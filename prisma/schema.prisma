@@ -1,0 +1,331 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  phone     String?  @unique
+  firstName String
+  lastName  String
+  username  String?  @unique
+  userType  String   @default("REFEREE") // ADMIN, REFEREE, FIRST_DEGREE, REFERRAL
+  password  String?
+
+  // Profile fields
+  profilePicture    String?
+  backgroundImage   String?
+  bio               String?
+  linkedinUrl       String?
+  twitterUrl        String?
+  facebookUrl       String?
+  instagramUrl      String?
+  websiteUrl        String?
+
+  // Referee-specific fields
+  skills           String? // JSON array of skills
+  companyName      String?
+  achievement      String?
+  achievementMethod String?
+  statementSummary String?
+  introRequest     String? // Types of people they'd like intros to (roles, sectors, or specific people)
+
+  // Magic link authentication
+  magicLinkToken     String?   @unique
+  magicLinkExpiry    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  contacts          Contact[]         @relation("UserContacts")
+  contactOf         Contact[]         @relation("ContactOfUser")
+  sentMessages      Message[]         @relation("MessageSender")
+  receivedMessages  Message[]         @relation("MessageReceiver")
+  initiatedReferrals Referral[]       @relation("ReferralInitiator")
+  receivedReferrals  Referral[]       @relation("ReferralRecipient")
+  firstDegreeReferrals Referral[]     @relation("FirstDegreeContact")
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  userId    String
+  contactId String?
+
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  company   String?
+
+  // Relationship tracking
+  degreeType String  @default("FIRST_DEGREE") // FIRST_DEGREE or SECOND_DEGREE
+  requestSentAt DateTime? // When the request was sent to this contact
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  contact   User?    @relation("ContactOfUser", fields: [contactId], references: [id])
+
+  @@index([userId])
+  @@index([contactId])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  senderId    String
+  receiverId  String
+  messageType String   // FIRST_DEGREE_REQUEST, REFERRAL_REQUEST
+  subject     String
+  body        String
+
+  // Delivery tracking
+  sentViaEmail Boolean @default(false)
+  sentViaSms   Boolean @default(false)
+  emailSentAt  DateTime?
+  smsSentAt    DateTime?
+
+  createdAt   DateTime @default(now())
+
+  // Relations
+  sender      User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Referral {
+  id              String    @id @default(cuid())
+  refereeId       String    // The original user who started the chain
+  firstDegreeId   String    // The 1st degree contact
+  referralId      String    // The final referral target
+
+  status          String    @default("PENDING") // PENDING, APPROVED, DENIED
+  customMessage   String?   // Customized message for this referral
+
+  approvedAt      DateTime?
+  deniedAt        DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  referee         User      @relation("ReferralInitiator", fields: [refereeId], references: [id], onDelete: Cascade)
+  firstDegree     User      @relation("FirstDegreeContact", fields: [firstDegreeId], references: [id], onDelete: Cascade)
+  referral        User      @relation("ReferralRecipient", fields: [referralId], references: [id], onDelete: Cascade)
+
+  @@index([refereeId])
+  @@index([firstDegreeId])
+  @@index([referralId])
+  @@index([status])
+}
+
+model BrandingSettings {
+  id                  String   @id @default(cuid())
+  productName         String   @default("Intro Network")
+  desktopSidebarLogo  String?
+  desktopHeaderLogo   String?
+  footerLogo          String?
+  desktopLogo         String?  // Legacy field
+  mobileLogo          String?
+  favicon             String?
+  primaryColor        String   @default("#3B82F6")
+  secondaryColor      String   @default("#8B5CF6")
+  accentColor         String   @default("#EC4899")
+
+  // Legacy step backgrounds (for backward compatibility)
+  step1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
+  step2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  step3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
+  step4Background     String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
+
+  // Flow A (/getintros - Referee flow) - Step Backgrounds
+  flowAStep1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
+  flowAStep2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  flowAStep3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
+  flowAStep1FormBg         String   @default("white")
+  flowAStep2FormBg         String   @default("white")
+  flowAStep3FormBg         String   @default("white")
+
+  // Flow B (/firstdegree - First Degree/Referrals flow) - Step Backgrounds
+  flowBStep1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
+  flowBStep2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  flowBStep3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
+  flowBStep4Background     String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
+  flowBStep1FormBg         String   @default("white")
+  flowBStep2FormBg         String   @default("white")
+  flowBStep3FormBg         String   @default("white")
+  flowBStep4FormBg         String   @default("white")
+
+  // Flow C (/onboarding - Onboarding flow) - Step Backgrounds
+  flowCStep1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
+  flowCStep2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  flowCStep3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
+  flowCStep4Background     String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
+  flowCStep1FormBg         String   @default("white")
+  flowCStep2FormBg         String   @default("white")
+  flowCStep3FormBg         String   @default("white")
+  flowCStep4FormBg         String   @default("white")
+
+  // User Flow A (Referee) Step Names
+  flowAStep1Name      String   @default("Your Profile")
+  flowAStep2Name      String   @default("Your Network")
+  flowAStep3Name      String   @default("Referrals")
+  flowAStep4Name      String   @default("Complete")
+
+  // User Flow B (First Degree) Step Names
+  flowBStep1Name      String   @default("Review request")
+  flowBStep2Name      String   @default("Suggest your contacts")
+  flowBStep3Name      String   @default("Review & send")
+  flowBStep4Name      String   @default("Track responses")
+
+  // User Flow C (Second Degree) Step Names
+  flowCStep1Name      String   @default("Review intro")
+  flowCStep2Name      String   @default("Accept or decline")
+  flowCStep3Name      String   @default("Connect")
+  flowCStep4Name      String   @default("Complete")
+
+  // Legacy fields (kept for backward compatibility)
+  step1Name           String   @default("Your Profile")
+  step2Name           String   @default("Your Network")
+  step3Name           String   @default("Referrals")
+  step4Name           String   @default("Complete")
+
+  fontFamily          String   @default("Inter, system-ui, sans-serif")
+  headingFont         String   @default("Inter, system-ui, sans-serif")
+  customCSS           String?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model ApiSettings {
+  id                  String   @id @default(cuid())
+
+  // Email provider selection
+  emailProvider       String   @default("resend") // "resend" or "gmail"
+
+  // Resend settings
+  resendApiKey        String?
+  resendFromEmail     String?
+
+  // Gmail SMTP settings
+  gmailEmail          String?
+  gmailAppPassword    String?
+
+  // Twilio settings
+  twilioAccountSid    String?
+  twilioAuthToken     String?
+  twilioPhoneNumber   String?
+
+  // Statement Summary Template
+  statementSummaryTemplate String? // Template for building referee statements with placeholders
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model MessageTemplate {
+  id              String   @id @default(cuid())
+  templateType    String   // REFEREE_WELCOME, FIRST_DEGREE_REQUEST, REFERRAL_REQUEST
+  messageChannel  String   // EMAIL or SMS
+
+  // Template content
+  subject         String?  // Only for email
+  bodyHtml        String?  // Only for email - HTML with inline CSS
+  bodySms         String?  // Only for SMS - plain text
+
+  // Metadata
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([templateType, messageChannel])
+  @@index([templateType])
+  @@index([messageChannel])
+}
+
+model Page {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique // URL-friendly identifier (e.g., "home", "about-us")
+  isPublished Boolean   @default(false)
+  isHomepage  Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sections    Section[]
+
+  @@index([slug])
+  @@index([isPublished])
+}
+
+model Section {
+  id          String   @id @default(cuid())
+  pageId      String
+  order       Int      // Position in the page
+  sectionId   String?  // Optional ID that can be used for smooth scrolling anchor links
+
+  // Layout options
+  isFullWidth Boolean  @default(false) // true = full-width, false = container
+  columns     Int      @default(1)     // 1, 2, or 3 columns
+
+  // Section content stored as JSON
+  // Structure: { columns: [{ align: 'left'|'center'|'right', classes: '', elements: [{ type: 'h1'|'h2'|'h3'|'h4'|'p'|'image'|'button', content: '', order: 0 }] }] }
+  content     String   // JSON string
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([order])
+}
+
+model NavigationSettings {
+  id            String   @id @default(cuid())
+
+  // Header links stored as JSON array
+  // Structure: [{ label: 'About', href: '/about', scrollToId: '#section-about' }]
+  headerLinks   String   @default("[]")
+
+  // Footer links stored as JSON array
+  // Structure: [{ title: 'Product', links: [{ label: 'Features', href: '/features' }] }]
+  footerLinks   String   @default("[]")
+
+  // Footer branding
+  tagline       String?
+  companyName   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model MagicLink {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  userId      String
+  redirectUrl String
+  expiresAt   DateTime
+  used        Boolean   @default(false)
+  usedAt      DateTime?
+
+  createdAt   DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}

@@ -1,0 +1,371 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+
+interface ApiSettings {
+  emailProvider: string
+  resendApiKey: string
+  resendFromEmail: string
+  gmailEmail: string
+  gmailAppPassword: string
+  twilioAccountSid: string
+  twilioAuthToken: string
+  twilioPhoneNumber: string
+}
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<ApiSettings>({
+    emailProvider: 'resend',
+    resendApiKey: '',
+    resendFromEmail: '',
+    gmailEmail: '',
+    gmailAppPassword: '',
+    twilioAccountSid: '',
+    twilioAuthToken: '',
+    twilioPhoneNumber: '',
+  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showApiKeys, setShowApiKeys] = useState(false)
+  const [testingEmail, setTestingEmail] = useState(false)
+  const [testingSms, setTestingSms] = useState(false)
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/settings')
+      const data = await response.json()
+      if (data.success) {
+        setSettings(data.settings)
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert('Settings saved successfully!')
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+      alert('Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const testEmail = async () => {
+    setTestingEmail(true)
+    try {
+      const response = await fetch('/api/admin/test-email', {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (data.success) {
+        const emailAddress = settings.emailProvider === 'gmail'
+          ? settings.gmailEmail
+          : settings.resendFromEmail
+        alert(`Test email sent successfully to ${emailAddress}!`)
+      } else {
+        alert(`Failed to send test email: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to test email:', error)
+      alert('Failed to send test email')
+    } finally {
+      setTestingEmail(false)
+    }
+  }
+
+  const testSms = async () => {
+    setTestingSms(true)
+    try {
+      const response = await fetch('/api/admin/test-sms', {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(`Test SMS sent successfully to ${settings.twilioPhoneNumber}!`)
+      } else {
+        alert(`Failed to send test SMS: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to test SMS:', error)
+      alert('Failed to send test SMS')
+    } finally {
+      setTestingSms(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">API Settings</h1>
+        <p className="text-gray-600 mt-2">Configure email and SMS API credentials</p>
+      </div>
+
+      {/* Email Provider Selection */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Email Provider</h2>
+        <div className="flex gap-4">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="emailProvider"
+              value="resend"
+              checked={settings.emailProvider === 'resend'}
+              onChange={(e) => setSettings({ ...settings, emailProvider: e.target.value })}
+              className="mr-2"
+            />
+            <span className="text-gray-700">Resend</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="emailProvider"
+              value="gmail"
+              checked={settings.emailProvider === 'gmail'}
+              onChange={(e) => setSettings({ ...settings, emailProvider: e.target.value })}
+              className="mr-2"
+            />
+            <span className="text-gray-700">Gmail SMTP</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Resend Settings */}
+      {settings.emailProvider === 'resend' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Resend Email API</h2>
+              <p className="text-sm text-gray-600 mt-1">Configure email delivery service</p>
+            </div>
+            <a
+              href="https://resend.com/api-keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Get API Key →
+            </a>
+          </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              API Key
+            </label>
+            <input
+              type={showApiKeys ? 'text' : 'password'}
+              value={settings.resendApiKey}
+              onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="re_..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              From Email Address
+            </label>
+            <input
+              type="email"
+              value={settings.resendFromEmail}
+              onChange={(e) => setSettings({ ...settings, resendFromEmail: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="noreply@yourdomain.com"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Must be a verified domain in your Resend account
+            </p>
+          </div>
+
+          <button
+            onClick={testEmail}
+            disabled={testingEmail || !settings.resendApiKey || !settings.resendFromEmail}
+            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {testingEmail ? 'Sending...' : 'Send Test Email'}
+          </button>
+        </div>
+      </div>
+      )}
+
+      {/* Gmail Settings */}
+      {settings.emailProvider === 'gmail' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Gmail SMTP</h2>
+              <p className="text-sm text-gray-600 mt-1">Configure Gmail email delivery</p>
+            </div>
+            <a
+              href="https://support.google.com/accounts/answer/185833"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Get App Password →
+            </a>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gmail Email Address
+              </label>
+              <input
+                type="email"
+                value={settings.gmailEmail}
+                onChange={(e) => setSettings({ ...settings, gmailEmail: e.target.value })}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="your.email@gmail.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                App Password
+              </label>
+              <input
+                type={showApiKeys ? 'text' : 'password'}
+                value={settings.gmailAppPassword}
+                onChange={(e) => setSettings({ ...settings, gmailAppPassword: e.target.value })}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="16-character app password"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Generate an app password in your Google Account settings
+              </p>
+            </div>
+
+            <button
+              onClick={testEmail}
+              disabled={testingEmail || !settings.gmailEmail || !settings.gmailAppPassword}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {testingEmail ? 'Sending...' : 'Send Test Email'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Twilio Settings */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Twilio SMS API</h2>
+            <p className="text-sm text-gray-600 mt-1">Configure SMS messaging service</p>
+          </div>
+          <a
+            href="https://console.twilio.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Get Credentials →
+          </a>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Account SID
+            </label>
+            <input
+              type={showApiKeys ? 'text' : 'password'}
+              value={settings.twilioAccountSid}
+              onChange={(e) => setSettings({ ...settings, twilioAccountSid: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="AC..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Auth Token
+            </label>
+            <input
+              type={showApiKeys ? 'text' : 'password'}
+              value={settings.twilioAuthToken}
+              onChange={(e) => setSettings({ ...settings, twilioAuthToken: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Your auth token"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={settings.twilioPhoneNumber}
+              onChange={(e) => setSettings({ ...settings, twilioPhoneNumber: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="+1234567890"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Your Twilio phone number with country code
+            </p>
+          </div>
+
+          <button
+            onClick={testSms}
+            disabled={testingSms || !settings.twilioAccountSid || !settings.twilioAuthToken || !settings.twilioPhoneNumber}
+            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {testingSms ? 'Sending...' : 'Send Test SMS'}
+          </button>
+        </div>
+      </div>
+
+      {/* Show/Hide API Keys Toggle */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <label className="flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showApiKeys}
+            onChange={(e) => setShowApiKeys(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="ml-2 text-sm text-gray-700">Show API keys and tokens</span>
+        </label>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          {saving ? 'Saving...' : 'Save Settings'}
+        </button>
+      </div>
+    </div>
+  )
+}

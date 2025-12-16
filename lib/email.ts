@@ -27,7 +27,8 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
     // sgMail.setApiKey(settings.sendgridApiKey)
     // await sgMail.send({ to, subject, html, from: settings.fromEmail })
 
-    return { success: true }
+    // Throw error in development so the dev link shows in the UI
+    throw new Error('Email sending not configured - using development mode')
   } catch (error) {
     console.error('Failed to send email:', error)
     throw error

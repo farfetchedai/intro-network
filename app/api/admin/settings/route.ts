@@ -24,6 +24,7 @@ export async function GET() {
         twilioAccountSid: settings.twilioAccountSid || '',
         twilioAuthToken: settings.twilioAuthToken || '',
         twilioPhoneNumber: settings.twilioPhoneNumber || '',
+        anthropicApiKey: settings.anthropicApiKey || '',
       },
     })
   } catch (error) {
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
           twilioAccountSid: body.twilioAccountSid || null,
           twilioAuthToken: body.twilioAuthToken || null,
           twilioPhoneNumber: body.twilioPhoneNumber || null,
+          anthropicApiKey: body.anthropicApiKey || null,
         },
       })
     } else {
@@ -69,6 +71,7 @@ export async function POST(request: Request) {
           twilioAccountSid: body.twilioAccountSid || null,
           twilioAuthToken: body.twilioAuthToken || null,
           twilioPhoneNumber: body.twilioPhoneNumber || null,
+          anthropicApiKey: body.anthropicApiKey || null,
         },
       })
     }

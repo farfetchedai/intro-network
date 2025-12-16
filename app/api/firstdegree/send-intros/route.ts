@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail, generateReferralRequestEmail } from '@/lib/services/email'
-import { sendSMS, generateReferralRequestSMS } from '@/lib/services/sms'
+import { sendSMS, generateFirstDegreeRequestSMS } from '@/lib/services/sms'
 import { generateMagicLink } from '@/lib/magicLink'
 import { z } from 'zod'
 
@@ -22,8 +22,14 @@ export async function POST(req: Request) {
     const validatedData = sendIntrosSchema.parse(body)
 
     // Get referee with all fields needed for the email
-    const referee = await prisma.user.findUnique({
-      where: { id: validatedData.refereeId },
+    // Try to find by username first, then by ID
+    const referee = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: validatedData.refereeId },
+          { id: validatedData.refereeId }
+        ]
+      },
     })
 
     if (!referee) {
@@ -146,10 +152,11 @@ export async function POST(req: Request) {
               .replace(/\{link\}/g, link)
           } else {
             // Use default template
-            smsMessage = generateReferralRequestSMS({
+            smsMessage = generateFirstDegreeRequestSMS({
               refereeFirstName: referee.firstName,
-              firstDegreeFirstName: firstDegree.firstName,
-              referralFirstName: referral.firstName,
+              refereeLastName: referee.lastName,
+              contactFirstName: referral.firstName,
+              customMessage: referee.introRequest || referee.statementSummary || `${firstDegree.firstName} ${firstDegree.lastName} thinks you should meet ${referee.firstName} ${referee.lastName}.`,
               link,
             })
           }

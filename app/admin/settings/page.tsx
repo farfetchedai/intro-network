@@ -11,6 +11,7 @@ interface ApiSettings {
   twilioAccountSid: string
   twilioAuthToken: string
   twilioPhoneNumber: string
+  anthropicApiKey: string
 }
 
 export default function SettingsPage() {
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     twilioAccountSid: '',
     twilioAuthToken: '',
     twilioPhoneNumber: '',
+    anthropicApiKey: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -340,6 +342,42 @@ export default function SettingsPage() {
           >
             {testingSms ? 'Sending...' : 'Send Test SMS'}
           </button>
+        </div>
+      </div>
+
+      {/* Anthropic API Settings */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Anthropic API (Claude)</h2>
+            <p className="text-sm text-gray-600 mt-1">Configure AI-powered statement generation</p>
+          </div>
+          <a
+            href="https://console.anthropic.com/settings/keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Get API Key →
+          </a>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              API Key
+            </label>
+            <input
+              type={showApiKeys ? 'text' : 'password'}
+              value={settings.anthropicApiKey}
+              onChange={(e) => setSettings({ ...settings, anthropicApiKey: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="sk-ant-..."
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Used for AI-generated professional statements
+            </p>
+          </div>
         </div>
       </div>
 

@@ -33,6 +33,7 @@ model User {
   achievement      String?
   achievementMethod String?
   statementSummary String?
+  statementSummary3rdPerson String? // 3rd person version for referral requests
   introRequest     String? // Types of people they'd like intros to (roles, sectors, or specific people)
 
   // Magic link authentication
@@ -231,6 +232,9 @@ model ApiSettings {
 
   // Statement Summary Template
   statementSummaryTemplate String? // Template for building referee statements with placeholders
+
+  // AI Settings
+  anthropicApiKey     String?  // Anthropic API key for AI-powered features
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

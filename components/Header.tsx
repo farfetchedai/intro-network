@@ -103,10 +103,11 @@ export default function Header() {
   ]
 
   const userMenuItems = user ? [
-    { label: 'My Profile', href: user.username ? `/${user.username}` : '/profile' },
-    { label: 'Edit Profile', href: '/onboarding' },
+    { label: 'My Business Card', href: user.username ? `/${user.username}` : `/profile/${user.id}` },
+    { label: 'My Profile', href: '/profile' },
+    { label: 'Edit Business Card', href: '/onboarding' },
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Request Introductions', href: '/introductions/request' },
+    { label: 'Request Introductions', href: '/getintros' },
     { label: 'Introductions', href: '/introductions' },
     { label: 'Contacts', href: '/contacts' },
     { label: 'Settings', href: '/settings' },

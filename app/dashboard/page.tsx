@@ -259,86 +259,157 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Contacts */}
+        {/* Connections Grid */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Contacts</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Connections</h2>
           {contacts.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">You haven't added any contacts yet</p>
+              <p className="text-gray-600 mb-4">You haven't added any connections yet</p>
               <button
                 onClick={() => router.push('/referee')}
                 className="bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-200"
               >
-                Add Contacts
+                Add Connections
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {contacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="flex items-center justify-between border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <p className="font-semibold text-gray-900">
-                        {contact.firstName} {contact.lastName}
-                      </p>
-                      {contact.requestSentAt && (
-                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
-                          <svg
-                            className="w-3 h-3"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          Request Sent
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 mt-1">
-                      {contact.email && (
-                        <p className="text-sm text-gray-600">{contact.email}</p>
-                      )}
-                      {contact.phone && (
-                        <p className="text-sm text-gray-600">{contact.phone}</p>
-                      )}
-                    </div>
-                    {contact.company && (
-                      <p className="text-sm text-gray-500 mt-1">{contact.company}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-3 py-1 rounded-full">
-                      {contact.degreeType.replace('_', ' ')}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteContact(contact.id)}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                      title="Delete contact"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* 1st Degree Column */}
+              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                  <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                    1
+                  </span>
+                  1st Degree
+                </h3>
+                <p className="text-sm text-blue-700 mb-4">Your direct connections</p>
+                <div className="space-y-3">
+                  {contacts.filter((c) => c.degreeType === 'FIRST_DEGREE').length === 0 ? (
+                    <p className="text-sm text-blue-600 italic">No 1st degree connections yet</p>
+                  ) : (
+                    contacts.filter((c) => c.degreeType === 'FIRST_DEGREE').map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="bg-white border border-blue-200 rounded-lg p-3 hover:shadow-md transition-shadow"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+                        <div className="flex items-start justify-between mb-2">
+                          <p className="font-semibold text-gray-900 text-sm">
+                            {contact.firstName} {contact.lastName}
+                          </p>
+                          <button
+                            onClick={() => handleDeleteContact(contact.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                        {contact.email && (
+                          <p className="text-xs text-gray-600 truncate">{contact.email}</p>
+                        )}
+                        {contact.company && (
+                          <p className="text-xs text-gray-500 mt-1">{contact.company}</p>
+                        )}
+                        {contact.requestSentAt && (
+                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded mt-2">
+                            ✓ Requested
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* 2nd Degree Column */}
+              <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+                <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                  <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                    2
+                  </span>
+                  2nd Degree
+                </h3>
+                <p className="text-sm text-purple-700 mb-4">Introduced by 1st degree</p>
+                <div className="space-y-3">
+                  {contacts.filter((c) => c.degreeType === 'SECOND_DEGREE').length === 0 ? (
+                    <p className="text-sm text-purple-600 italic">No 2nd degree connections yet</p>
+                  ) : (
+                    contacts.filter((c) => c.degreeType === 'SECOND_DEGREE').map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <p className="font-semibold text-gray-900 text-sm">
+                            {contact.firstName} {contact.lastName}
+                          </p>
+                          <button
+                            onClick={() => handleDeleteContact(contact.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                        {contact.email && (
+                          <p className="text-xs text-gray-600 truncate">{contact.email}</p>
+                        )}
+                        {contact.company && (
+                          <p className="text-xs text-gray-500 mt-1">{contact.company}</p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* 3rd Degree Column */}
+              <div className="border-2 border-pink-200 rounded-lg p-4 bg-pink-50">
+                <h3 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+                  <span className="bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                    3
+                  </span>
+                  3rd Degree
+                </h3>
+                <p className="text-sm text-pink-700 mb-4">Introduced by 2nd degree</p>
+                <div className="space-y-3">
+                  {contacts.filter((c) => c.degreeType === 'THIRD_DEGREE').length === 0 ? (
+                    <p className="text-sm text-pink-600 italic">No 3rd degree connections yet</p>
+                  ) : (
+                    contacts.filter((c) => c.degreeType === 'THIRD_DEGREE').map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="bg-white border border-pink-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <p className="font-semibold text-gray-900 text-sm">
+                            {contact.firstName} {contact.lastName}
+                          </p>
+                          <button
+                            onClick={() => handleDeleteContact(contact.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                        {contact.email && (
+                          <p className="text-xs text-gray-600 truncate">{contact.email}</p>
+                        )}
+                        {contact.company && (
+                          <p className="text-xs text-gray-500 mt-1">{contact.company}</p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>

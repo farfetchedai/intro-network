@@ -10,8 +10,9 @@ const registerSchema = z.object({
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  username: z.string().min(3, 'Username must be at least 3 characters').regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores').optional(),
   profilePicture: z.string().optional(),
-  statementSummary: z.string().min(10, 'Statement summary must be at least 10 characters').optional().or(z.literal('')),
+  statementSummary: z.string().optional(),
   skills: z.array(z.string()).optional(),
   companyName: z.string().optional(),
   achievement: z.string().optional(),
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
     // Convert empty strings to null for unique fields
     const email = validatedData.email?.trim() || null
     const phone = validatedData.phone?.trim() || null
+    const username = validatedData.username?.trim() || null
     const profilePicture = validatedData.profilePicture?.trim() || null
     const statementSummary = validatedData.statementSummary?.trim() || null
 
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       // User exists - update their information
-      // Check if email/phone are being changed to avoid conflicts with other users
+      // Check if email/phone/username are being changed to avoid conflicts with other users
       const updateData: any = {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
@@ -113,6 +115,11 @@ export async function POST(req: Request) {
       // Only update phone if it's different from current and not null
       if (phone !== null && phone !== existingUser.phone) {
         updateData.phone = phone
+      }
+
+      // Only update username if it's different from current and not null
+      if (username !== null && username !== existingUser.username) {
+        updateData.username = username
       }
 
       const updatedUser = await prisma.user.update({
@@ -153,6 +160,7 @@ export async function POST(req: Request) {
         lastName: validatedData.lastName,
         email,
         phone,
+        username,
         profilePicture,
         statementSummary,
         skills: validatedData.skills ? JSON.stringify(validatedData.skills) : null,

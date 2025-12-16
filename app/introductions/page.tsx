@@ -97,15 +97,15 @@ export default function IntroductionsPage() {
         const authResponse = await fetch('/api/auth/me')
         if (authResponse.ok) {
           const authData = await authResponse.json()
-          if (authData.success && authData.userId) {
-            setUser({ id: authData.userId })
-            
+          if (authData.success && authData.user) {
+            setUser({ id: authData.user.id })
+
             // Fetch referrals
-            const referralsResponse = await fetch(`/api/referrals?userId=${authData.userId}`)
+            const referralsResponse = await fetch(`/api/referrals?userId=${authData.user.id}`)
             if (referralsResponse.ok) {
               const data = await referralsResponse.json()
-              // We only want the received referrals (where user is the referralId)
-              setReferrals(data.referrals.received || [])
+              // We want the initiated referrals (where user is the referee requesting introductions)
+              setReferrals(data.referrals.initiated || [])
             }
           } else {
             router.push('/referee')

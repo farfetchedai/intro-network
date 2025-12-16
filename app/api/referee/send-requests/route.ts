@@ -89,6 +89,12 @@ export async function POST(req: Request) {
             .replace(/\{refereeFirstName\}/g, referee.firstName)
             .replace(/\{refereeLastName\}/g, referee.lastName)
             .replace(/\{link\}/g, link)
+            .replace(/\{statementSummary\}/g, referee.statementSummary || '')
+            .replace(/\{skills\}/g, referee.skills || '')
+            .replace(/\{achievement\}/g, referee.achievement || '')
+            .replace(/\{achievementMethod\}/g, referee.achievementMethod || '')
+            .replace(/\{introRequest\}/g, referee.introRequest || '')
+            .replace(/\{companyName\}/g, referee.companyName || '')
 
           // Use custom subject if provided, otherwise use default
           let emailSubject = validatedData.emailSubject || `${referee.firstName} needs your help with introductions`
@@ -101,6 +107,12 @@ export async function POST(req: Request) {
             .replace(/\{firstName\}/g, referee.firstName)
             .replace(/\{refereeFirstName\}/g, referee.firstName)
             .replace(/\{refereeLastName\}/g, referee.lastName)
+            .replace(/\{statementSummary\}/g, referee.statementSummary || '')
+            .replace(/\{skills\}/g, referee.skills || '')
+            .replace(/\{achievement\}/g, referee.achievement || '')
+            .replace(/\{achievementMethod\}/g, referee.achievementMethod || '')
+            .replace(/\{introRequest\}/g, referee.introRequest || '')
+            .replace(/\{companyName\}/g, referee.companyName || '')
 
           emailResult = await sendEmail({
             to: contact.email,
@@ -125,6 +137,12 @@ export async function POST(req: Request) {
               .replace(/\{refereeFirstName\}/g, referee.firstName)
               .replace(/\{refereeLastName\}/g, referee.lastName)
               .replace(/\{link\}/g, link)
+              .replace(/\{statementSummary\}/g, referee.statementSummary || '')
+              .replace(/\{skills\}/g, referee.skills || '')
+              .replace(/\{achievement\}/g, referee.achievement || '')
+              .replace(/\{achievementMethod\}/g, referee.achievementMethod || '')
+              .replace(/\{introRequest\}/g, referee.introRequest || '')
+              .replace(/\{companyName\}/g, referee.companyName || '')
           } else {
             smsMessage = generateFirstDegreeRequestSMS({
               refereeFirstName: referee.firstName,

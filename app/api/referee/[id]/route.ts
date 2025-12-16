@@ -8,8 +8,14 @@ export async function GET(
   try {
     const { id } = await params
 
-    const referee = await prisma.user.findUnique({
-      where: { id },
+    // Try to find by username first, then by ID
+    const referee = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: id },
+          { id: id }
+        ]
+      },
       select: {
         id: true,
         firstName: true,
@@ -21,14 +27,15 @@ export async function GET(
         achievement: true,
         achievementMethod: true,
         statementSummary: true,
+        statementSummary3rdPerson: true,
         introRequest: true,
         userType: true,
       },
     })
 
-    if (!referee || referee.userType !== 'REFEREE') {
+    if (!referee) {
       return NextResponse.json(
-        { error: 'Referee not found' },
+        { error: 'User not found' },
         { status: 404 }
       )
     }

@@ -96,7 +96,7 @@ export default function TopHeader({ userName: userNameProp }: TopHeaderProps) {
                     <button
                       onClick={() => {
                         setShowUserMenu(false)
-                        router.push('/introductions/request')
+                        router.push('/getintros')
                       }}
                       className="w-full text-left px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
                     >

@@ -14,7 +14,7 @@ export default function MobileProgressBar({
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700">

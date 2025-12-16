@@ -6,14 +6,17 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
     const email = searchParams.get('email')
+    const username = searchParams.get('username')
 
-    if (!userId && !email) {
-      return NextResponse.json({ error: 'Missing userId or email' }, { status: 400 })
+    if (!userId && !email && !username) {
+      return NextResponse.json({ error: 'Missing userId, email, or username' }, { status: 400 })
     }
 
     const user = await prisma.user.findFirst({
       where: userId
         ? { id: userId }
+        : username
+        ? { username: username }
         : { email: email! },
       select: {
         id: true,
@@ -30,6 +33,11 @@ export async function GET(req: Request) {
         achievementMethod: true,
         statementSummary: true,
         introRequest: true,
+        linkedinUrl: true,
+        twitterUrl: true,
+        facebookUrl: true,
+        instagramUrl: true,
+        websiteUrl: true,
       },
     })
 

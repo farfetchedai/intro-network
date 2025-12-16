@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BusinessCard from '@/components/BusinessCard'
 
 interface Element {
   id: string
@@ -66,6 +67,11 @@ async function getUserByUsername(username: string) {
       statementSummary: true,
       introRequest: true,
       username: true,
+      linkedinUrl: true,
+      twitterUrl: true,
+      facebookUrl: true,
+      instagramUrl: true,
+      websiteUrl: true,
     },
   })
 
@@ -89,45 +95,7 @@ export default async function DynamicPage({
         <Header />
         <main className="flex-1 pt-24 pb-12 px-4">
           <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-              <div className="flex items-center gap-6 mb-8 pb-8 border-b border-gray-200">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold flex-shrink-0 overflow-hidden">
-                  {user.profilePicture ? (
-                    <img
-                      src={user.profilePicture}
-                      alt={`${user.firstName} ${user.lastName}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-1">
-                    Hi, I'm {user.firstName} {user.lastName}
-                  </h2>
-                  <p className="text-gray-600 text-lg">
-                    {user.email}
-                  </p>
-                  {user.phone && (
-                    <p className="text-gray-500 text-sm mt-1">
-                      {user.phone}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {user.statementSummary && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                    Professional Summary
-                  </h3>
-                  <p className="text-xl text-gray-800 leading-relaxed whitespace-pre-line">
-                    {user.statementSummary}
-                  </p>
-                </div>
-              )}
-            </div>
+            <BusinessCard user={user} />
           </div>
         </main>
         <Footer />

@@ -9,7 +9,7 @@ export default function GetIntrosPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [userId, setUserId] = useState('')
-  const [userName, setUserName] = useState({ firstName: '', lastName: '' })
+  const [userName, setUserName] = useState({ firstName: '', lastName: '', statementSummary: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -37,10 +37,10 @@ export default function GetIntrosPage() {
   // Email/SMS templates
   const [emailSubject, setEmailSubject] = useState('Introduction Request')
   const [emailTemplate, setEmailTemplate] = useState(
-    "Hi [Contact Name],\n\nI hope this message finds you well. I'm reaching out because I'm looking to connect with people in your network who might be able to help me with [your goal].\n\nWould you be willing to make an introduction?\n\nThank you for considering this request.\n\nBest regards"
+    "Hi {contactName},\n\nI hope this message finds you well. I'm reaching out because I'm looking to connect with people in your network who might be able to help me with my goals.\n\nWould you be willing to make an introduction?\n\nThank you for considering this request.\n\nBest regards,\n{firstName}"
   )
   const [smsTemplate, setSmsTemplate] = useState(
-    "Hi [Contact Name], I'm looking to connect with people in your network. Would you be willing to make an introduction? Thanks!"
+    "Hi {contactName}, I'm {firstName} and I'm looking to connect with people in your network. Would you be willing to make an introduction? Thanks!"
   )
 
   // Preview state
@@ -48,6 +48,12 @@ export default function GetIntrosPage() {
 
   // Track which contacts have been sent to
   const [sentContactIndices, setSentContactIndices] = useState<Set<number>>(new Set())
+
+  // Modal state for template editing
+  const [showEmailEditor, setShowEmailEditor] = useState(false)
+  const [showSmsEditor, setShowSmsEditor] = useState(false)
+  const [tempEmailTemplate, setTempEmailTemplate] = useState('')
+  const [tempSmsTemplate, setTempSmsTemplate] = useState('')
 
   // Branding settings
   const [brandingSettings, setBrandingSettings] = useState({
@@ -77,7 +83,8 @@ export default function GetIntrosPage() {
             if (authData.user.firstName && authData.user.lastName) {
               setUserName({
                 firstName: authData.user.firstName,
-                lastName: authData.user.lastName
+                lastName: authData.user.lastName,
+                statementSummary: authData.user.statementSummary || ''
               })
             }
 
@@ -227,62 +234,157 @@ export default function GetIntrosPage() {
     return str.charAt(0).toUpperCase() + str.slice(1)
   }
 
+  // Parse template into segments (text and placeholders)
+  type TemplateSegment = {
+    type: 'text' | 'placeholder'
+    content: string
+    placeholder?: string // For placeholder type, the actual {key}
+  }
+
+  const parseTemplate = (template: string): TemplateSegment[] => {
+    const segments: TemplateSegment[] = []
+    const placeholderRegex = /\{[^}]+\}/g
+    let lastIndex = 0
+    let match
+
+    while ((match = placeholderRegex.exec(template)) !== null) {
+      // Add text before placeholder
+      if (match.index > lastIndex) {
+        segments.push({
+          type: 'text',
+          content: template.substring(lastIndex, match.index)
+        })
+      }
+
+      // Add placeholder
+      segments.push({
+        type: 'placeholder',
+        content: match[0].replace(/[{}]/g, ''),
+        placeholder: match[0]
+      })
+
+      lastIndex = placeholderRegex.lastIndex
+    }
+
+    // Add remaining text
+    if (lastIndex < template.length) {
+      segments.push({
+        type: 'text',
+        content: template.substring(lastIndex)
+      })
+    }
+
+    return segments
+  }
+
+  // Reconstruct template from segments
+  const reconstructTemplate = (segments: TemplateSegment[]): string => {
+    return segments.map(seg =>
+      seg.type === 'placeholder' ? seg.placeholder : seg.content
+    ).join('')
+  }
+
+  // Modal handlers
+  const openEmailEditor = () => {
+    setTempEmailTemplate(emailTemplate)
+    setShowEmailEditor(true)
+  }
+
+  const openSmsEditor = () => {
+    setTempSmsTemplate(smsTemplate)
+    setShowSmsEditor(true)
+  }
+
+  const saveEmailTemplate = () => {
+    setEmailTemplate(tempEmailTemplate)
+    setShowEmailEditor(false)
+  }
+
+  const saveSmsTemplate = () => {
+    setSmsTemplate(tempSmsTemplate)
+    setShowSmsEditor(false)
+  }
+
   // Generate preview subject with actual contact data substituted
   const getPreviewSubject = () => {
-    if (contacts.length === 0 || !emailSubject) {
+    if (!emailSubject) {
       return emailSubject
     }
 
-    const contact = contacts[previewContactIndex] || contacts[0]
+    // Use actual contact if available, otherwise use fallback preview data
+    const contact = contacts.length > 0
+      ? (contacts[previewContactIndex] || contacts[0])
+      : { firstName: 'John', lastName: 'Doe' }
+
+    const userFirstName = userName.firstName || 'Your Name'
 
     // Replace template variables with actual values
     let previewSubject = emailSubject
       .replace(/\{contactName\}/g, `${contact.firstName} ${contact.lastName}`)
       .replace(/\{contactFirstName\}/g, contact.firstName)
       .replace(/\{contactLastName\}/g, contact.lastName)
-      .replace(/\{firstName\}/g, userName.firstName)
-      .replace(/\{refereeFirstName\}/g, userName.firstName)
-      .replace(/\{refereeLastName\}/g, userName.lastName)
+      .replace(/\{firstName\}/g, userFirstName)
+      .replace(/\{refereeFirstName\}/g, userFirstName)
+      .replace(/\{refereeLastName\}/g, userName.lastName || '')
+      .replace(/\{statementSummary\}/g, userName.statementSummary || 'Your statement summary')
+      // Remove any remaining unreplaced placeholders
+      .replace(/\{[^}]+\}/g, '[placeholder]')
 
     return previewSubject
   }
 
   // Generate preview HTML with actual contact data substituted
   const getPreviewHtml = () => {
-    if (contacts.length === 0 || !emailTemplate) {
-      return emailTemplate
+    if (!emailTemplate) {
+      return ''
     }
 
-    const contact = contacts[previewContactIndex] || contacts[0]
+    // Use actual contact if available, otherwise use fallback preview data
+    const contact = contacts.length > 0
+      ? (contacts[previewContactIndex] || contacts[0])
+      : { firstName: 'John', lastName: 'Doe' }
+
+    const userFirstName = userName.firstName || 'Your Name'
 
     // Replace template variables with actual values (capitalize first names)
     let previewHtml = emailTemplate
       .replace(/\{contactName\}/g, `${capitalizeFirstLetter(contact.firstName)} ${contact.lastName}`)
       .replace(/\{contactFirstName\}/g, capitalizeFirstLetter(contact.firstName))
       .replace(/\{contactLastName\}/g, contact.lastName)
-      .replace(/\{firstName\}/g, userName.firstName)
-      .replace(/\{refereeFirstName\}/g, userName.firstName)
-      .replace(/\{refereeLastName\}/g, userName.lastName)
+      .replace(/\{firstName\}/g, userFirstName)
+      .replace(/\{refereeFirstName\}/g, userFirstName)
+      .replace(/\{refereeLastName\}/g, userName.lastName || '')
+      .replace(/\{statementSummary\}/g, userName.statementSummary || 'Your statement summary')
+      // Remove any remaining unreplaced placeholders
+      .replace(/\{[^}]+\}/g, '[placeholder]')
 
     return previewHtml
   }
 
   // Generate preview SMS with actual contact data substituted
   const getPreviewSms = () => {
-    if (contacts.length === 0 || !smsTemplate) {
-      return smsTemplate
+    if (!smsTemplate) {
+      return ''
     }
 
-    const contact = contacts[previewContactIndex] || contacts[0]
+    // Use actual contact if available, otherwise use fallback preview data
+    const contact = contacts.length > 0
+      ? (contacts[previewContactIndex] || contacts[0])
+      : { firstName: 'John', lastName: 'Doe' }
+
+    const userFirstName = userName.firstName || 'Your Name'
 
     // Replace template variables with actual values (capitalize first names)
     let previewSms = smsTemplate
       .replace(/\{contactName\}/g, `${capitalizeFirstLetter(contact.firstName)} ${contact.lastName}`)
       .replace(/\{contactFirstName\}/g, capitalizeFirstLetter(contact.firstName))
       .replace(/\{contactLastName\}/g, contact.lastName)
-      .replace(/\{firstName\}/g, userName.firstName)
-      .replace(/\{refereeFirstName\}/g, userName.firstName)
-      .replace(/\{refereeLastName\}/g, userName.lastName)
+      .replace(/\{firstName\}/g, userFirstName)
+      .replace(/\{refereeFirstName\}/g, userFirstName)
+      .replace(/\{refereeLastName\}/g, userName.lastName || '')
+      .replace(/\{statementSummary\}/g, userName.statementSummary || 'Your statement summary')
+      // Remove any remaining unreplaced placeholders
+      .replace(/\{[^}]+\}/g, '[placeholder]')
 
     return previewSms
   }
@@ -590,32 +692,55 @@ export default function GetIntrosPage() {
                     </div>
                   )}
 
-                  {/* Email Subject */}
+                  {/* Email Subject - Preview Only */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Email Subject
                     </label>
-                    <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-[#191919]">
+                    <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-gray-900">
                       {getPreviewSubject()}
                     </div>
                   </div>
 
-                  {/* Email Template */}
+                  {/* Email Message - Preview with Edit Button */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Email Message
-                    </label>
-                    <div
-                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-white text-[#191919] min-h-[200px]"
-                      dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Email Message
+                      </label>
+                      <button
+                        onClick={openEmailEditor}
+                        className="px-3 py-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200"
+                      >
+                        Edit Email
+                      </button>
+                    </div>
+                    <div className="w-full rounded-xl border-2 border-gray-200 bg-gray-50">
+                      <div
+                        className="overflow-auto p-4 bg-white min-h-[200px]"
+                        dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+                      />
+                      {contacts.length > 0 && (
+                        <p className="text-xs text-gray-500 px-4 py-2 bg-gray-50">
+                          Preview shown with: {contacts[previewContactIndex]?.firstName || contacts[0]?.firstName} {contacts[previewContactIndex]?.lastName || contacts[0]?.lastName}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* SMS Template */}
+                  {/* SMS Message - Preview with Edit Button */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      SMS Message
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        SMS Message
+                      </label>
+                      <button
+                        onClick={openSmsEditor}
+                        className="px-3 py-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200"
+                      >
+                        Edit SMS
+                      </button>
+                    </div>
                     <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50">
                       <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-md p-4">
                         <div className="text-sm text-gray-900 whitespace-pre-wrap">
@@ -624,6 +749,11 @@ export default function GetIntrosPage() {
                         <div className="text-xs text-gray-500 mt-2 text-right">
                           {getPreviewSms().length} characters
                         </div>
+                        {contacts.length > 0 && (
+                          <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                            Preview with: {contacts[previewContactIndex]?.firstName || contacts[0]?.firstName} {contacts[previewContactIndex]?.lastName || contacts[0]?.lastName}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -757,6 +887,152 @@ export default function GetIntrosPage() {
             : 'Requests for introductions sent!'
         }
       />
+
+      {/* Email Editor Modal */}
+      {showEmailEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Edit Email Message</h3>
+                <button
+                  onClick={() => setShowEmailEditor(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Template
+                </label>
+                <textarea
+                  value={tempEmailTemplate}
+                  onChange={(e) => setTempEmailTemplate(e.target.value)}
+                  rows={12}
+                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200 font-mono text-sm"
+                  placeholder="Enter your email message..."
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-600 font-semibold">Available placeholders:</span>
+                  {['{contactName}', '{contactFirstName}', '{firstName}'].map((placeholder) => (
+                    <button
+                      key={placeholder}
+                      onClick={() => setTempEmailTemplate(tempEmailTemplate + placeholder)}
+                      className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold hover:bg-purple-200 transition-colors"
+                    >
+                      {placeholder}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Preview:</p>
+                <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50 text-gray-900 min-h-[150px] whitespace-pre-wrap">
+                  {tempEmailTemplate || 'Enter your message above...'}
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowEmailEditor(false)}
+                  className="px-6 py-2 border-2 border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEmailTemplate}
+                  className="px-6 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-200"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SMS Editor Modal */}
+      {showSmsEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Edit SMS Message</h3>
+                <button
+                  onClick={() => setShowSmsEditor(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  SMS Template
+                </label>
+                <textarea
+                  value={tempSmsTemplate}
+                  onChange={(e) => setTempSmsTemplate(e.target.value)}
+                  rows={6}
+                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                  placeholder="Enter your SMS message..."
+                />
+                <div className="mt-2">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    <span className="text-xs text-gray-600 font-semibold">Available placeholders:</span>
+                    {['{contactName}', '{contactFirstName}', '{firstName}'].map((placeholder) => (
+                      <button
+                        key={placeholder}
+                        onClick={() => setTempSmsTemplate(tempSmsTemplate + placeholder)}
+                        className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold hover:bg-purple-200 transition-colors"
+                      >
+                        {placeholder}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">{tempSmsTemplate.length} characters</p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Preview:</p>
+                <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50">
+                  <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-md p-4">
+                    <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                      {tempSmsTemplate || 'Enter your message above...'}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 text-right">
+                      {tempSmsTemplate.length} characters
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowSmsEditor(false)}
+                  className="px-6 py-2 border-2 border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveSmsTemplate}
+                  className="px-6 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-200"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

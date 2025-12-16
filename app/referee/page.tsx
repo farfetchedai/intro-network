@@ -405,22 +405,16 @@ export default function RefereePage() {
     e.preventDefault()
     setErrorMessage(null)
 
-    // Generate statement summary from paragraph-based fields
-    const skillsList = formData.skills.filter(s => s.trim() !== '').join(' & ')
-    const generatedSummary = `${skillsList} at ${formData.companyName} where I ${formData.achievement} by ${formData.achievementMethod}`
-
-    // Update formData with generated summary
-    const updatedFormData = {
-      ...formData,
-      statementSummary: generatedSummary
-    }
+    const skills = formData.skills.filter(s => s.trim() !== '')
 
     try {
+      // First save the profile data
       const response = await fetch('/api/referee/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...updatedFormData,
+          ...formData,
+          skills,
           userId: userId || undefined, // Include userId if already logged in
         }),
       })
@@ -434,9 +428,47 @@ export default function RefereePage() {
       if (data.success) {
         setUserId(data.user.id)
 
-        // Save to localStorage with updated summary
+        // Generate AI statement summary
+        try {
+          const aiResponse = await fetch('/api/user/generate-statement-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              skills,
+              company: formData.companyName,
+              achievement: formData.achievement,
+              achievementMethod: formData.achievementMethod,
+              introRequest: formData.introRequest,
+              firstName: formData.firstName,
+            }),
+          })
+
+          const aiData = await aiResponse.json()
+
+          if (aiData.success && aiData.statementSummary) {
+            // Save both AI-generated summaries (1st person and 3rd person)
+            // Pass userId from the registration response since cookie may not be set yet
+            await fetch('/api/user/update-statement', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                statementSummary: aiData.statementSummary,
+                statementSummary3rdPerson: aiData.statementSummary3rdPerson,
+                userId: data.user.id,
+              }),
+            })
+
+            // Update local formData with AI-generated summary
+            setFormData(prev => ({ ...prev, statementSummary: aiData.statementSummary }))
+          }
+        } catch (aiError) {
+          // AI generation failed, but profile was saved - continue anyway
+          console.error('AI generation error:', aiError)
+        }
+
+        // Save to localStorage
         localStorage.setItem('userId', data.user.id)
-        localStorage.setItem('formData', JSON.stringify(updatedFormData))
+        localStorage.setItem('formData', JSON.stringify(formData))
 
         // Don't override the template here - it's already set from the useEffect that fetches from admin
         // If no template was fetched, the useEffect will have already set a default

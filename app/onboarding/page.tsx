@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import BottomProgressBar from '@/components/BottomProgressBar'
+import CountryCodeSelect from '@/components/CountryCodeSelect'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -22,10 +23,17 @@ export default function OnboardingPage() {
     phone: '',
     countryCode: '+1',
   })
+  const [countryCodeIso, setCountryCodeIso] = useState('US')
 
   // Step 2: Profile Picture
   const [profilePicture, setProfilePicture] = useState<File | null>(null)
   const [profilePicturePreview, setProfilePicturePreview] = useState<string>('')
+
+  // Username
+  const [username, setUsername] = useState('')
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+  const [checkingUsername, setCheckingUsername] = useState(false)
+  const [isCurrentUsername, setIsCurrentUsername] = useState(false)
 
   // Step 3: Skills and Intro Request
   const [skill1, setSkill1] = useState('')
@@ -39,6 +47,11 @@ export default function OnboardingPage() {
     achievementMethod: '',
   })
 
+  // Form validation errors
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [generalError, setGeneralError] = useState<string>('')
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+
   // Branding settings
   const [brandingSettings, setBrandingSettings] = useState({
     flowCStep1Background: 'from-blue-400 via-purple-400 to-pink-400',
@@ -50,6 +63,32 @@ export default function OnboardingPage() {
     flowCStep3FormBg: 'white',
     flowCStep4FormBg: 'white',
   })
+
+  // Check username availability with debouncing
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      setUsernameAvailable(null)
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setCheckingUsername(true)
+      try {
+        const response = await fetch(`/api/auth/check-username?username=${encodeURIComponent(username)}`)
+        const data = await response.json()
+        setUsernameAvailable(data.available)
+        setIsCurrentUsername(data.isCurrentUser || false)
+      } catch (error) {
+        console.error('Error checking username:', error)
+        setUsernameAvailable(null)
+        setIsCurrentUsername(false)
+      } finally {
+        setCheckingUsername(false)
+      }
+    }, 500) // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId)
+  }, [username])
 
   // Fetch current user and pre-populate form if logged in
   useEffect(() => {
@@ -64,19 +103,58 @@ export default function OnboardingPage() {
 
           // Split phone number into country code and number
           let countryCode = '+1'
+          let countryIso = 'US'
           let phoneNumber = ''
           if (data.user.phone) {
             // Try to extract country code from phone number
             const phone = data.user.phone
-            if (phone.startsWith('+1')) {
-              countryCode = '+1'
-              phoneNumber = phone.substring(2)
-            } else if (phone.startsWith('+44')) {
-              countryCode = '+44'
-              phoneNumber = phone.substring(3)
-            } else if (phone.startsWith('+61')) {
-              countryCode = '+61'
-              phoneNumber = phone.substring(3)
+            if (phone.startsWith('+')) {
+              // Find the longest matching country code
+              // Common codes sorted by length (longest first for accurate matching)
+              const commonCodes = [
+                '+1868', '+1869', '+1876', '+1784', '+1767', '+1758', '+1721', '+1684', '+1671', '+1670',
+                '+1649', '+1473', '+1441', '+1345', '+1284', '+1268', '+1264', '+1246', '+1242',
+                '+1939', '+1787', '+1809', '+1829', '+1849',
+                '+998', '+996', '+995', '+994', '+993', '+992', '+977', '+976', '+975', '+974',
+                '+973', '+972', '+971', '+970', '+968', '+967', '+966', '+965', '+964', '+963',
+                '+962', '+961', '+960', '+886', '+880', '+856', '+855', '+853', '+852', '+850',
+                '+692', '+691', '+690', '+689', '+688', '+687', '+686', '+685', '+683', '+682',
+                '+681', '+680', '+679', '+678', '+677', '+676', '+675', '+674', '+673', '+672',
+                '+670', '+599', '+598', '+597', '+595', '+593', '+592', '+591', '+590', '+509',
+                '+508', '+507', '+506', '+505', '+504', '+503', '+502', '+501', '+500', '+423',
+                '+421', '+420', '+389', '+387', '+386', '+385', '+383', '+382', '+381', '+380',
+                '+379', '+378', '+377', '+376', '+375', '+374', '+373', '+372', '+371', '+370',
+                '+359', '+358', '+357', '+356', '+355', '+354', '+353', '+352', '+351', '+350',
+                '+299', '+298', '+297', '+291', '+290', '+269', '+268', '+267', '+266', '+265',
+                '+264', '+263', '+262', '+261', '+260', '+258', '+257', '+256', '+255', '+254',
+                '+253', '+252', '+251', '+250', '+249', '+248', '+247', '+246', '+245', '+244',
+                '+243', '+242', '+241', '+240', '+239', '+238', '+237', '+236', '+235', '+234',
+                '+233', '+232', '+231', '+230', '+229', '+228', '+227', '+226', '+225', '+224',
+                '+223', '+222', '+221', '+220', '+218', '+216', '+213', '+212', '+211', '+98',
+                '+95', '+94', '+93', '+92', '+91', '+90', '+86', '+84', '+82', '+81', '+66',
+                '+65', '+64', '+63', '+62', '+61', '+60', '+58', '+57', '+56', '+55', '+54',
+                '+53', '+52', '+51', '+49', '+48', '+47', '+46', '+45', '+44', '+43', '+41',
+                '+40', '+39', '+36', '+34', '+33', '+32', '+31', '+30', '+27', '+20', '+7', '+1'
+              ]
+
+              let foundCode = '+1'
+              for (const code of commonCodes) {
+                if (phone.startsWith(code)) {
+                  foundCode = code
+                  break
+                }
+              }
+              countryCode = foundCode
+              phoneNumber = phone.substring(foundCode.length)
+
+              // Set default ISO code for shared dial codes
+              if (foundCode === '+1') {
+                countryIso = 'US' // Default to US for +1
+              } else if (foundCode === '+7') {
+                countryIso = 'RU' // Default to Russia for +7
+              } else if (foundCode === '+44') {
+                countryIso = 'GB'
+              }
             } else {
               phoneNumber = phone
             }
@@ -89,6 +167,7 @@ export default function OnboardingPage() {
             phone: phoneNumber,
             countryCode,
           })
+          setCountryCodeIso(countryIso)
 
           // Pre-populate skills if available
           if (data.user.skills) {
@@ -120,6 +199,13 @@ export default function OnboardingPage() {
           // Pre-populate profile picture if available
           if (data.user.profilePicture) {
             setProfilePicturePreview(data.user.profilePicture)
+          }
+
+          // Pre-populate username if available
+          if (data.user.username) {
+            setUsername(data.user.username)
+            setUsernameAvailable(true) // Username already belongs to this user
+            setIsCurrentUsername(true) // Mark as current user's username
           }
         }
       } catch (error) {
@@ -155,6 +241,9 @@ export default function OnboardingPage() {
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Clear previous errors
+    setValidationErrors({})
 
     try {
       // Combine country code and phone number
@@ -195,7 +284,18 @@ export default function OnboardingPage() {
           setStep(2)
         }
       } else {
-        alert(data.error || 'Failed to create account')
+        // Parse validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          const errors: Record<string, string> = {}
+          data.details.forEach((detail: any) => {
+            if (detail.path && detail.path.length > 0) {
+              const fieldName = detail.path[0]
+              errors[fieldName] = detail.message
+            }
+          })
+          setValidationErrors(errors)
+        }
+        alert(data.error || 'Failed to create account. Please check the form for errors.')
       }
     } catch (error) {
       console.error('Error:', error)
@@ -206,8 +306,14 @@ export default function OnboardingPage() {
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Save profile picture if one was uploaded
-    if (profilePicturePreview && userId) {
+    // Check if username is available before continuing
+    if (usernameAvailable !== true) {
+      alert('Please choose an available username')
+      return
+    }
+
+    // Save profile picture and username
+    if (userId) {
       try {
         const fullPhone = formData.phone ? `${formData.countryCode}${formData.phone}` : ''
 
@@ -219,7 +325,8 @@ export default function OnboardingPage() {
             lastName: formData.lastName,
             email: formData.email,
             phone: fullPhone,
-            profilePicture: profilePicturePreview,
+            profilePicture: profilePicturePreview || null,
+            username,
             userId,
           }),
         })
@@ -227,12 +334,12 @@ export default function OnboardingPage() {
         const data = await response.json()
 
         if (!data.success) {
-          alert(data.error || 'Failed to save profile picture')
+          alert(data.error || 'Failed to save profile')
           return
         }
       } catch (error) {
-        console.error('Error saving profile picture:', error)
-        alert('Failed to save profile picture')
+        console.error('Error saving profile:', error)
+        alert('Failed to save profile')
         return
       }
     }
@@ -242,6 +349,9 @@ export default function OnboardingPage() {
 
   const handleStep3Submit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Clear previous errors
+    setValidationErrors({})
 
     const skills = [skill1, skill2].filter(s => s.trim() !== '')
 
@@ -268,7 +378,18 @@ export default function OnboardingPage() {
       if (data.success) {
         setStep(4)
       } else {
-        alert(data.error || 'Failed to update profile')
+        // Parse validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          const errors: Record<string, string> = {}
+          data.details.forEach((detail: any) => {
+            if (detail.path && detail.path.length > 0) {
+              const fieldName = detail.path[0]
+              errors[fieldName] = detail.message
+            }
+          })
+          setValidationErrors(errors)
+        }
+        alert(data.error || 'Failed to update profile. Please check the form for errors.')
       }
     } catch (error) {
       console.error('Error:', error)
@@ -279,14 +400,18 @@ export default function OnboardingPage() {
   const handleStep4Submit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Clear previous errors
+    setValidationErrors({})
+    setGeneralError('')
+    setIsGeneratingAI(true)
+
     const skills = [skill1, skill2].filter(s => s.trim() !== '')
-    const skillsList = skills.join(' and ')
-    const statementSummary = `I'm really good at ${skillsList}. I've worked at ${achievement.company} where I ${achievement.achievement} by ${achievement.achievementMethod}\n\nI'd love to meet ${introRequest}.`
 
     try {
       // Combine country code and phone number
       const fullPhone = formData.phone ? `${formData.countryCode}${formData.phone}` : ''
 
+      // First, save the profile data (without AI-generated summary)
       const response = await fetch('/api/referee/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -301,7 +426,6 @@ export default function OnboardingPage() {
           companyName: achievement.company,
           achievement: achievement.achievement,
           achievementMethod: achievement.achievementMethod,
-          statementSummary,
           introRequest,
         }),
       })
@@ -309,13 +433,106 @@ export default function OnboardingPage() {
       const data = await response.json()
 
       if (data.success) {
-        router.push(`/profile/${userId}`)
+        console.log('Registration successful, user data:', data.user)
+
+        // Generate AI summary if skills are provided
+        if (skills.length > 0) {
+          try {
+            console.log('Generating AI summary with:', { skills, company: achievement.company, firstName: formData.firstName })
+            const aiResponse = await fetch('/api/user/generate-statement-ai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                skills,
+                company: achievement.company,
+                achievement: achievement.achievement,
+                achievementMethod: achievement.achievementMethod,
+                introRequest,
+                firstName: formData.firstName,
+              }),
+            })
+
+            const aiData = await aiResponse.json()
+            console.log('AI generation response:', aiData)
+
+            if (aiData.success && aiData.statementSummary) {
+              // Save both AI-generated summaries (1st person and 3rd person)
+              // Pass userId from the registration response since cookie may not be set yet
+              const targetUserId = data.user?.id || userId
+              console.log('Saving statement for userId:', targetUserId)
+
+              const updatePayload = {
+                statementSummary: aiData.statementSummary,
+                statementSummary3rdPerson: aiData.statementSummary3rdPerson,
+                userId: targetUserId,
+              }
+              console.log('Update statement payload:', updatePayload)
+
+              const updateResponse = await fetch('/api/user/update-statement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatePayload),
+              })
+
+              console.log('Update statement response status:', updateResponse.status)
+              const updateText = await updateResponse.text()
+              console.log('Update statement raw response:', updateText)
+
+              let updateResult
+              try {
+                updateResult = JSON.parse(updateText)
+              } catch (e) {
+                console.error('Failed to parse update response:', e)
+                updateResult = { error: 'Invalid JSON response' }
+              }
+
+              if (updateResponse.status !== 200 || updateResult.error) {
+                console.error('Failed to save statement:', updateResult.error || `Status ${updateResponse.status}`)
+              } else {
+                console.log('Statement saved successfully')
+              }
+            } else {
+              console.error('AI generation failed:', aiData.error || 'Unknown error')
+            }
+          } catch (aiError) {
+            // AI generation failed, but profile was saved - continue to profile page
+            console.error('AI generation error:', aiError)
+          }
+        } else {
+          console.log('No skills provided, skipping AI generation')
+        }
+
+        // Small delay to ensure database write completes before redirect
+        await new Promise(resolve => setTimeout(resolve, 100))
+        router.push(`/profile/${username || userId}`)
       } else {
-        alert(data.error || 'Failed to complete profile')
+        console.log('Error response:', data)
+
+        // Parse validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          const errors: Record<string, string> = {}
+          data.details.forEach((detail: any) => {
+            if (detail.path && detail.path.length > 0) {
+              const fieldName = detail.path[0]
+              errors[fieldName] = detail.message
+            }
+          })
+          setValidationErrors(errors)
+
+          // Only show general error if there are no field-specific errors
+          if (Object.keys(errors).length === 0) {
+            setGeneralError(data.error || 'Failed to complete profile')
+          }
+        } else {
+          // No validation details, show general error
+          setGeneralError(data.error || 'Failed to complete profile')
+        }
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('An error occurred')
+      setGeneralError('An error occurred while saving your profile')
+    } finally {
+      setIsGeneratingAI(false)
     }
   }
 
@@ -473,15 +690,14 @@ export default function OnboardingPage() {
                     Phone Number
                   </label>
                   <div className="flex gap-3">
-                    <select
+                    <CountryCodeSelect
                       value={formData.countryCode}
-                      onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                      className="rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                    >
-                      <option value="+1">+1</option>
-                      <option value="+44">+44</option>
-                      <option value="+61">+61</option>
-                    </select>
+                      selectedCountryCode={countryCodeIso}
+                      onChange={(value, code) => {
+                        setFormData({ ...formData, countryCode: value })
+                        setCountryCodeIso(code)
+                      }}
+                    />
                     <input
                       type="tel"
                       value={formData.phone}
@@ -536,6 +752,70 @@ export default function OnboardingPage() {
 
                   <p className="text-sm text-gray-500 mt-4">
                     JPG, PNG or GIF (Max 5MB)
+                  </p>
+                </div>
+
+                {/* Username Field */}
+                <div className="max-w-md mx-auto">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Choose your username
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      placeholder="yourusername"
+                      className={`w-full rounded-xl border-2 px-4 py-3 text-gray-900 focus:ring-2 transition-all ${
+                        username.length >= 3 && usernameAvailable === false
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                          : username.length >= 3 && usernameAvailable === true
+                          ? 'border-green-500 focus:border-green-500 focus:ring-green-200'
+                          : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
+                      }`}
+                      required
+                      minLength={3}
+                    />
+                    {checkingUsername && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    )}
+                    {!checkingUsername && username.length >= 3 && usernameAvailable === true && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                    {!checkingUsername && username.length >= 3 && usernameAvailable === false && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {username.length >= 3 && usernameAvailable === false && (
+                    <p className="mt-2 text-sm text-red-600 font-medium">
+                      This username is already taken
+                    </p>
+                  )}
+                  {username.length >= 3 && usernameAvailable === true && (
+                    <p className="mt-2 text-sm text-green-600 font-medium">
+                      {isCurrentUsername ? 'This is your current username.' : 'Username is available!'}
+                    </p>
+                  )}
+                  {username.length > 0 && username.length < 3 && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Username must be at least 3 characters
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm text-gray-500">
+                    Only lowercase letters, numbers, and underscores
                   </p>
                 </div>
 
@@ -639,6 +919,13 @@ export default function OnboardingPage() {
                 What are you most proud of?
               </p>
 
+              {/* General error banner */}
+              {generalError && (
+                <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 rounded-xl">
+                  <p className="text-red-700 font-medium">{generalError}</p>
+                </div>
+              )}
+
               <form onSubmit={handleStep4Submit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -647,11 +934,26 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     value={achievement.company}
-                    onChange={(e) => setAchievement({ ...achievement, company: e.target.value })}
+                    onChange={(e) => {
+                      setAchievement({ ...achievement, company: e.target.value })
+                      // Clear error when user starts typing
+                      if (validationErrors.companyName) {
+                        setValidationErrors({ ...validationErrors, companyName: '' })
+                      }
+                    }}
                     placeholder="e.g., Google"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className={`w-full rounded-xl border-2 px-4 py-3 text-gray-900 focus:ring-2 transition-all ${
+                      validationErrors.companyName
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                        : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
+                    }`}
                     required
                   />
+                  {validationErrors.companyName && (
+                    <p className="mt-2 text-sm text-red-600 font-medium">
+                      {validationErrors.companyName}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -661,11 +963,26 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     value={achievement.achievement}
-                    onChange={(e) => setAchievement({ ...achievement, achievement: e.target.value })}
+                    onChange={(e) => {
+                      setAchievement({ ...achievement, achievement: e.target.value })
+                      // Clear error when user starts typing
+                      if (validationErrors.achievement) {
+                        setValidationErrors({ ...validationErrors, achievement: '' })
+                      }
+                    }}
                     placeholder="e.g., increased user engagement by 40%"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className={`w-full rounded-xl border-2 px-4 py-3 text-gray-900 focus:ring-2 transition-all ${
+                      validationErrors.achievement
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                        : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
+                    }`}
                     required
                   />
+                  {validationErrors.achievement && (
+                    <p className="mt-2 text-sm text-red-600 font-medium">
+                      {validationErrors.achievement}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -675,26 +992,53 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     value={achievement.achievementMethod}
-                    onChange={(e) => setAchievement({ ...achievement, achievementMethod: e.target.value })}
+                    onChange={(e) => {
+                      setAchievement({ ...achievement, achievementMethod: e.target.value })
+                      // Clear error when user starts typing
+                      if (validationErrors.achievementMethod) {
+                        setValidationErrors({ ...validationErrors, achievementMethod: '' })
+                      }
+                    }}
                     placeholder="e.g., implementing a new onboarding flow"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className={`w-full rounded-xl border-2 px-4 py-3 text-gray-900 focus:ring-2 transition-all ${
+                      validationErrors.achievementMethod
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                        : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
+                    }`}
                     required
                   />
+                  {validationErrors.achievementMethod && (
+                    <p className="mt-2 text-sm text-red-600 font-medium">
+                      {validationErrors.achievementMethod}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-4 pt-6">
                   <button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                    disabled={isGeneratingAI}
+                    className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-xl hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     ← Back
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+                    disabled={isGeneratingAI}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Complete Profile →
+                    {isGeneratingAI ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      'Complete Profile →'
+                    )}
                   </button>
                 </div>
               </form>

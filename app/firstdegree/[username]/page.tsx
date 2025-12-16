@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
-import MobileHeader from '@/components/MobileHeader'
+import Header from '@/components/Header'
 import MobileProgressBar from '@/components/MobileProgressBar'
 
 export default function FirstDegreePage() {
@@ -152,36 +151,40 @@ export default function FirstDegreePage() {
     const referral = referrals[previewContactIndex] || referrals[0]
     const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/seconddegree/${refereeId}`
 
-    // Build the referee intro text matching the email template format
-    let skillsList: string[] = []
-    if (referee?.skills) {
-      try {
-        skillsList = Array.isArray(referee.skills) ? referee.skills : JSON.parse(referee.skills)
-      } catch {
-        skillsList = [referee.skills]
+    // Use 3rd person statementSummary if available, then 1st person, otherwise build a fallback
+    let refereeIntro = referee?.statementSummary3rdPerson || referee?.statementSummary || ''
+
+    if (!refereeIntro) {
+      // Fallback: Build the referee intro text from individual fields
+      let skillsList: string[] = []
+      if (referee?.skills) {
+        try {
+          skillsList = Array.isArray(referee.skills) ? referee.skills : JSON.parse(referee.skills)
+        } catch {
+          skillsList = [referee.skills]
+        }
       }
-    }
 
-    let refereeIntro = ''
-    if (skillsList.length > 0) {
-      refereeIntro = `${referee?.firstName} ${referee?.lastName} is great at ${skillsList.join(' and ')}.`
-    }
-
-    if (referee?.companyName || referee?.achievement || referee?.achievementMethod) {
-      if (refereeIntro) refereeIntro += ' '
-
-      if (referee?.companyName && referee?.achievement && referee?.achievementMethod) {
-        refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement} by ${referee.achievementMethod}.`
-      } else if (referee?.companyName && referee?.achievement) {
-        refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement}.`
-      } else if (referee?.companyName) {
-        refereeIntro += `${referee.firstName} has worked at ${referee.companyName}.`
+      if (skillsList.length > 0) {
+        refereeIntro = `${referee?.firstName} ${referee?.lastName} is great at ${skillsList.join(' and ')}.`
       }
-    }
 
-    if (referee?.introRequest) {
-      if (refereeIntro) refereeIntro += ' '
-      refereeIntro += `They would really appreciate ${referee.introRequest}.`
+      if (referee?.companyName || referee?.achievement || referee?.achievementMethod) {
+        if (refereeIntro) refereeIntro += ' '
+
+        if (referee?.companyName && referee?.achievement && referee?.achievementMethod) {
+          refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement} by ${referee.achievementMethod}.`
+        } else if (referee?.companyName && referee?.achievement) {
+          refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement}.`
+        } else if (referee?.companyName) {
+          refereeIntro += `${referee.firstName} has worked at ${referee.companyName}.`
+        }
+      }
+
+      if (referee?.introRequest) {
+        if (refereeIntro) refereeIntro += ' '
+        refereeIntro += `They would really appreciate ${referee.introRequest}.`
+      }
     }
 
     // Replace template variables with actual values (capitalize first names)
@@ -211,36 +214,40 @@ export default function FirstDegreePage() {
     const referral = referrals[previewContactIndex] || referrals[0]
     const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/seconddegree/${refereeId}`
 
-    // Build the referee intro text matching the email template format
-    let skillsList: string[] = []
-    if (referee?.skills) {
-      try {
-        skillsList = Array.isArray(referee.skills) ? referee.skills : JSON.parse(referee.skills)
-      } catch {
-        skillsList = [referee.skills]
+    // Use 3rd person statementSummary if available, then 1st person, otherwise build a fallback
+    let refereeIntro = referee?.statementSummary3rdPerson || referee?.statementSummary || ''
+
+    if (!refereeIntro) {
+      // Fallback: Build the referee intro text from individual fields
+      let skillsList: string[] = []
+      if (referee?.skills) {
+        try {
+          skillsList = Array.isArray(referee.skills) ? referee.skills : JSON.parse(referee.skills)
+        } catch {
+          skillsList = [referee.skills]
+        }
       }
-    }
 
-    let refereeIntro = ''
-    if (skillsList.length > 0) {
-      refereeIntro = `${referee?.firstName} ${referee?.lastName} is great at ${skillsList.join(' and ')}.`
-    }
-
-    if (referee?.companyName || referee?.achievement || referee?.achievementMethod) {
-      if (refereeIntro) refereeIntro += ' '
-
-      if (referee?.companyName && referee?.achievement && referee?.achievementMethod) {
-        refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement} by ${referee.achievementMethod}.`
-      } else if (referee?.companyName && referee?.achievement) {
-        refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement}.`
-      } else if (referee?.companyName) {
-        refereeIntro += `${referee.firstName} has worked at ${referee.companyName}.`
+      if (skillsList.length > 0) {
+        refereeIntro = `${referee?.firstName} ${referee?.lastName} is great at ${skillsList.join(' and ')}.`
       }
-    }
 
-    if (referee?.introRequest) {
-      if (refereeIntro) refereeIntro += ' '
-      refereeIntro += `They would really appreciate ${referee.introRequest}.`
+      if (referee?.companyName || referee?.achievement || referee?.achievementMethod) {
+        if (refereeIntro) refereeIntro += ' '
+
+        if (referee?.companyName && referee?.achievement && referee?.achievementMethod) {
+          refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement} by ${referee.achievementMethod}.`
+        } else if (referee?.companyName && referee?.achievement) {
+          refereeIntro += `${referee.firstName} has worked at ${referee.companyName} where they ${referee.achievement}.`
+        } else if (referee?.companyName) {
+          refereeIntro += `${referee.firstName} has worked at ${referee.companyName}.`
+        }
+      }
+
+      if (referee?.introRequest) {
+        if (refereeIntro) refereeIntro += ' '
+        refereeIntro += `They would really appreciate ${referee.introRequest}.`
+      }
     }
 
     // Replace template variables with actual values (capitalize first names)
@@ -425,18 +432,31 @@ export default function FirstDegreePage() {
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Try to fetch existing referrals for this user based on email
+    // Create account and send magic link
     if (firstDegreeInfo.email) {
       try {
-        // First, check if user exists by email
-        const userResponse = await fetch(`/api/user?email=${encodeURIComponent(firstDegreeInfo.email)}`)
-        if (userResponse.ok) {
-          const userData = await userResponse.json()
-          if (userData.user && userData.user.id) {
-            setFirstDegreeUserId(userData.user.id)
+        // Create account (or get existing user) and send magic link
+        const createAccountResponse = await fetch('/api/firstdegree/create-account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firstName: firstDegreeInfo.firstName,
+            lastName: firstDegreeInfo.lastName,
+            email: firstDegreeInfo.email,
+            phone: firstDegreeInfo.phone || undefined,
+            refereeUsername: refereeId,
+          }),
+        })
+
+        if (createAccountResponse.ok) {
+          const accountData = await createAccountResponse.json()
+          if (accountData.userId) {
+            setFirstDegreeUserId(accountData.userId)
 
             // Fetch existing contacts/referrals for this user
-            const contactsResponse = await fetch(`/api/contacts?userId=${userData.user.id}`)
+            const contactsResponse = await fetch(`/api/contacts?userId=${accountData.userId}`)
             if (contactsResponse.ok) {
               const contactsData = await contactsResponse.json()
               if (contactsData.contacts && contactsData.contacts.length > 0) {
@@ -447,7 +467,7 @@ export default function FirstDegreePage() {
           }
         }
       } catch (error) {
-        console.error('Error fetching existing referrals:', error)
+        console.error('Error creating account:', error)
       }
     }
 
@@ -660,28 +680,17 @@ export default function FirstDegreePage() {
   ]
 
   return (
-    <div className="h-screen flex flex-col lg:flex-row overflow-hidden bg-white">
-      {/* Mobile Header */}
-      <MobileHeader currentStep={step} />
+    <div className={`min-h-screen flex flex-col bg-gradient-to-br ${getStepBackgroundClass()}`} style={getStepBackgroundStyle()}>
+      {/* Main Header */}
+      <Header />
 
-      {/* Sidebar - Desktop Only */}
-      <Sidebar
-        currentStep={step}
-        totalSteps={4}
-        stepTitles={stepTitles}
-        onStepClick={(s) => {
-          if (s < step) handleBack(s)
-        }}
-      />
-
-      {/* Mobile Progress Bar */}
+      {/* Progress Bar */}
       <MobileProgressBar currentStep={step} totalSteps={4} />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pt-16">
         <div
-          className={`min-h-full bg-gradient-to-br ${getStepBackgroundClass()} flex items-center justify-center p-4 lg:p-8`}
-          style={getStepBackgroundStyle()}
+          className="min-h-full flex items-center justify-center p-4 lg:p-8"
         >
           <div className={`w-full max-w-3xl transition-all duration-500 ${
             direction === 'down' ? 'animate-slideDown' : 'animate-slideUp'
@@ -702,22 +711,32 @@ export default function FirstDegreePage() {
                       <li className="flex items-start">
                         <span className="font-bold mr-2">1)</span>
                         <span>
-                          {referee?.firstName} {referee?.lastName} is great at{' '}
-                          {referee?.skills?.join(' and ') || 'their unique skills'}.
-                          {(referee?.companyName || referee?.achievement || referee?.achievementMethod) && (
+                          {referee?.statementSummary3rdPerson ? (
+                            referee.statementSummary3rdPerson
+                          ) : referee?.statementSummary ? (
+                            referee.statementSummary
+                          ) : (
                             <>
-                              {' '}{referee?.firstName} has worked at {referee?.companyName || 'their company'}
-                              {referee?.achievement && referee?.achievementMethod && (
-                                <> where they {referee.achievement} by {referee.achievementMethod}</>
+                              {referee?.firstName} {referee?.lastName} is great at{' '}
+                              {Array.isArray(referee?.skills) && referee.skills.length > 0
+                                ? referee.skills.join(' and ')
+                                : 'their unique skills'}.
+                              {(referee?.companyName || referee?.achievement || referee?.achievementMethod) && (
+                                <>
+                                  {' '}{referee?.firstName} has worked at {referee?.companyName || 'their company'}
+                                  {referee?.achievement && referee?.achievementMethod && (
+                                    <> where they {referee.achievement} by {referee.achievementMethod}</>
+                                  )}
+                                  {referee?.achievement && !referee?.achievementMethod && (
+                                    <> where they {referee.achievement}</>
+                                  )}
+                                  .
+                                </>
                               )}
-                              {referee?.achievement && !referee?.achievementMethod && (
-                                <> where they {referee.achievement}</>
+                              {referee?.introRequest && (
+                                <> They would really appreciate {referee.introRequest}.</>
                               )}
-                              .
                             </>
-                          )}
-                          {referee?.introRequest && (
-                            <> They would really appreciate {referee.introRequest}.</>
                           )}
                         </span>
                       </li>

@@ -34,6 +34,7 @@ export async function GET() {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
+        username: user.username,
         profilePicture: user.profilePicture,
         userType: user.userType,
         skills: user.skills,

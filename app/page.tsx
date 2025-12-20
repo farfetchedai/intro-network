@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic'
+
 interface Element {
   id: string
   type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button'

@@ -42,19 +42,25 @@ interface Page {
 }
 
 async function getHomepage(): Promise<Page | null> {
-  const homepage = await prisma.page.findFirst({
-    where: {
-      isHomepage: true,
-      isPublished: true,
-    },
-    include: {
-      sections: {
-        orderBy: { order: 'asc' },
+  try {
+    const homepage = await prisma.page.findFirst({
+      where: {
+        isHomepage: true,
+        isPublished: true,
       },
-    },
-  })
+      include: {
+        sections: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
 
-  return homepage as Page | null
+    return homepage as Page | null
+  } catch (error) {
+    // Handle case where Page table doesn't exist (e.g., migrations not run)
+    console.error('Failed to fetch CMS homepage:', error)
+    return null
+  }
 }
 
 const renderElement = (element: Element) => {

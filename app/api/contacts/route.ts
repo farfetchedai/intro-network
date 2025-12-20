@@ -85,12 +85,40 @@ export async function GET(req: Request) {
       where: {
         userId,
       },
+      include: {
+        contact: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true,
+            skills: true,
+            companyName: true,
+            achievement: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
     })
 
-    return NextResponse.json({ contacts })
+    // Transform contacts to include linked user info
+    const transformedContacts = contacts.map((c) => ({
+      ...c,
+      linkedUser: c.contact ? {
+        id: c.contact.id,
+        username: c.contact.username,
+        firstName: c.contact.firstName,
+        lastName: c.contact.lastName,
+        profilePicture: c.contact.profilePicture,
+        hasCompletedOnboarding: !!(c.contact.skills || c.contact.companyName || c.contact.achievement),
+      } : null,
+      contact: undefined, // Remove the raw contact relation from response
+    }))
+
+    return NextResponse.json({ contacts: transformedContacts })
   } catch (error) {
     console.error('Get contacts error:', error)
     return NextResponse.json(

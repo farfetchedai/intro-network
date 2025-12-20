@@ -1,19 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import BottomProgressBar from '@/components/BottomProgressBar'
 import CountryCodeSelect from '@/components/CountryCodeSelect'
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState(1)
   const [userId, setUserId] = useState('')
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [devLink, setDevLink] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [linkedInConnected, setLinkedInConnected] = useState(false)
 
   // Step 1: Contact Details
   const [formData, setFormData] = useState({
@@ -218,6 +220,21 @@ export default function OnboardingPage() {
     fetchCurrentUser()
   }, [])
 
+  // Check for LinkedIn OAuth callback
+  useEffect(() => {
+    const linkedInParam = searchParams.get('linkedin')
+    if (linkedInParam === 'connected') {
+      setLinkedInConnected(true)
+      // User just logged in via LinkedIn - skip to step 2
+      // The user data will be fetched by fetchCurrentUser effect
+      setStep(2)
+      // Clean up the URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('linkedin')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [searchParams])
+
   // Fetch branding settings
   useEffect(() => {
     fetch('/api/admin/branding')
@@ -281,6 +298,30 @@ export default function OnboardingPage() {
         } else {
           // New user or logged-in user - proceed to step 2
           setUserId(data.user.id)
+
+          // Handle pending connection from profile page
+          const pendingConnectionData = localStorage.getItem('pendingConnection')
+          if (pendingConnectionData) {
+            try {
+              const pendingConnection = JSON.parse(pendingConnectionData)
+              // Create the connection
+              const connectionResponse = await fetch('/api/user/add-connection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUserId: pendingConnection.userId }),
+              })
+              const connectionData = await connectionResponse.json()
+              if (connectionData.success) {
+                console.log(`Connected with ${pendingConnection.firstName} ${pendingConnection.lastName}`)
+              }
+              // Clear pending connection regardless of success
+              localStorage.removeItem('pendingConnection')
+            } catch (error) {
+              console.error('Error processing pending connection:', error)
+              localStorage.removeItem('pendingConnection')
+            }
+          }
+
           setStep(2)
         }
       } else {
@@ -504,7 +545,7 @@ export default function OnboardingPage() {
 
         // Small delay to ensure database write completes before redirect
         await new Promise(resolve => setTimeout(resolve, 100))
-        router.push(`/profile/${username || userId}`)
+        router.push(`/${username || userId}`)
       } else {
         console.log('Error response:', data)
 
@@ -588,7 +629,7 @@ export default function OnboardingPage() {
 
   return (
     <div
-      className={`min-h-screen bg-gradient-to-br ${getStepBackgroundClass()}`}
+      className={`min-h-screen bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`}
       style={getStepBackgroundStyle()}
     >
       <Header />
@@ -605,6 +646,28 @@ export default function OnboardingPage() {
               <p className="text-gray-600 mb-8">
                 Tell us a bit about yourself
               </p>
+
+              {/* LinkedIn Login Button */}
+              {!magicLinkSent && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => window.location.href = '/api/auth/linkedin?returnTo=/onboarding'}
+                    className="w-full flex items-center justify-center gap-3 bg-[#0A66C2] text-white font-semibold py-4 rounded-xl hover:bg-[#004182] transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    </svg>
+                    Continue with LinkedIn
+                  </button>
+
+                  <div className="flex items-center my-6">
+                    <div className="flex-1 border-t border-gray-300"></div>
+                    <span className="px-4 text-gray-500 text-sm">or enter manually</span>
+                    <div className="flex-1 border-t border-gray-300"></div>
+                  </div>
+                </>
+              )}
 
               {/* Magic Link Success Message */}
               {magicLinkSent && (

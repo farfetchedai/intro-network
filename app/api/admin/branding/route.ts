@@ -80,6 +80,9 @@ export async function GET() {
         flowCStep2Name: settings.flowCStep2Name,
         flowCStep3Name: settings.flowCStep3Name,
         flowCStep4Name: settings.flowCStep4Name,
+        // Profile Pages
+        profilePageBackground: settings.profilePageBackground,
+        profilePageFormBg: settings.profilePageFormBg,
         // Legacy fields
         step1Name: settings.step1Name,
         step2Name: settings.step2Name,
@@ -166,6 +169,9 @@ export async function POST(request: Request) {
           flowCStep2Name: settings.flowCStep2Name,
           flowCStep3Name: settings.flowCStep3Name,
           flowCStep4Name: settings.flowCStep4Name,
+          // Profile Pages
+          profilePageBackground: settings.profilePageBackground,
+          profilePageFormBg: settings.profilePageFormBg,
           // Legacy fields
           step1Name: settings.step1Name,
           step2Name: settings.step2Name,
@@ -234,6 +240,9 @@ export async function POST(request: Request) {
           flowCStep2Name: settings.flowCStep2Name,
           flowCStep3Name: settings.flowCStep3Name,
           flowCStep4Name: settings.flowCStep4Name,
+          // Profile Pages
+          profilePageBackground: settings.profilePageBackground,
+          profilePageFormBg: settings.profilePageFormBg,
           // Legacy fields
           step1Name: settings.step1Name,
           step2Name: settings.step2Name,

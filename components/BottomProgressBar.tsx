@@ -20,7 +20,7 @@ export default function BottomProgressBar({
   const displayStepName = stepName || defaultStepNames[currentStep - 1] || `Step ${currentStep}`
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+    <div className="progress-bar fixed bottom-0 left-0 right-0 z-40">
       <div className="px-6 py-3">
         {/* Step Info Above Bar */}
         <div className="flex items-center justify-between mb-2">
@@ -31,9 +31,9 @@ export default function BottomProgressBar({
         </div>
 
         {/* Thin Progress Bar */}
-        <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+        <div className="progress-bar-line-bg w-full bg-gray-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
+            className="progress-bar-line h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>

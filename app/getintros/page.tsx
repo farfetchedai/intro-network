@@ -497,7 +497,7 @@ export default function GetIntrosPage() {
 
   return (
     <div
-      className={`flex-1 flex flex-col bg-gradient-to-br ${getStepBackgroundClass()}`}
+      className={`flex-1 flex flex-col bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`}
       style={getStepBackgroundStyle()}
     >
       <Header />

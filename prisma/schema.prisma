@@ -52,6 +52,11 @@ model User {
   receivedReferrals  Referral[]       @relation("ReferralRecipient")
   firstDegreeReferrals Referral[]     @relation("FirstDegreeContact")
 
+  // LinkedIn OAuth relations
+  linkedInAccount     LinkedInAccount?
+  linkedInConnections LinkedInConnection[]
+  careerHistory       CareerHistory[]
+
   @@index([email])
   @@index([phone])
 }
@@ -178,6 +183,10 @@ model BrandingSettings {
   flowCStep2FormBg         String   @default("white")
   flowCStep3FormBg         String   @default("white")
   flowCStep4FormBg         String   @default("white")
+
+  // Profile Pages (/username and /profile/username) - Backgrounds
+  profilePageBackground    String   @default("from-blue-400 via-purple-400 to-pink-400")
+  profilePageFormBg        String   @default("white")
 
   // User Flow A (Referee) Step Names
   flowAStep1Name      String   @default("Your Profile")
@@ -332,4 +341,64 @@ model MagicLink {
   @@index([token])
   @@index([userId])
   @@index([expiresAt])
+}
+
+model LinkedInAccount {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  linkedinId      String    @unique
+  accessToken     String
+  refreshToken    String?
+  tokenExpiry     DateTime?
+  scope           String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([linkedinId])
+}
+
+model LinkedInConnection {
+  id                String   @id @default(cuid())
+  userId            String
+  linkedinId        String?
+  firstName         String
+  lastName          String
+  headline          String?
+  profilePictureUrl String?
+  profileUrl        String?
+  lastSyncedAt      DateTime @default(now())
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, linkedinId])
+  @@index([userId])
+}
+
+model CareerHistory {
+  id                   String    @id @default(cuid())
+  userId               String
+  title                String
+  companyName          String
+  companyLogoUrl       String?
+  location             String?
+  description          String?
+  startDate            DateTime?
+  endDate              DateTime?
+  isCurrent            Boolean   @default(false)
+  importedFromLinkedIn Boolean   @default(false)
+  linkedInPositionId   String?   @unique
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

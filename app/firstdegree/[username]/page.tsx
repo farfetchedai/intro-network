@@ -680,7 +680,7 @@ export default function FirstDegreePage() {
   ]
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gradient-to-br ${getStepBackgroundClass()}`} style={getStepBackgroundStyle()}>
+    <div className={`min-h-screen flex flex-col bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`} style={getStepBackgroundStyle()}>
       {/* Main Header */}
       <Header />
 

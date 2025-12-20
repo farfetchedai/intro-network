@@ -57,6 +57,9 @@ interface BrandingSettings {
   flowCStep2Name: string
   flowCStep3Name: string
   flowCStep4Name: string
+  // Profile Pages
+  profilePageBackground: string
+  profilePageFormBg: string
   // Legacy fields
   step1Name: string
   step2Name: string
@@ -122,6 +125,9 @@ export default function BrandingPage() {
     flowCStep2Name: 'Accept or decline',
     flowCStep3Name: 'Connect',
     flowCStep4Name: 'Complete',
+    // Profile Pages
+    profilePageBackground: 'from-blue-400 via-purple-400 to-pink-400',
+    profilePageFormBg: 'white',
     // Legacy
     step1Name: 'Your Profile',
     step2Name: 'Your Network',
@@ -143,7 +149,14 @@ export default function BrandingPage() {
       const response = await fetch('/api/admin/branding')
       const data = await response.json()
       if (data.success) {
-        setSettings(data.settings)
+        // Merge with defaults to ensure all fields have values (prevents uncontrolled input errors)
+        setSettings(prev => ({
+          ...prev,
+          ...data.settings,
+          // Ensure new fields have defaults if not in database yet
+          profilePageBackground: data.settings.profilePageBackground || 'from-blue-400 via-purple-400 to-pink-400',
+          profilePageFormBg: data.settings.profilePageFormBg || 'white',
+        }))
         setCustomCSS(data.customCSS || '')
       }
     } catch (error) {
@@ -1050,6 +1063,40 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, flowCStep4Name: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="Complete"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Pages (/username and /profile/username) */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Profile Pages (/username and /profile/username)</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Background and form colors for the /username and /profile/username pages
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Page Background
+            </label>
+            <input
+              type="text"
+              value={settings.profilePageBackground}
+              onChange={(e) => setSettings({ ...settings, profilePageBackground: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="from-blue-400 via-purple-400 to-pink-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Form Background
+            </label>
+            <input
+              type="text"
+              value={settings.profilePageFormBg}
+              onChange={(e) => setSettings({ ...settings, profilePageFormBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="white or #FFFFFF"
             />
           </div>
         </div>

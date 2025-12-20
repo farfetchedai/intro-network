@@ -1186,10 +1186,10 @@ export default function RefereePage() {
         </div>
 
         {/* Mobile: Fading sections */}
-        <div className="lg:hidden">
+        <div className={`lg:hidden min-h-screen bg-gradient-to-br ${getStepBackgroundClass(step)} transition-all duration-700 ease-in-out`} style={getStepBackgroundStyle(step)}>
           {step === 1 && (
             <div
-              className="animate-fadeIn min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 px-4 py-8"
+              className="animate-fadeIn min-h-screen flex items-center justify-center px-4 py-8"
             >
               <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -1235,7 +1235,7 @@ export default function RefereePage() {
           )}
 
           {step === 2 && (
-            <div className="animate-fadeIn min-h-screen bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 px-4 py-8">
+            <div className="animate-fadeIn min-h-screen px-4 py-8">
               <div className="w-full max-w-lg mx-auto bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                   Add Contacts
@@ -1318,7 +1318,7 @@ export default function RefereePage() {
           )}
 
           {step === 3 && (
-            <div className="animate-fadeIn min-h-screen bg-gradient-to-br from-orange-400 via-rose-400 to-pink-400 px-4 py-8">
+            <div className="animate-fadeIn min-h-screen px-4 py-8">
               <div className="w-full max-w-lg mx-auto bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                   Customize Message
@@ -1362,7 +1362,7 @@ export default function RefereePage() {
           )}
 
           {step === 4 && (
-            <div className="animate-fadeIn min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-400 px-4">
+            <div className="animate-fadeIn min-h-screen flex items-center justify-center px-4">
               <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg

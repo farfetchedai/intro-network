@@ -38,6 +38,29 @@ export default function VerifyMagicLinkPage() {
         localStorage.setItem('userId', data.user.id)
         localStorage.setItem('userName', `${data.user.firstName} ${data.user.lastName}`)
 
+        // Handle pending connection from profile page (for existing users logging in)
+        const pendingConnectionData = localStorage.getItem('pendingConnection')
+        if (pendingConnectionData) {
+          try {
+            const pendingConnection = JSON.parse(pendingConnectionData)
+            // Create the connection
+            const connectionResponse = await fetch('/api/user/add-connection', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ targetUserId: pendingConnection.userId }),
+            })
+            const connectionData = await connectionResponse.json()
+            if (connectionData.success) {
+              console.log(`Connected with ${pendingConnection.firstName} ${pendingConnection.lastName}`)
+            }
+            // Clear pending connection regardless of success
+            localStorage.removeItem('pendingConnection')
+          } catch (error) {
+            console.error('Error processing pending connection:', error)
+            localStorage.removeItem('pendingConnection')
+          }
+        }
+
         setStatus('success')
 
         // Redirect to onboarding page after a short delay

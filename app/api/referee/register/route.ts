@@ -195,7 +195,7 @@ export async function POST(req: Request) {
     if (error instanceof z.ZodError) {
       console.log('Zod validation error:', error)
       console.log('error.issues:', error.issues)
-      console.log('error.errors:', error.errors)
+      console.log('error.issues:', error.issues)
       return NextResponse.json(
         { error: 'Invalid data', details: error.issues },
         { status: 400 }
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
 
     // Handle Prisma unique constraint errors
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-      const meta = 'meta' in error && error.meta as { target?: string[] }
+      const meta = ('meta' in error ? error.meta : null) as { target?: string[] } | null
       const field = meta?.target?.[0] || 'field'
       return NextResponse.json(
         { error: `A user with this ${field} already exists. Please use a different ${field} or log in.` },

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import BottomProgressBar from '@/components/BottomProgressBar'
 import CountryCodeSelect from '@/components/CountryCodeSelect'
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [step, setStep] = useState(1)
@@ -1127,5 +1127,24 @@ export default function OnboardingPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <h1 className="text-xl font-bold text-gray-900">Loading...</h1>
+      </div>
+    </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OnboardingContent />
+    </Suspense>
   )
 }

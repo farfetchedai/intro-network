@@ -112,7 +112,7 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       // Format validation errors into user-friendly messages
-      const errorMessages = error.errors.map((err) => {
+      const errorMessages = error.issues.map((err) => {
         const path = err.path
         const contactIndex = path[1] !== undefined ? Number(path[1]) + 1 : null
         const field = path[2] as string
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: 'Please fix the following:',
-          details: error.errors,
+          details: error.issues,
           messages: errorMessages
         },
         { status: 400 }

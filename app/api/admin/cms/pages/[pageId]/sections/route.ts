@@ -27,7 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ pageId:
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid data', details: error.errors },
+        { error: 'Invalid data', details: error.issues },
         { status: 400 }
       )
     }
@@ -38,8 +38,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ pageId:
 }
 
 // PUT update section (batch reorder)
-export async function PUT(req: Request, { params }: { params: { pageId: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ pageId: string }> }) {
   try {
+    const { pageId } = await params
     const { sections } = await req.json()
 
     // Update all sections' order

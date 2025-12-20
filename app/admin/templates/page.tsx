@@ -145,10 +145,12 @@ export default function TemplatesPage() {
   const loadDefaultTemplate = () => {
     const defaults = DEFAULT_TEMPLATES[selectedTemplate][activeTab]
     if (activeTab === 'EMAIL') {
-      setSubject(defaults.subject || '')
-      setBodyHtml(defaults.bodyHtml || '')
+      const emailDefaults = defaults as { subject: string; bodyHtml: string }
+      setSubject(emailDefaults.subject || '')
+      setBodyHtml(emailDefaults.bodyHtml || '')
     } else {
-      setBodySms(defaults.bodySms || '')
+      const smsDefaults = defaults as { bodySms: string }
+      setBodySms(smsDefaults.bodySms || '')
     }
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -50,7 +50,7 @@ interface CareerEntry {
   importedFromLinkedIn: boolean
 }
 
-export default function ProfilePage() {
+function ProfileContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<string>('profile')
@@ -793,7 +793,15 @@ export default function ProfilePage() {
                       {editingCareerEntry ? 'Edit Position' : 'Add New Position'}
                     </h3>
                     <CareerEntryForm
-                      initialData={editingCareerEntry || undefined}
+                      initialData={editingCareerEntry ? {
+                        title: editingCareerEntry.title,
+                        companyName: editingCareerEntry.companyName,
+                        location: editingCareerEntry.location ?? undefined,
+                        description: editingCareerEntry.description ?? undefined,
+                        startDate: editingCareerEntry.startDate ?? undefined,
+                        endDate: editingCareerEntry.endDate ?? undefined,
+                        isCurrent: editingCareerEntry.isCurrent,
+                      } : undefined}
                       onSubmit={editingCareerEntry ? handleUpdateCareerEntry : handleAddCareerEntry}
                       onCancel={() => {
                         setShowCareerForm(false)
@@ -834,5 +842,24 @@ export default function ProfilePage() {
 
       <Footer />
     </>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <h1 className="text-xl font-bold text-gray-900">Loading profile...</h1>
+      </div>
+    </div>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ProfileContent />
+    </Suspense>
   )
 }

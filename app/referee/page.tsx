@@ -358,7 +358,7 @@ export default function RefereePage() {
     }
 
     const contact = contacts[previewContactIndex] || contacts[0]
-    const link = `${window.location.origin}/firstdegree/${formData.userId || 'user-id'}`
+    const link = `${window.location.origin}/firstdegree/${userId || 'user-id'}`
 
     // Replace template variables with actual values (capitalize first names)
     let previewHtml = editableEmailBody
@@ -381,7 +381,7 @@ export default function RefereePage() {
     }
 
     const contact = contacts[previewContactIndex] || contacts[0]
-    const link = `${window.location.origin}/firstdegree/${formData.userId || 'user-id'}`
+    const link = `${window.location.origin}/firstdegree/${userId || 'user-id'}`
 
     // Replace template variables with actual values (capitalize first names)
     let previewSms = editableSmsBody

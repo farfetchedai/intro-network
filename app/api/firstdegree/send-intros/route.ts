@@ -148,7 +148,7 @@ export async function POST(req: Request) {
               .replace(/\{refereeLastName\}/g, referee.lastName)
               .replace(/\{firstDegreeFirstName\}/g, firstDegree.firstName)
               .replace(/\{firstDegreeLastName\}/g, firstDegree.lastName)
-              .replace(/\{statementSummary\}/g, referee.statementSummary)
+              .replace(/\{statementSummary\}/g, referee.statementSummary || '')
               .replace(/\{link\}/g, link)
           } else {
             // Use default template
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
             receiverId: referral.id,
             messageType: 'REFERRAL_REQUEST',
             subject: `${firstDegree.firstName} wants to introduce you to ${referee.firstName}`,
-            body: referee.statementSummary,
+            body: referee.statementSummary || '',
             sentViaEmail: validatedData.sendViaEmail && !!referral.email,
             sentViaSms: validatedData.sendViaSms && !!referral.phone,
             emailSentAt: emailResult?.success ? new Date() : null,
@@ -205,7 +205,7 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid data', details: error.errors },
+        { error: 'Invalid data', details: error.issues },
         { status: 400 }
       )
     }

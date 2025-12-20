@@ -148,6 +148,7 @@ export async function POST(req: Request) {
               refereeFirstName: referee.firstName,
               refereeLastName: referee.lastName,
               contactFirstName: capitalize(contact.firstName),
+              customMessage: referee.introRequest || referee.statementSummary || `I'd like to introduce you to ${referee.firstName} ${referee.lastName}.`,
               link,
             })
           }
@@ -198,7 +199,7 @@ export async function POST(req: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid data', details: error.errors },
+        { error: 'Invalid data', details: error.issues },
         { status: 400 }
       )
     }

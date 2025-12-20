@@ -65,8 +65,8 @@ export async function POST(req: Request) {
     // Send introductions and create referral records
     const results = await Promise.all(
       referrals.map(async (referral) => {
-        // Generate magic link for authentication
-        const redirectUrl = `/network/${firstDegree.id}?referralId=${referral.id}&refereeId=${referee.id}`
+        // Generate magic link for authentication - redirect to second degree flow
+        const redirectUrl = `/seconddegree/${referee.username || referee.id}?r=${referral.id}`
         const link = await generateMagicLink(referral.id, redirectUrl)
 
         let emailResult, smsResult

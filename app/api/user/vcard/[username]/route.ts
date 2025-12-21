@@ -95,9 +95,9 @@ function generateVCard(user: {
   companyName: string | null
   statementSummary: string | null
 }, requestUrl: string): string {
-  // Get base URL from request
+  // Get base URL from env var for production, fallback to request URL for local dev
   const url = new URL(requestUrl)
-  const baseUrl = `${url.protocol}//${url.host}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${url.protocol}//${url.host}`
   const profileUrl = `${baseUrl}/${user.username || user.id}`
 
   // Start building vCard

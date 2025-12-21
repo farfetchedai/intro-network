@@ -37,12 +37,29 @@ interface Contact {
   linkedUser?: LinkedUser | null
 }
 
-type TabType = 'contacts' | 'linkedin'
+type TabType = 'requests' | 'contacts' | 'linkedin'
+
+interface ConnectionUser {
+  id: string
+  firstName: string
+  lastName: string
+  username: string | null
+  profilePicture: string | null
+  companyName: string | null
+}
+
+interface ConnectionRequest {
+  id: string
+  note: string | null
+  createdAt: string
+  fromUser?: ConnectionUser
+  toUser?: ConnectionUser
+}
 
 export default function ConnectionsPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<TabType>('contacts')
+  const [activeTab, setActiveTab] = useState<TabType>('requests')
   const [userId, setUserId] = useState('')
   const [linkedInConnected, setLinkedInConnected] = useState(false)
   const [connections, setConnections] = useState<Connection[]>([])
@@ -51,6 +68,13 @@ export default function ConnectionsPage() {
   const [connectionsLoading, setConnectionsLoading] = useState(false)
   const [connectionsSyncing, setConnectionsSyncing] = useState(false)
   const [userName, setUserName] = useState('')
+
+  // Connection requests state
+  const [myConnections, setMyConnections] = useState<ConnectionUser[]>([])
+  const [pendingReceived, setPendingReceived] = useState<ConnectionRequest[]>([])
+  const [pendingSent, setPendingSent] = useState<ConnectionRequest[]>([])
+  const [requestsLoading, setRequestsLoading] = useState(false)
+  const [respondingTo, setRespondingTo] = useState<string | null>(null)
 
   // Search and Add Contact states
   const [searchQuery, setSearchQuery] = useState('')
@@ -81,6 +105,7 @@ export default function ConnectionsPage() {
         setIsLoading(false)
         fetchContacts(data.user.id)
         fetchConnections()
+        fetchConnectionRequests()
       })
       .catch(err => {
         console.error('Failed to check auth:', err)
@@ -118,6 +143,49 @@ export default function ConnectionsPage() {
       console.error('Failed to fetch connections:', err)
     } finally {
       setConnectionsLoading(false)
+    }
+  }
+
+  const fetchConnectionRequests = async () => {
+    setRequestsLoading(true)
+    try {
+      const response = await fetch('/api/connections')
+      const data = await response.json()
+      if (data.success) {
+        setMyConnections(data.connections || [])
+        setPendingReceived(data.pendingReceived || [])
+        setPendingSent(data.pendingSent || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch connection requests:', err)
+    } finally {
+      setRequestsLoading(false)
+    }
+  }
+
+  const handleRespondToRequest = async (requestId: string, action: 'accept' | 'decline') => {
+    setRespondingTo(requestId)
+    try {
+      const response = await fetch('/api/connections/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        const request = pendingReceived.find(r => r.id === requestId)
+        setPendingReceived(prev => prev.filter(r => r.id !== requestId))
+        if (action === 'accept' && request?.fromUser) {
+          setMyConnections(prev => [request.fromUser!, ...prev])
+        }
+      } else {
+        alert(data.error || 'Failed to respond to request')
+      }
+    } catch (err) {
+      console.error('Failed to respond to request:', err)
+      alert('Failed to respond to request')
+    } finally {
+      setRespondingTo(null)
     }
   }
 
@@ -215,10 +283,30 @@ export default function ConnectionsPage() {
         {/* Main Content */}
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
+          <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                activeTab === 'requests'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Requests
+                {pendingReceived.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
+                    {pendingReceived.length}
+                  </span>
+                )}
+              </span>
+            </button>
             <button
               onClick={() => setActiveTab('contacts')}
-              className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px ${
+              className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 activeTab === 'contacts'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -255,6 +343,181 @@ export default function ConnectionsPage() {
               </span>
             </button>
           </div>
+
+          {/* Requests Tab Content */}
+          {activeTab === 'requests' && (
+            <div className="space-y-6">
+              {/* Pending Received */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  Requests Received
+                  {pendingReceived.length > 0 && (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
+                      {pendingReceived.length}
+                    </span>
+                  )}
+                </h3>
+                {requestsLoading ? (
+                  <div className="bg-white rounded-xl shadow-md p-8 text-center">
+                    <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <p className="text-gray-600">Loading...</p>
+                  </div>
+                ) : pendingReceived.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
+                    No pending requests
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingReceived.map((request) => (
+                      <div key={request.id} className="bg-white rounded-xl shadow-md p-4">
+                        <div className="flex items-start gap-4">
+                          <a href={`/${request.fromUser?.username || request.fromUser?.id}`} className="flex-shrink-0">
+                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg font-bold overflow-hidden">
+                              {request.fromUser?.profilePicture ? (
+                                <img src={request.fromUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${request.fromUser?.firstName.charAt(0)}${request.fromUser?.lastName.charAt(0)}`
+                              )}
+                            </div>
+                          </a>
+                          <div className="flex-1 min-w-0">
+                            <a href={`/${request.fromUser?.username || request.fromUser?.id}`} className="hover:underline">
+                              <h4 className="font-semibold text-gray-900">
+                                {request.fromUser?.firstName} {request.fromUser?.lastName}
+                              </h4>
+                            </a>
+                            {request.fromUser?.companyName && (
+                              <p className="text-sm text-gray-500">{request.fromUser.companyName}</p>
+                            )}
+                            {request.note && (
+                              <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                                <p className="text-sm text-gray-600 italic">"{request.note}"</p>
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-400 mt-2">
+                              {new Date(request.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => handleRespondToRequest(request.id, 'decline')}
+                            disabled={respondingTo === request.id}
+                            className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                          >
+                            Decline
+                          </button>
+                          <button
+                            onClick={() => handleRespondToRequest(request.id, 'accept')}
+                            disabled={respondingTo === request.id}
+                            className="flex-1 px-4 py-2 text-white bg-gradient-to-r from-emerald-500 to-teal-500 font-medium rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-colors disabled:opacity-50"
+                          >
+                            {respondingTo === request.id ? 'Processing...' : 'Accept'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pending Sent */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  Requests Sent
+                  {pendingSent.length > 0 && (
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                      {pendingSent.length}
+                    </span>
+                  )}
+                </h3>
+                {pendingSent.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
+                    No pending sent requests
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingSent.map((request) => (
+                      <div key={request.id} className="bg-white rounded-xl shadow-md p-4 flex items-center gap-4">
+                        <a href={`/${request.toUser?.username || request.toUser?.id}`} className="flex-shrink-0">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                            {request.toUser?.profilePicture ? (
+                              <img src={request.toUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              `${request.toUser?.firstName.charAt(0)}${request.toUser?.lastName.charAt(0)}`
+                            )}
+                          </div>
+                        </a>
+                        <div className="flex-1 min-w-0">
+                          <a href={`/${request.toUser?.username || request.toUser?.id}`} className="hover:underline">
+                            <h4 className="font-semibold text-gray-900">
+                              {request.toUser?.firstName} {request.toUser?.lastName}
+                            </h4>
+                          </a>
+                          {request.toUser?.companyName && (
+                            <p className="text-sm text-gray-500">{request.toUser.companyName}</p>
+                          )}
+                        </div>
+                        <span className="px-3 py-1 bg-amber-50 text-amber-700 text-sm rounded-full">
+                          Pending
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* My Connections */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  My Connections
+                  {myConnections.length > 0 && (
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">
+                      {myConnections.length}
+                    </span>
+                  )}
+                </h3>
+                {myConnections.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
+                    No connections yet
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-md overflow-hidden divide-y divide-gray-200">
+                    {myConnections.map((user) => (
+                      <div key={user.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                        <a href={`/${user.username || user.id}`} className="flex-shrink-0">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                            {user.profilePicture ? (
+                              <img src={user.profilePicture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                            )}
+                          </div>
+                        </a>
+                        <div className="flex-1 min-w-0">
+                          <a href={`/${user.username || user.id}`} className="hover:underline">
+                            <h4 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h4>
+                          </a>
+                          {user.companyName && (
+                            <p className="text-sm text-gray-500">{user.companyName}</p>
+                          )}
+                        </div>
+                        <a
+                          href={`/${user.username || user.id}`}
+                          className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          View Profile
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* My Contacts Tab Content */}
           {activeTab === 'contacts' && (

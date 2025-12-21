@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import ConnectModal from '@/components/ConnectModal'
 
 // Helper function to determine background style
 function getBackgroundStyle(background: string): { className?: string; style?: React.CSSProperties } {
@@ -59,9 +60,9 @@ export default function ProfilePage() {
   const [copySuccess, setCopySuccess] = useState(false)
 
   // Connection state
-  const [isConnected, setIsConnected] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<'not_authenticated' | 'self' | 'connected' | 'pending_sent' | 'pending_received' | 'not_connected'>('not_authenticated')
   const [connectionChecked, setConnectionChecked] = useState(false)
+  const [showConnectModal, setShowConnectModal] = useState(false)
 
   // Statement editing state
   const [isEditingStatement, setIsEditingStatement] = useState(false)
@@ -141,11 +142,11 @@ export default function ProfilePage() {
           if (data.user.cardTextColor) setCustomTextColor(data.user.cardTextColor)
           if (data.user.cardBgImage) setCustomBgImage(data.user.cardBgImage)
 
-          // Check connection status
-          const connectionResponse = await fetch(`/api/user/add-connection?targetUserId=${data.user.id}`)
+          // Check connection status using new API
+          const connectionResponse = await fetch(`/api/connections/status?userId=${data.user.id}`)
           const connectionData = await connectionResponse.json()
           if (connectionData.success) {
-            setIsConnected(connectionData.isConnected)
+            setConnectionStatus(connectionData.status)
           }
           setConnectionChecked(true)
 
@@ -231,7 +232,7 @@ export default function ProfilePage() {
     }
   }
 
-  const handleConnect = async () => {
+  const handleConnect = () => {
     if (!profile) return
 
     // If not logged in, store pending connection and redirect to onboarding
@@ -245,28 +246,12 @@ export default function ProfilePage() {
       return
     }
 
-    setIsConnecting(true)
-    try {
-      const response = await fetch('/api/user/add-connection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUserId: profile.id }),
-      })
-      const data = await response.json()
+    // Open the connect modal
+    setShowConnectModal(true)
+  }
 
-      if (data.success) {
-        setIsConnected(true)
-      } else if (data.alreadyConnected) {
-        setIsConnected(true)
-      } else {
-        alert(data.error || 'Failed to connect')
-      }
-    } catch (error) {
-      console.error('Connect error:', error)
-      alert('Failed to connect. Please try again.')
-    } finally {
-      setIsConnecting(false)
-    }
+  const handleConnectionSuccess = () => {
+    setConnectionStatus('pending_sent')
   }
 
   const handleCopyShareUrl = () => {
@@ -951,33 +936,50 @@ export default function ProfilePage() {
                   >
                     Introduce {profile.firstName} to someone
                   </a>
-                  {connectionChecked && !isConnected && (
+                  {connectionChecked && connectionStatus === 'not_connected' && (
                     <button
                       onClick={handleConnect}
-                      disabled={isConnecting}
-                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
                     >
-                      {isConnecting ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Connecting...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                          </svg>
-                          Connect with {profile.firstName}
-                        </>
-                      )}
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      </svg>
+                      Connect with {profile.firstName}
                     </button>
                   )}
-                  {connectionChecked && isConnected && (
-                    <div className="flex-1 bg-gray-100 text-gray-600 font-semibold py-4 rounded-xl flex items-center justify-center gap-2">
-                      <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {connectionChecked && connectionStatus === 'not_authenticated' && (
+                    <button
+                      onClick={handleConnect}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      </svg>
+                      Connect with {profile.firstName}
+                    </button>
+                  )}
+                  {connectionChecked && connectionStatus === 'pending_sent' && (
+                    <div className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 font-semibold py-4 rounded-xl flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Request Pending
+                    </div>
+                  )}
+                  {connectionChecked && connectionStatus === 'pending_received' && (
+                    <a
+                      href="/dashboard"
+                      className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      Review Their Request
+                    </a>
+                  )}
+                  {connectionChecked && connectionStatus === 'connected' && (
+                    <div className="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold py-4 rounded-xl flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       Connected
@@ -1039,6 +1041,22 @@ export default function ProfilePage() {
       </main>
 
       <Footer />
+
+      {/* Connect Modal */}
+      {profile && (
+        <ConnectModal
+          isOpen={showConnectModal}
+          onClose={() => setShowConnectModal(false)}
+          targetUser={{
+            id: profile.id,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            profilePicture: profile.profilePicture,
+            companyName: profile.companyName,
+          }}
+          onSuccess={handleConnectionSuccess}
+        />
+      )}
     </div>
   )
 }

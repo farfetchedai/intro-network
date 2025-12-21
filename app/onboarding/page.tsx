@@ -230,9 +230,11 @@ function OnboardingContent() {
     fetchCurrentUser()
   }, [])
 
-  // Check for LinkedIn OAuth callback
+  // Check for LinkedIn OAuth callback or magic link redirect
   useEffect(() => {
     const linkedInParam = searchParams.get('linkedin')
+    const fromMagicLink = searchParams.get('fromMagicLink')
+
     if (linkedInParam === 'connected') {
       setLinkedInConnected(true)
       // User just logged in via LinkedIn - skip to step 2
@@ -241,6 +243,14 @@ function OnboardingContent() {
       // Clean up the URL
       const url = new URL(window.location.href)
       url.searchParams.delete('linkedin')
+      window.history.replaceState({}, '', url.toString())
+    } else if (fromMagicLink === 'true') {
+      // User just verified via magic link - skip to step 2
+      // They already completed step 1 before magic link was sent
+      setStep(2)
+      // Clean up the URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('fromMagicLink')
       window.history.replaceState({}, '', url.toString())
     }
   }, [searchParams])

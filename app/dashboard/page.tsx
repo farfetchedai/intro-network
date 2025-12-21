@@ -63,6 +63,23 @@ interface User {
   email: string | null
 }
 
+interface ConnectionUser {
+  id: string
+  firstName: string
+  lastName: string
+  username: string | null
+  profilePicture: string | null
+  companyName: string | null
+}
+
+interface ConnectionRequest {
+  id: string
+  note: string | null
+  createdAt: string
+  fromUser?: ConnectionUser
+  toUser?: ConnectionUser
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -78,6 +95,12 @@ export default function DashboardPage() {
   })
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Connection requests state
+  const [myConnections, setMyConnections] = useState<ConnectionUser[]>([])
+  const [pendingReceived, setPendingReceived] = useState<ConnectionRequest[]>([])
+  const [pendingSent, setPendingSent] = useState<ConnectionRequest[]>([])
+  const [respondingTo, setRespondingTo] = useState<string | null>(null)
 
   useEffect(() => {
     // Get current user from session cookie
@@ -98,17 +121,19 @@ export default function DashboardPage() {
 
   const fetchData = async (userId: string) => {
     try {
-      const [userRes, contactsRes, messagesRes, referralsRes] = await Promise.all([
+      const [userRes, contactsRes, messagesRes, referralsRes, connectionsRes] = await Promise.all([
         fetch(`/api/user?userId=${userId}`),
         fetch(`/api/contacts?userId=${userId}`),
         fetch(`/api/messages?userId=${userId}`),
         fetch(`/api/referrals?userId=${userId}`),
+        fetch('/api/connections'),
       ])
 
       const userData = await userRes.json()
       const contactsData = await contactsRes.json()
       const messagesData = await messagesRes.json()
       const referralsData = await referralsRes.json()
+      const connectionsData = await connectionsRes.json()
 
       if (userData.user) {
         setUser(userData.user)
@@ -125,10 +150,42 @@ export default function DashboardPage() {
       if (referralsData.referrals) {
         setReferrals(referralsData.referrals)
       }
+
+      if (connectionsData.success) {
+        setMyConnections(connectionsData.connections || [])
+        setPendingReceived(connectionsData.pendingReceived || [])
+        setPendingSent(connectionsData.pendingSent || [])
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRespondToRequest = async (requestId: string, action: 'accept' | 'decline') => {
+    setRespondingTo(requestId)
+    try {
+      const response = await fetch('/api/connections/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        const request = pendingReceived.find(r => r.id === requestId)
+        setPendingReceived(prev => prev.filter(r => r.id !== requestId))
+        if (action === 'accept' && request?.fromUser) {
+          setMyConnections(prev => [request.fromUser!, ...prev])
+        }
+      } else {
+        alert(data.error || 'Failed to respond to request')
+      }
+    } catch (err) {
+      console.error('Failed to respond to request:', err)
+      alert('Failed to respond to request')
+    } finally {
+      setRespondingTo(null)
     }
   }
 
@@ -259,159 +316,178 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Connections Grid */}
+        {/* Connection Requests */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Connections</h2>
-          {contacts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">You haven't added any connections yet</p>
-              <button
-                onClick={() => router.push('/referee')}
-                className="bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-200"
-              >
-                Add Connections
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* 1st Degree Column */}
-              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
-                <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
-                  <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
-                    1
-                  </span>
-                  1st Degree
-                </h3>
-                <p className="text-sm text-blue-700 mb-4">Your direct connections</p>
-                <div className="space-y-3">
-                  {contacts.filter((c) => c.degreeType === 'FIRST_DEGREE').length === 0 ? (
-                    <p className="text-sm text-blue-600 italic">No 1st degree connections yet</p>
-                  ) : (
-                    contacts.filter((c) => c.degreeType === 'FIRST_DEGREE').map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="bg-white border border-blue-200 rounded-lg p-3 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <p className="font-semibold text-gray-900 text-sm">
-                            {contact.firstName} {contact.lastName}
-                          </p>
-                          <button
-                            onClick={() => handleDeleteContact(contact.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Delete"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                        {contact.email && (
-                          <p className="text-xs text-gray-600 truncate">{contact.email}</p>
-                        )}
-                        {contact.company && (
-                          <p className="text-xs text-gray-500 mt-1">{contact.company}</p>
-                        )}
-                        {contact.requestSentAt && (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded mt-2">
-                            ✓ Requested
-                          </span>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Connection Requests</h2>
+            <a
+              href="/connections"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              View All →
+            </a>
+          </div>
 
-              {/* 2nd Degree Column */}
-              <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
-                <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
-                  <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
-                    2
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Requests Received */}
+            <div className="border-2 border-amber-200 rounded-lg p-4 bg-amber-50">
+              <h3 className="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                Received
+                {pendingReceived.length > 0 && (
+                  <span className="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {pendingReceived.length}
                   </span>
-                  2nd Degree
-                </h3>
-                <p className="text-sm text-purple-700 mb-4">Introduced by 1st degree</p>
-                <div className="space-y-3">
-                  {contacts.filter((c) => c.degreeType === 'SECOND_DEGREE').length === 0 ? (
-                    <p className="text-sm text-purple-600 italic">No 2nd degree connections yet</p>
-                  ) : (
-                    contacts.filter((c) => c.degreeType === 'SECOND_DEGREE').map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <p className="font-semibold text-gray-900 text-sm">
-                            {contact.firstName} {contact.lastName}
-                          </p>
-                          <button
-                            onClick={() => handleDeleteContact(contact.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Delete"
+                )}
+              </h3>
+              <div className="space-y-3">
+                {pendingReceived.length === 0 ? (
+                  <p className="text-sm text-amber-700 italic">No pending requests</p>
+                ) : (
+                  pendingReceived.slice(0, 3).map((request) => (
+                    <div key={request.id} className="bg-white border border-amber-200 rounded-lg p-3">
+                      <div className="flex items-center gap-3 mb-2">
+                        <a
+                          href={`/${request.fromUser?.username || request.fromUser?.id}`}
+                          className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition-all"
+                        >
+                          {request.fromUser?.profilePicture ? (
+                            <img src={request.fromUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            `${request.fromUser?.firstName.charAt(0)}${request.fromUser?.lastName.charAt(0)}`
+                          )}
+                        </a>
+                        <div className="flex-1 min-w-0">
+                          <a
+                            href={`/${request.fromUser?.username || request.fromUser?.id}`}
+                            className="font-semibold text-gray-900 text-sm truncate block hover:text-blue-600 transition-colors"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
+                            {request.fromUser?.firstName} {request.fromUser?.lastName}
+                          </a>
+                          {request.fromUser?.companyName && (
+                            <p className="text-xs text-gray-500 truncate">{request.fromUser.companyName}</p>
+                          )}
                         </div>
-                        {contact.email && (
-                          <p className="text-xs text-gray-600 truncate">{contact.email}</p>
-                        )}
-                        {contact.company && (
-                          <p className="text-xs text-gray-500 mt-1">{contact.company}</p>
-                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* 3rd Degree Column */}
-              <div className="border-2 border-pink-200 rounded-lg p-4 bg-pink-50">
-                <h3 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
-                  <span className="bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
-                    3
-                  </span>
-                  3rd Degree
-                </h3>
-                <p className="text-sm text-pink-700 mb-4">Introduced by 2nd degree</p>
-                <div className="space-y-3">
-                  {contacts.filter((c) => c.degreeType === 'THIRD_DEGREE').length === 0 ? (
-                    <p className="text-sm text-pink-600 italic">No 3rd degree connections yet</p>
-                  ) : (
-                    contacts.filter((c) => c.degreeType === 'THIRD_DEGREE').map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="bg-white border border-pink-200 rounded-lg p-3 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <p className="font-semibold text-gray-900 text-sm">
-                            {contact.firstName} {contact.lastName}
-                          </p>
-                          <button
-                            onClick={() => handleDeleteContact(contact.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Delete"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                        {contact.email && (
-                          <p className="text-xs text-gray-600 truncate">{contact.email}</p>
-                        )}
-                        {contact.company && (
-                          <p className="text-xs text-gray-500 mt-1">{contact.company}</p>
-                        )}
+                      {request.note && (
+                        <p className="text-xs text-gray-600 italic mb-2 line-clamp-2">"{request.note}"</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleRespondToRequest(request.id, 'decline')}
+                          disabled={respondingTo === request.id}
+                          className="flex-1 px-3 py-1.5 text-xs text-gray-700 bg-gray-100 font-medium rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          onClick={() => handleRespondToRequest(request.id, 'accept')}
+                          disabled={respondingTo === request.id}
+                          className="flex-1 px-3 py-1.5 text-xs text-white bg-emerald-500 font-medium rounded hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                        >
+                          {respondingTo === request.id ? '...' : 'Accept'}
+                        </button>
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          )}
+
+            {/* Requests Sent */}
+            <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+              <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                Sent
+                {pendingSent.length > 0 && (
+                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {pendingSent.length}
+                  </span>
+                )}
+              </h3>
+              <div className="space-y-3">
+                {pendingSent.length === 0 ? (
+                  <p className="text-sm text-blue-700 italic">No pending requests</p>
+                ) : (
+                  pendingSent.slice(0, 3).map((request) => (
+                    <div key={request.id} className="bg-white border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={`/${request.toUser?.username || request.toUser?.id}`}
+                          className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition-all"
+                        >
+                          {request.toUser?.profilePicture ? (
+                            <img src={request.toUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            `${request.toUser?.firstName.charAt(0)}${request.toUser?.lastName.charAt(0)}`
+                          )}
+                        </a>
+                        <div className="flex-1 min-w-0">
+                          <a
+                            href={`/${request.toUser?.username || request.toUser?.id}`}
+                            className="font-semibold text-gray-900 text-sm truncate block hover:text-blue-600 transition-colors"
+                          >
+                            {request.toUser?.firstName} {request.toUser?.lastName}
+                          </a>
+                          <span className="text-xs text-amber-600">Pending</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* My Connections */}
+            <div className="border-2 border-emerald-200 rounded-lg p-4 bg-emerald-50">
+              <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Connected
+                {myConnections.length > 0 && (
+                  <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {myConnections.length}
+                  </span>
+                )}
+              </h3>
+              <div className="space-y-3">
+                {myConnections.length === 0 ? (
+                  <p className="text-sm text-emerald-700 italic">No connections yet</p>
+                ) : (
+                  myConnections.slice(0, 3).map((user) => (
+                    <a
+                      key={user.id}
+                      href={`/${user.username || user.id}`}
+                      className="block bg-white border border-emerald-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
+                          {user.profilePicture ? (
+                            <img src={user.profilePicture} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          {user.companyName && (
+                            <p className="text-xs text-gray-500 truncate">{user.companyName}</p>
+                          )}
+                        </div>
+                      </div>
+                    </a>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Introduction Requests */}

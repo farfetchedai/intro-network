@@ -7,6 +7,7 @@ import {
   generateApprovalNotificationToFirstDegree,
   generateApprovalNotificationToReferral,
 } from '@/lib/services/email'
+import { notifyIntroAccepted, notifyIntroDeclined } from '@/lib/notifications'
 
 const respondSchema = z.object({
   referralId: z.string(),
@@ -52,6 +53,25 @@ export async function POST(req: Request) {
         deniedAt: validatedData.response === 'DENIED' ? new Date() : null,
       },
     })
+
+    // Create in-app notifications
+    const targetName = `${referral.referee.firstName} ${referral.referee.lastName}`
+    const fromUserInfo = {
+      id: referral.referral.id,
+      firstName: referral.referral.firstName,
+      lastName: referral.referral.lastName,
+    }
+
+    if (validatedData.response === 'APPROVED') {
+      // Notify referee and first degree about the accepted intro
+      await Promise.all([
+        notifyIntroAccepted(referral.refereeId, fromUserInfo, `${referral.firstDegree.firstName} ${referral.firstDegree.lastName}`),
+        notifyIntroAccepted(referral.firstDegreeId, fromUserInfo, targetName),
+      ])
+    } else {
+      // Notify first degree about the declined intro
+      await notifyIntroDeclined(referral.firstDegreeId, fromUserInfo, targetName)
+    }
 
     // Send notification emails if approved
     if (validatedData.response === 'APPROVED') {

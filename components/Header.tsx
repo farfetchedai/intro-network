@@ -5,14 +5,33 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import LoginModal from './LoginModal'
 
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  link: string | null
+  isRead: boolean
+  createdAt: string
+  fromUser?: {
+    id: string
+    firstName: string
+    lastName: string
+    profilePicture: string | null
+  }
+}
+
 export default function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [branding, setBranding] = useState<any>(null)
   const [navigation, setNavigation] = useState<any>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     // Check if user is logged in from session cookie
@@ -21,6 +40,7 @@ export default function Header() {
       .then(data => {
         if (data.success && data.user) {
           fetchUser(data.user.id)
+          fetchNotifications()
         }
       })
       .catch(err => console.error('Failed to fetch current user:', err))
@@ -28,6 +48,17 @@ export default function Header() {
     fetchBranding()
     fetchNavigation()
   }, [])
+
+  // Poll for new notifications every 30 seconds
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(() => {
+      fetchNotifications()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [user])
 
   const fetchUser = async (userId: string) => {
     try {
@@ -63,6 +94,70 @@ export default function Header() {
     } catch (error) {
       console.error('Failed to fetch navigation:', error)
     }
+  }
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications?limit=10')
+      const data = await response.json()
+      if (data.success) {
+        setNotifications(data.notifications || [])
+        setUnreadCount(data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error)
+    }
+  }
+
+  const markAllRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('Failed to mark notifications as read:', error)
+    }
+  }
+
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark this notification as read
+    if (!notification.isRead) {
+      try {
+        await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationIds: [notification.id] }),
+        })
+        setNotifications(notifications.map(n =>
+          n.id === notification.id ? { ...n, isRead: true } : n
+        ))
+        setUnreadCount(Math.max(0, unreadCount - 1))
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error)
+      }
+    }
+
+    // Navigate to link if present
+    if (notification.link) {
+      setNotificationsOpen(false)
+      router.push(notification.link)
+    }
+  }
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (seconds < 60) return 'Just now'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
+    return date.toLocaleDateString()
   }
 
   const handleSignOut = async () => {
@@ -145,9 +240,110 @@ export default function Header() {
                 >
                   Get Started
                 </Link>
+
+                {/* Notifications Bell */}
                 <div className="relative">
                   <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    onClick={() => {
+                      setNotificationsOpen(!notificationsOpen)
+                      setUserMenuOpen(false)
+                    }}
+                    className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notificationsOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+                      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllRead}
+                            className="text-xs text-blue-600 hover:text-blue-700"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-gray-500">
+                            <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <p className="text-sm">No notifications yet</p>
+                          </div>
+                        ) : (
+                          notifications.map((notification) => (
+                            <button
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                !notification.isRead ? 'bg-blue-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
+                                  {notification.fromUser?.profilePicture ? (
+                                    <img
+                                      src={notification.fromUser.profilePicture}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : notification.fromUser ? (
+                                    `${notification.fromUser.firstName[0]}${notification.fromUser.lastName[0]}`
+                                  ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm ${!notification.isRead ? 'font-semibold' : ''} text-gray-900`}>
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {getTimeAgo(notification.createdAt)}
+                                  </p>
+                                </div>
+                                {!notification.isRead && (
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                                )}
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                      {notifications.length > 0 && (
+                        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                          <Link
+                            href="/connections"
+                            onClick={() => setNotificationsOpen(false)}
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            View all activity
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* User Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(!userMenuOpen)
+                      setNotificationsOpen(false)
+                    }}
                     className="flex items-center space-x-2 focus:outline-none"
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold overflow-hidden">

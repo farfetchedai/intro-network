@@ -4,6 +4,7 @@ import { sendEmail, generateReferralRequestEmail } from '@/lib/services/email'
 import { sendSMS, generateFirstDegreeRequestSMS } from '@/lib/services/sms'
 import { generateMagicLink } from '@/lib/magicLink'
 import { z } from 'zod'
+import { notifyIntroRequest } from '@/lib/notifications'
 
 const sendIntrosSchema = z.object({
   refereeId: z.string(),
@@ -176,6 +177,17 @@ export async function POST(req: Request) {
             status: 'PENDING',
           },
         })
+
+        // Create in-app notification for the referral user
+        await notifyIntroRequest(
+          referral.id,
+          {
+            id: firstDegree.id,
+            firstName: firstDegree.firstName,
+            lastName: firstDegree.lastName,
+          },
+          `${referee.firstName} ${referee.lastName}`
+        )
 
         // Create message record
         await prisma.message.create({

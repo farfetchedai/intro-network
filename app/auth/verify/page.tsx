@@ -63,9 +63,9 @@ function VerifyContent() {
 
         setStatus('success')
 
-        // Redirect to onboarding page after a short delay
+        // Redirect to onboarding step 2 after a short delay (user already completed step 1)
         setTimeout(() => {
-          router.push('/onboarding')
+          router.push('/onboarding?fromMagicLink=true')
         }, 2000)
       } else {
         setStatus('error')

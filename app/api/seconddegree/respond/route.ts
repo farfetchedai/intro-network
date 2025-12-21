@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/services/email'
 import { z } from 'zod'
+import { notifyIntroAccepted, notifyIntroDeclined } from '@/lib/notifications'
 
 const respondSchema = z.object({
   referralId: z.string(),
@@ -62,9 +63,47 @@ export async function POST(req: Request) {
       }
     }
 
+    // Create in-app notifications
+    const secondDegree = referral.referral
+    const targetName = `${referral.referee.firstName} ${referral.referee.lastName}`
+
+    if (validatedData.response === 'APPROVED') {
+      // Notify referee that second degree accepted
+      await notifyIntroAccepted(
+        referral.refereeId,
+        {
+          id: secondDegree.id,
+          firstName: secondDegree.firstName,
+          lastName: secondDegree.lastName,
+        },
+        `${referral.firstDegree.firstName} ${referral.firstDegree.lastName}`
+      )
+
+      // Notify first degree that their intro was accepted
+      await notifyIntroAccepted(
+        referral.firstDegreeId,
+        {
+          id: secondDegree.id,
+          firstName: secondDegree.firstName,
+          lastName: secondDegree.lastName,
+        },
+        targetName
+      )
+    } else {
+      // Notify first degree that their intro was declined
+      await notifyIntroDeclined(
+        referral.firstDegreeId,
+        {
+          id: secondDegree.id,
+          firstName: secondDegree.firstName,
+          lastName: secondDegree.lastName,
+        },
+        targetName
+      )
+    }
+
     // Send notification email to referee if approved
     if (validatedData.response === 'APPROVED' && referral.referee.email) {
-      const secondDegree = referral.referral
       const firstDegree = referral.firstDegree
 
       try {
@@ -102,7 +141,6 @@ export async function POST(req: Request) {
 
     // Also notify the first degree contact
     if (referral.firstDegree.email) {
-      const secondDegree = referral.referral
       const statusText = validatedData.response === 'APPROVED' ? 'accepted' : 'declined'
 
       try {

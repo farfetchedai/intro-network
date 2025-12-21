@@ -4,6 +4,7 @@ import { sendEmail, generateFirstDegreeRequestEmail } from '@/lib/services/email
 import { sendSMS, generateFirstDegreeRequestSMS } from '@/lib/services/sms'
 import { generateMagicLink } from '@/lib/magicLink'
 import { z } from 'zod'
+import { notifyIntroHelpRequest } from '@/lib/notifications'
 
 const sendRequestSchema = z.object({
   userId: z.string(),
@@ -170,7 +171,7 @@ export async function POST(req: Request) {
           throw updateError
         }
 
-        // Create message record
+        // Create message record and notification
         if (contact.contactId) {
           await prisma.message.create({
             data: {
@@ -184,6 +185,13 @@ export async function POST(req: Request) {
               emailSentAt: emailResult?.success ? new Date() : null,
               smsSentAt: smsResult?.success ? new Date() : null,
             },
+          })
+
+          // Create in-app notification
+          await notifyIntroHelpRequest(contact.contactId, {
+            id: referee.id,
+            firstName: referee.firstName,
+            lastName: referee.lastName,
           })
         }
 

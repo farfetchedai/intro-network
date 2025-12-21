@@ -63,6 +63,16 @@ model User {
   linkedInConnections LinkedInConnection[]
   careerHistory       CareerHistory[]
 
+  // Connection relations
+  connectionRequestsSent     ConnectionRequest[] @relation("ConnectionRequestsSent")
+  connectionRequestsReceived ConnectionRequest[] @relation("ConnectionRequestsReceived")
+  connections                Connection[]        @relation("UserConnections")
+  connectedTo                Connection[]        @relation("ConnectedToUser")
+
+  // Notification relations
+  notifications              Notification[]      @relation("UserNotifications")
+  sentNotifications          Notification[]      @relation("NotificationSender")
+
   @@index([email])
   @@index([phone])
 }
@@ -418,4 +428,64 @@ model CareerHistory {
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model ConnectionRequest {
+  id          String    @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  note        String?   // Optional message with the connection request
+  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  token       String    @unique @default(cuid()) // For secure email links
+
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  fromUser    User      @relation("ConnectionRequestsSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser      User      @relation("ConnectionRequestsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([status])
+  @@index([token])
+}
+
+model Connection {
+  id        String   @id @default(cuid())
+  userId    String
+  connectedUserId String
+
+  createdAt DateTime @default(now())
+
+  user          User @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
+  connectedUser User @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectedUserId])
+  @@index([userId])
+  @@index([connectedUserId])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String    // The user who receives this notification
+  type        String    // CONNECTION_REQUEST, CONNECTION_ACCEPTED, CONNECTION_DECLINED, INTRO_REQUEST, INTRO_ACCEPTED, INTRO_DECLINED
+  title       String    // Short title like "New connection request"
+  message     String    // Full message like "John Doe would like to connect with you"
+  link        String?   // Optional link to navigate to (e.g., /connections, /dashboard)
+  isRead      Boolean   @default(false)
+
+  // Optional references to related entities
+  fromUserId  String?   // The user who triggered this notification
+
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  fromUser    User?     @relation("NotificationSender", fields: [fromUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
 }

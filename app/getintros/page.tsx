@@ -13,7 +13,7 @@ export default function GetIntrosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Contact form
+  // Contact form - start with one empty row ready for input
   const [contacts, setContacts] = useState<Array<{
     id?: string
     firstName: string
@@ -21,7 +21,7 @@ export default function GetIntrosPage() {
     email: string
     phone: string
     company: string
-  }>>([])
+  }>>([{ firstName: '', lastName: '', email: '', phone: '', company: '' }])
 
   // Track existing contacts from database
   const [existingContacts, setExistingContacts] = useState<Array<{
@@ -215,6 +215,17 @@ export default function GetIntrosPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Update contacts with the IDs from the database
+        if (data.contacts && data.contacts.length > 0) {
+          setContacts(data.contacts.map((c: any) => ({
+            id: c.id,
+            firstName: c.firstName,
+            lastName: c.lastName,
+            email: c.email || '',
+            phone: c.phone || '',
+            company: c.company || '',
+          })))
+        }
         // Move to step 2
         setStep(2)
         setIsSubmitting(false)

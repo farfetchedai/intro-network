@@ -748,29 +748,6 @@ function OnboardingContent() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="flex gap-3">
-                    <CountryCodeSelect
-                      value={formData.countryCode}
-                      selectedCountryCode={countryCodeIso}
-                      onChange={(value, code) => {
-                        setFormData({ ...formData, countryCode: value })
-                        setCountryCodeIso(code)
-                      }}
-                    />
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-
                 <button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
@@ -880,6 +857,29 @@ function OnboardingContent() {
                   <p className="mt-2 text-sm text-gray-500">
                     Only lowercase letters, numbers, and underscores
                   </p>
+                </div>
+
+                {/* Phone Number Field */}
+                <div className="max-w-md mx-auto">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="flex gap-3">
+                    <CountryCodeSelect
+                      value={formData.countryCode}
+                      selectedCountryCode={countryCodeIso}
+                      onChange={(value, code) => {
+                        setFormData({ ...formData, countryCode: value })
+                        setCountryCodeIso(code)
+                      }}
+                    />
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-4 pt-6">

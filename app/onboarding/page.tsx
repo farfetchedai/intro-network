@@ -54,6 +54,10 @@ function OnboardingContent() {
   const [generalError, setGeneralError] = useState<string>('')
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
 
+  // AI Profile toggle
+  const [hasExistingAIProfile, setHasExistingAIProfile] = useState(false)
+  const [enableAIGeneration, setEnableAIGeneration] = useState(true)
+
   // Branding settings
   const [brandingSettings, setBrandingSettings] = useState({
     flowCStep1Background: 'from-blue-400 via-purple-400 to-pink-400',
@@ -208,6 +212,12 @@ function OnboardingContent() {
             setUsername(data.user.username)
             setUsernameAvailable(true) // Username already belongs to this user
             setIsCurrentUsername(true) // Mark as current user's username
+          }
+
+          // Check if user already has AI-generated profile
+          if (data.user.statementSummary) {
+            setHasExistingAIProfile(true)
+            setEnableAIGeneration(true) // Default to enabled, user can toggle off
           }
         }
       } catch (error) {
@@ -476,8 +486,9 @@ function OnboardingContent() {
       if (data.success) {
         console.log('Registration successful, user data:', data.user)
 
-        // Generate AI summary if skills are provided
-        if (skills.length > 0) {
+        // Generate AI summary if skills are provided and AI generation is enabled
+        // Skip if user has existing profile and chose to disable regeneration
+        if (skills.length > 0 && enableAIGeneration) {
           try {
             console.log('Generating AI summary with:', { skills, company: achievement.company, firstName: formData.firstName })
             const aiResponse = await fetch('/api/user/generate-statement-ai', {
@@ -1077,6 +1088,37 @@ function OnboardingContent() {
                   )}
                 </div>
 
+                {/* AI Profile Toggle - only show if user already has an AI-generated profile */}
+                {hasExistingAIProfile && (
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">AI-Generate Profile</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {enableAIGeneration
+                            ? 'Your profile summary will be regenerated using AI based on your updated information.'
+                            : 'Your existing AI-generated profile will be kept unchanged.'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEnableAIGeneration(!enableAIGeneration)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                          enableAIGeneration ? 'bg-purple-600' : 'bg-gray-300'
+                        }`}
+                        role="switch"
+                        aria-checked={enableAIGeneration}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            enableAIGeneration ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-4 pt-6">
                   <button
                     type="button"
@@ -1097,7 +1139,7 @@ function OnboardingContent() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        Generating...
+                        {enableAIGeneration ? 'Generating...' : 'Saving...'}
                       </>
                     ) : (
                       'Complete Profile →'

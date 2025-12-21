@@ -60,6 +60,10 @@ interface BrandingSettings {
   // Profile Pages
   profilePageBackground: string
   profilePageFormBg: string
+  // Business Card Color Swatches
+  cardPageBgSwatches: string
+  cardBoxBgSwatches: string
+  cardTextSwatches: string
   // Legacy fields
   step1Name: string
   step2Name: string
@@ -128,6 +132,10 @@ export default function BrandingPage() {
     // Profile Pages
     profilePageBackground: 'from-blue-400 via-purple-400 to-pink-400',
     profilePageFormBg: 'white',
+    // Business Card Color Swatches
+    cardPageBgSwatches: '["#f0f9ff", "#fef3c7", "#fce7f3", "#ecfdf5", "#f5f3ff", "#fef2f2"]',
+    cardBoxBgSwatches: '["#ffffff", "#f9fafb", "#fef3c7", "#fce7f3", "#ecfdf5", "#1f2937"]',
+    cardTextSwatches: '["#111827", "#374151", "#6b7280", "#ffffff", "#1e40af", "#7c3aed"]',
     // Legacy
     step1Name: 'Your Profile',
     step2Name: 'Your Network',
@@ -156,6 +164,9 @@ export default function BrandingPage() {
           // Ensure new fields have defaults if not in database yet
           profilePageBackground: data.settings.profilePageBackground || 'from-blue-400 via-purple-400 to-pink-400',
           profilePageFormBg: data.settings.profilePageFormBg || 'white',
+          cardPageBgSwatches: data.settings.cardPageBgSwatches || '["#f0f9ff", "#fef3c7", "#fce7f3", "#ecfdf5", "#f5f3ff", "#fef2f2"]',
+          cardBoxBgSwatches: data.settings.cardBoxBgSwatches || '["#ffffff", "#f9fafb", "#fef3c7", "#fce7f3", "#ecfdf5", "#1f2937"]',
+          cardTextSwatches: data.settings.cardTextSwatches || '["#111827", "#374151", "#6b7280", "#ffffff", "#1e40af", "#7c3aed"]',
         }))
         setCustomCSS(data.customCSS || '')
       }
@@ -1097,6 +1108,138 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, profilePageFormBg: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="white or #FFFFFF"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Business Card Color Swatches */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Business Card Color Swatches</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Define the color options shown to users when customizing their business card. Enter hex colors separated by commas.
+        </p>
+        <div className="space-y-6">
+          {/* Page Background Swatches */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Page Background Colors
+            </label>
+            <p className="text-xs text-gray-500 mb-2">Colors users can choose for their card page background</p>
+            <div className="flex gap-2 mb-2">
+              {(() => {
+                try {
+                  const colors = JSON.parse(settings.cardPageBgSwatches || '[]')
+                  return colors.map((color: string, i: number) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2 border-gray-300"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))
+                } catch {
+                  return null
+                }
+              })()}
+            </div>
+            <input
+              type="text"
+              value={(() => {
+                try {
+                  return JSON.parse(settings.cardPageBgSwatches || '[]').join(', ')
+                } catch {
+                  return settings.cardPageBgSwatches
+                }
+              })()}
+              onChange={(e) => {
+                const colors = e.target.value.split(',').map(c => c.trim()).filter(c => c)
+                setSettings({ ...settings, cardPageBgSwatches: JSON.stringify(colors) })
+              }}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#f0f9ff, #fef3c7, #fce7f3, #ecfdf5, #f5f3ff, #fef2f2"
+            />
+          </div>
+
+          {/* Card Background Swatches */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Card Background Colors
+            </label>
+            <p className="text-xs text-gray-500 mb-2">Colors users can choose for the card box background</p>
+            <div className="flex gap-2 mb-2">
+              {(() => {
+                try {
+                  const colors = JSON.parse(settings.cardBoxBgSwatches || '[]')
+                  return colors.map((color: string, i: number) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2 border-gray-300"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))
+                } catch {
+                  return null
+                }
+              })()}
+            </div>
+            <input
+              type="text"
+              value={(() => {
+                try {
+                  return JSON.parse(settings.cardBoxBgSwatches || '[]').join(', ')
+                } catch {
+                  return settings.cardBoxBgSwatches
+                }
+              })()}
+              onChange={(e) => {
+                const colors = e.target.value.split(',').map(c => c.trim()).filter(c => c)
+                setSettings({ ...settings, cardBoxBgSwatches: JSON.stringify(colors) })
+              }}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#ffffff, #f9fafb, #fef3c7, #fce7f3, #ecfdf5, #1f2937"
+            />
+          </div>
+
+          {/* Text Color Swatches */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Text Colors
+            </label>
+            <p className="text-xs text-gray-500 mb-2">Colors users can choose for text inside the card</p>
+            <div className="flex gap-2 mb-2">
+              {(() => {
+                try {
+                  const colors = JSON.parse(settings.cardTextSwatches || '[]')
+                  return colors.map((color: string, i: number) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2 border-gray-300"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))
+                } catch {
+                  return null
+                }
+              })()}
+            </div>
+            <input
+              type="text"
+              value={(() => {
+                try {
+                  return JSON.parse(settings.cardTextSwatches || '[]').join(', ')
+                } catch {
+                  return settings.cardTextSwatches
+                }
+              })()}
+              onChange={(e) => {
+                const colors = e.target.value.split(',').map(c => c.trim()).filter(c => c)
+                setSettings({ ...settings, cardTextSwatches: JSON.stringify(colors) })
+              }}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#111827, #374151, #6b7280, #ffffff, #1e40af, #7c3aed"
             />
           </div>
         </div>

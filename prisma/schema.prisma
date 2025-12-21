@@ -36,6 +36,12 @@ model User {
   statementSummary3rdPerson String? // 3rd person version for referral requests
   introRequest     String? // Types of people they'd like intros to (roles, sectors, or specific people)
 
+  // Business card customization
+  cardPageBgColor  String?  // Page background color
+  cardBoxBgColor   String?  // Card box background color
+  cardTextColor    String?  // Text color inside the card
+  cardBgImage      String?  // Background image URL (object-fit: cover)
+
   // Magic link authentication
   magicLinkToken     String?   @unique
   magicLinkExpiry    DateTime?
@@ -215,6 +221,11 @@ model BrandingSettings {
   fontFamily          String   @default("Inter, system-ui, sans-serif")
   headingFont         String   @default("Inter, system-ui, sans-serif")
   customCSS           String?
+
+  // Business Card Color Swatches (JSON arrays of hex colors)
+  cardPageBgSwatches  String   @default("[\"#f0f9ff\", \"#fef3c7\", \"#fce7f3\", \"#ecfdf5\", \"#f5f3ff\", \"#fef2f2\"]")
+  cardBoxBgSwatches   String   @default("[\"#ffffff\", \"#f9fafb\", \"#fef3c7\", \"#fce7f3\", \"#ecfdf5\", \"#1f2937\"]")
+  cardTextSwatches    String   @default("[\"#111827\", \"#374151\", \"#6b7280\", \"#ffffff\", \"#1e40af\", \"#7c3aed\"]")
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

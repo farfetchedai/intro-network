@@ -38,6 +38,10 @@ export async function GET(req: Request) {
         facebookUrl: true,
         instagramUrl: true,
         websiteUrl: true,
+        cardPageBgColor: true,
+        cardBoxBgColor: true,
+        cardTextColor: true,
+        cardBgImage: true,
       },
     })
 

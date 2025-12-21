@@ -38,6 +38,10 @@ interface UserProfile {
   companyName: string | null
   achievement: string | null
   achievementMethod: string | null
+  cardPageBgColor: string | null
+  cardBoxBgColor: string | null
+  cardTextColor: string | null
+  cardBgImage: string | null
 }
 
 export default function ProfilePage() {
@@ -66,10 +70,21 @@ export default function ProfilePage() {
   const [isSavingStatement, setIsSavingStatement] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
 
+  // Card customization state
+  const [showCustomization, setShowCustomization] = useState(false)
+  const [customPageBgColor, setCustomPageBgColor] = useState('')
+  const [customBoxBgColor, setCustomBoxBgColor] = useState('')
+  const [customTextColor, setCustomTextColor] = useState('')
+  const [customBgImage, setCustomBgImage] = useState('')
+  const [isSavingCustomization, setIsSavingCustomization] = useState(false)
+
   // Branding settings
   const [branding, setBranding] = useState({
     profilePageBackground: 'from-blue-50 via-purple-50 to-pink-50',
     profilePageFormBg: 'white',
+    cardPageBgSwatches: ['#f0f9ff', '#fef3c7', '#fce7f3', '#ecfdf5', '#f5f3ff', '#fef2f2'],
+    cardBoxBgSwatches: ['#ffffff', '#f9fafb', '#fef3c7', '#fce7f3', '#ecfdf5', '#1f2937'],
+    cardTextSwatches: ['#111827', '#374151', '#6b7280', '#ffffff', '#1e40af', '#7c3aed'],
   })
 
   useEffect(() => {
@@ -79,9 +94,31 @@ export default function ProfilePage() {
         const brandingResponse = await fetch('/api/admin/branding')
         const brandingData = await brandingResponse.json()
         if (brandingData.success && brandingData.settings) {
+          // Parse color swatches from JSON strings
+          let pageBgSwatches = ['#f0f9ff', '#fef3c7', '#fce7f3', '#ecfdf5', '#f5f3ff', '#fef2f2']
+          let boxBgSwatches = ['#ffffff', '#f9fafb', '#fef3c7', '#fce7f3', '#ecfdf5', '#1f2937']
+          let textSwatches = ['#111827', '#374151', '#6b7280', '#ffffff', '#1e40af', '#7c3aed']
+
+          try {
+            if (brandingData.settings.cardPageBgSwatches) {
+              pageBgSwatches = JSON.parse(brandingData.settings.cardPageBgSwatches)
+            }
+            if (brandingData.settings.cardBoxBgSwatches) {
+              boxBgSwatches = JSON.parse(brandingData.settings.cardBoxBgSwatches)
+            }
+            if (brandingData.settings.cardTextSwatches) {
+              textSwatches = JSON.parse(brandingData.settings.cardTextSwatches)
+            }
+          } catch (e) {
+            console.error('Failed to parse color swatches:', e)
+          }
+
           setBranding({
             profilePageBackground: brandingData.settings.profilePageBackground || 'from-blue-50 via-purple-50 to-pink-50',
             profilePageFormBg: brandingData.settings.profilePageFormBg || 'white',
+            cardPageBgSwatches: pageBgSwatches,
+            cardBoxBgSwatches: boxBgSwatches,
+            cardTextSwatches: textSwatches,
           })
         }
 
@@ -97,6 +134,12 @@ export default function ProfilePage() {
 
         if (data.user) {
           setProfile(data.user)
+
+          // Populate customization state from profile
+          if (data.user.cardPageBgColor) setCustomPageBgColor(data.user.cardPageBgColor)
+          if (data.user.cardBoxBgColor) setCustomBoxBgColor(data.user.cardBoxBgColor)
+          if (data.user.cardTextColor) setCustomTextColor(data.user.cardTextColor)
+          if (data.user.cardBgImage) setCustomBgImage(data.user.cardBgImage)
 
           // Check connection status
           const connectionResponse = await fetch(`/api/user/add-connection?targetUserId=${data.user.id}`)
@@ -324,6 +367,60 @@ export default function ProfilePage() {
     }
   }
 
+  const handleSaveCustomization = async () => {
+    setIsSavingCustomization(true)
+    try {
+      const response = await fetch('/api/user/card-customization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardPageBgColor: customPageBgColor || null,
+          cardBoxBgColor: customBoxBgColor || null,
+          cardTextColor: customTextColor || null,
+          cardBgImage: customBgImage || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success && profile) {
+        setProfile({
+          ...profile,
+          cardPageBgColor: customPageBgColor || null,
+          cardBoxBgColor: customBoxBgColor || null,
+          cardTextColor: customTextColor || null,
+          cardBgImage: customBgImage || null,
+        })
+        setShowCustomization(false)
+      } else {
+        alert(data.error || 'Failed to save customization')
+      }
+    } catch (error) {
+      console.error('Save customization error:', error)
+      alert('Failed to save customization. Please try again.')
+    } finally {
+      setIsSavingCustomization(false)
+    }
+  }
+
+  const handleBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setCustomBgImage(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleResetCustomization = () => {
+    setCustomPageBgColor('')
+    setCustomBoxBgColor('')
+    setCustomTextColor('')
+    setCustomBgImage('')
+  }
+
   const bgStyle = getBackgroundStyle(branding.profilePageBackground)
   const formStyle = getBackgroundStyle(branding.profilePageFormBg)
 
@@ -345,16 +442,45 @@ export default function ProfilePage() {
     )
   }
 
+  // Determine effective background and card styles
+  const effectivePageBgStyle = customPageBgColor
+    ? { backgroundColor: customPageBgColor }
+    : bgStyle.style
+  const effectivePageBgClass = customPageBgColor ? '' : (bgStyle.className || '')
+
+  const effectiveCardBgStyle = customBoxBgColor
+    ? { backgroundColor: customBoxBgColor }
+    : formStyle.style
+  const effectiveCardBgClass = customBoxBgColor ? '' : (formStyle.className || 'bg-white')
+
+  const effectiveTextColor = customTextColor || ''
+
   return (
-    <div className={`min-h-screen flex flex-col ${bgStyle.className || ''}`} style={bgStyle.style}>
+    <div
+      className={`min-h-screen flex flex-col ${effectivePageBgClass} relative`}
+      style={effectivePageBgStyle}
+    >
+      {/* Background Image */}
+      {customBgImage && (
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${customBgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+      )}
+
       <Header />
 
-      <main className="flex-1 pt-24 pb-12 px-4">
+      <main className="flex-1 pt-24 pb-12 px-4 relative z-10">
         <div className="max-w-2xl mx-auto">
           {/* Profile Card */}
           <div
-            className={`rounded-3xl shadow-2xl p-8 md:p-12 ${formStyle.className || 'bg-white'}`}
-            style={formStyle.style}
+            className={`rounded-3xl shadow-2xl p-8 md:p-12 ${effectiveCardBgClass}`}
+            style={effectiveCardBgStyle}
           >
             {/* Profile Header - Centered */}
             <div className="flex flex-col items-center text-center mb-8">
@@ -372,13 +498,21 @@ export default function ProfilePage() {
               </div>
 
               {/* Name */}
-              <h2 className="text-3xl font-bold text-gray-900 mb-1">
+              <h2
+                className="text-3xl font-bold mb-1"
+                style={{ color: effectiveTextColor || '#111827' }}
+              >
                 Hi, I'm {profile.firstName} {profile.lastName}
               </h2>
 
               {/* Username */}
               {profile.username && (
-                <h3 className="bus-card-username">@{profile.username}</h3>
+                <h3
+                  className="bus-card-username"
+                  style={effectiveTextColor ? { color: effectiveTextColor, opacity: 0.7 } : undefined}
+                >
+                  @{profile.username}
+                </h3>
               )}
             </div>
 
@@ -416,7 +550,10 @@ export default function ProfilePage() {
               ) : (
                 <>
                   {profile.statementSummary ? (
-                    <p className="text-xl text-gray-800 leading-relaxed whitespace-pre-line text-center">
+                    <p
+                      className="text-xl leading-relaxed whitespace-pre-line text-center"
+                      style={{ color: effectiveTextColor || '#1f2937' }}
+                    >
                       {profile.statementSummary}
                     </p>
                   ) : isGeneratingAI ? (
@@ -474,6 +611,21 @@ export default function ProfilePage() {
                               </>
                             )}
                           </button>
+                          {/* Colors Button */}
+                          <button
+                            onClick={() => setShowCustomization(!showCustomization)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                              showCustomization
+                                ? 'text-white bg-gradient-to-r from-amber-500 to-orange-500'
+                                : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                            }`}
+                            title="Customize card colors"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clipRule="evenodd" />
+                            </svg>
+                            Colors
+                          </button>
                         </>
                       ) : !isGeneratingAI && (
                         <>
@@ -504,6 +656,167 @@ export default function ProfilePage() {
                 </>
               )}
             </div>
+
+            {/* Customization Panel */}
+            {isOwner && showCustomization && (
+              <div className="mb-6 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl animate-fadeIn">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                  Customize Your Card
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Page Background Color */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Page Background
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {branding.cardPageBgSwatches.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomPageBgColor(color)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            customPageBgColor === color ? 'border-blue-500 scale-110' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={customPageBgColor || '#ffffff'}
+                        onChange={(e) => setCustomPageBgColor(e.target.value)}
+                        className="w-8 h-8 rounded-full cursor-pointer border-2 border-gray-300"
+                        title="Custom color"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card Background Color */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Card Background
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {branding.cardBoxBgSwatches.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomBoxBgColor(color)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            customBoxBgColor === color ? 'border-blue-500 scale-110' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={customBoxBgColor || '#ffffff'}
+                        onChange={(e) => setCustomBoxBgColor(e.target.value)}
+                        className="w-8 h-8 rounded-full cursor-pointer border-2 border-gray-300"
+                        title="Custom color"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Text Color */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Text Color
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {branding.cardTextSwatches.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomTextColor(color)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            customTextColor === color ? 'border-blue-500 scale-110' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={customTextColor || '#111827'}
+                        onChange={(e) => setCustomTextColor(e.target.value)}
+                        className="w-8 h-8 rounded-full cursor-pointer border-2 border-gray-300"
+                        title="Custom color"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Background Image */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Background Image
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <label className="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Upload
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBgImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      {customBgImage && (
+                        <button
+                          onClick={() => setCustomBgImage('')}
+                          className="px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    {customBgImage && (
+                      <div className="mt-2 relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                        <img src={customBgImage} alt="Background preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    onClick={handleResetCustomization}
+                    className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Reset to Default
+                  </button>
+                  <button
+                    onClick={handleSaveCustomization}
+                    disabled={isSavingCustomization}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {isSavingCustomization ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Login message for non-logged-in users */}
             {!isLoggedIn && hasContactInfo && (

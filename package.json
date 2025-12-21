@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@aws-sdk/client-ses": "^3.956.0",
     "@hookform/resolvers": "^5.2.2",
     "bcryptjs": "^3.0.3",
     "mammoth": "^1.11.0",

@@ -224,7 +224,7 @@ model ApiSettings {
   id                  String   @id @default(cuid())
 
   // Email provider selection
-  emailProvider       String   @default("resend") // "resend" or "gmail"
+  emailProvider       String   @default("resend") // "resend", "gmail", or "ses"
 
   // Resend settings
   resendApiKey        String?
@@ -233,6 +233,12 @@ model ApiSettings {
   // Gmail SMTP settings
   gmailEmail          String?
   gmailAppPassword    String?
+
+  // Amazon SES settings
+  sesAccessKeyId      String?
+  sesSecretAccessKey  String?
+  sesRegion           String?  @default("us-east-1")
+  sesFromEmail        String?
 
   // Twilio settings
   twilioAccountSid    String?

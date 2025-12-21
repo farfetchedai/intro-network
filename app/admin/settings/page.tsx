@@ -8,6 +8,10 @@ interface ApiSettings {
   resendFromEmail: string
   gmailEmail: string
   gmailAppPassword: string
+  sesAccessKeyId: string
+  sesSecretAccessKey: string
+  sesRegion: string
+  sesFromEmail: string
   twilioAccountSid: string
   twilioAuthToken: string
   twilioPhoneNumber: string
@@ -21,6 +25,10 @@ export default function SettingsPage() {
     resendFromEmail: '',
     gmailEmail: '',
     gmailAppPassword: '',
+    sesAccessKeyId: '',
+    sesSecretAccessKey: '',
+    sesRegion: 'us-east-1',
+    sesFromEmail: '',
     twilioAccountSid: '',
     twilioAuthToken: '',
     twilioPhoneNumber: '',
@@ -78,9 +86,12 @@ export default function SettingsPage() {
       })
       const data = await response.json()
       if (data.success) {
-        const emailAddress = settings.emailProvider === 'gmail'
-          ? settings.gmailEmail
-          : settings.resendFromEmail
+        let emailAddress = settings.resendFromEmail
+        if (settings.emailProvider === 'gmail') {
+          emailAddress = settings.gmailEmail
+        } else if (settings.emailProvider === 'ses') {
+          emailAddress = settings.sesFromEmail
+        }
         alert(`Test email sent successfully to ${emailAddress}!`)
       } else {
         alert(`Failed to send test email: ${data.error}`)
@@ -131,7 +142,7 @@ export default function SettingsPage() {
       {/* Email Provider Selection */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Email Provider</h2>
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <label className="flex items-center cursor-pointer">
             <input
               type="radio"
@@ -153,6 +164,17 @@ export default function SettingsPage() {
               className="mr-2"
             />
             <span className="text-gray-700">Gmail SMTP</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="emailProvider"
+              value="ses"
+              checked={settings.emailProvider === 'ses'}
+              onChange={(e) => setSettings({ ...settings, emailProvider: e.target.value })}
+              className="mr-2"
+            />
+            <span className="text-gray-700">Amazon SES</span>
           </label>
         </div>
       </div>
@@ -267,6 +289,105 @@ export default function SettingsPage() {
             <button
               onClick={testEmail}
               disabled={testingEmail || !settings.gmailEmail || !settings.gmailAppPassword}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {testingEmail ? 'Sending...' : 'Send Test Email'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Amazon SES Settings */}
+      {settings.emailProvider === 'ses' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Amazon SES</h2>
+              <p className="text-sm text-gray-600 mt-1">Configure Amazon Simple Email Service</p>
+            </div>
+            <a
+              href="https://console.aws.amazon.com/ses/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              AWS Console →
+            </a>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Access Key ID
+              </label>
+              <input
+                type={showApiKeys ? 'text' : 'password'}
+                value={settings.sesAccessKeyId}
+                onChange={(e) => setSettings({ ...settings, sesAccessKeyId: e.target.value })}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="AKIA..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Secret Access Key
+              </label>
+              <input
+                type={showApiKeys ? 'text' : 'password'}
+                value={settings.sesSecretAccessKey}
+                onChange={(e) => setSettings({ ...settings, sesSecretAccessKey: e.target.value })}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Your secret access key"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Region
+              </label>
+              <select
+                value={settings.sesRegion}
+                onChange={(e) => setSettings({ ...settings, sesRegion: e.target.value })}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="us-east-1">US East (N. Virginia)</option>
+                <option value="us-east-2">US East (Ohio)</option>
+                <option value="us-west-1">US West (N. California)</option>
+                <option value="us-west-2">US West (Oregon)</option>
+                <option value="eu-west-1">EU (Ireland)</option>
+                <option value="eu-west-2">EU (London)</option>
+                <option value="eu-west-3">EU (Paris)</option>
+                <option value="eu-central-1">EU (Frankfurt)</option>
+                <option value="ap-south-1">Asia Pacific (Mumbai)</option>
+                <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                <option value="ap-northeast-2">Asia Pacific (Seoul)</option>
+                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
+                <option value="ca-central-1">Canada (Central)</option>
+                <option value="sa-east-1">South America (São Paulo)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                From Email Address
+              </label>
+              <input
+                type="email"
+                value={settings.sesFromEmail}
+                onChange={(e) => setSettings({ ...settings, sesFromEmail: e.target.value })}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="noreply@yourdomain.com"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Must be a verified email or domain in your SES account
+              </p>
+            </div>
+
+            <button
+              onClick={testEmail}
+              disabled={testingEmail || !settings.sesAccessKeyId || !settings.sesSecretAccessKey || !settings.sesFromEmail}
               className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {testingEmail ? 'Sending...' : 'Send Test Email'}

@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import nodemailer from 'nodemailer'
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { prisma } from '../prisma'
 
 export async function sendEmail({
@@ -50,6 +51,53 @@ export async function sendEmail({
       console.log('Gmail SMTP send successful:', info.messageId)
 
       return { success: true, provider: 'gmail' }
+    }
+
+    // Use Amazon SES if selected
+    if (settings.emailProvider === 'ses') {
+      if (!settings.sesAccessKeyId || !settings.sesSecretAccessKey || !settings.sesFromEmail) {
+        console.warn('Amazon SES credentials not configured. Email not sent.')
+        return { success: false, error: 'Amazon SES not configured' }
+      }
+
+      console.log('Sending email via Amazon SES:', {
+        from: settings.sesFromEmail,
+        to,
+        subject,
+        region: settings.sesRegion,
+      })
+
+      const sesClient = new SESClient({
+        region: settings.sesRegion || 'us-east-1',
+        credentials: {
+          accessKeyId: settings.sesAccessKeyId,
+          secretAccessKey: settings.sesSecretAccessKey,
+        },
+      })
+
+      const command = new SendEmailCommand({
+        Source: settings.sesFromEmail,
+        Destination: {
+          ToAddresses: [to],
+        },
+        Message: {
+          Subject: {
+            Data: subject,
+            Charset: 'UTF-8',
+          },
+          Body: {
+            Html: {
+              Data: html,
+              Charset: 'UTF-8',
+            },
+          },
+        },
+      })
+
+      const result = await sesClient.send(command)
+      console.log('Amazon SES send successful:', result.MessageId)
+
+      return { success: true, provider: 'ses', messageId: result.MessageId }
     }
 
     // Use Resend if selected or default

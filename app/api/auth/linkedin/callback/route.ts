@@ -4,6 +4,9 @@ import { exchangeCodeForToken, fetchLinkedInProfile } from '@/lib/linkedin'
 import { cookies } from 'next/headers'
 
 export async function GET(req: Request) {
+  // Use NEXT_PUBLIC_APP_URL for production, fallback to req.url origin for local dev
+  const getBaseUrl = () => process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin
+
   try {
     const { searchParams } = new URL(req.url)
     const code = searchParams.get('code')
@@ -15,13 +18,13 @@ export async function GET(req: Request) {
     if (error) {
       console.error('LinkedIn OAuth error:', error, errorDescription)
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(errorDescription || error)}`, req.url)
+        new URL(`/login?error=${encodeURIComponent(errorDescription || error)}`, getBaseUrl())
       )
     }
 
     if (!code) {
       return NextResponse.redirect(
-        new URL('/login?error=No authorization code received', req.url)
+        new URL('/login?error=No authorization code received', getBaseUrl())
       )
     }
 
@@ -31,7 +34,7 @@ export async function GET(req: Request) {
 
     if (!stateCookie) {
       return NextResponse.redirect(
-        new URL('/login?error=Invalid session state', req.url)
+        new URL('/login?error=Invalid session state', getBaseUrl())
       )
     }
 
@@ -40,7 +43,7 @@ export async function GET(req: Request) {
       stateData = JSON.parse(stateCookie.value)
     } catch {
       return NextResponse.redirect(
-        new URL('/login?error=Invalid session state', req.url)
+        new URL('/login?error=Invalid session state', getBaseUrl())
       )
     }
 
@@ -58,7 +61,7 @@ export async function GET(req: Request) {
 
     if (receivedState !== stateData.state) {
       return NextResponse.redirect(
-        new URL('/login?error=Invalid state parameter', req.url)
+        new URL('/login?error=Invalid state parameter', getBaseUrl())
       )
     }
 
@@ -142,7 +145,7 @@ export async function GET(req: Request) {
 
     // Build redirect URL with linkedin flag
     const returnTo = stateData.returnTo || '/onboarding'
-    const redirectUrl = new URL(returnTo, req.url)
+    const redirectUrl = new URL(returnTo, getBaseUrl())
     redirectUrl.searchParams.set('linkedin', 'connected')
 
     // Create response with redirect
@@ -169,8 +172,9 @@ export async function GET(req: Request) {
     return response
   } catch (error) {
     console.error('LinkedIn OAuth callback failed:', error)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin
     return NextResponse.redirect(
-      new URL('/login?error=LinkedIn authentication failed', req.url)
+      new URL('/login?error=LinkedIn authentication failed', baseUrl)
     )
   }
 }

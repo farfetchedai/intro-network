@@ -651,11 +651,11 @@ function OnboardingContent() {
           {/* Step 1: Contact Details */}
           {step === 1 && (
             <div className="backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 animate-fadeIn" style={getFormBackgroundStyle()}>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              <h2 className="text-center text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                 Let's get started
               </h2>
-              <p className="text-gray-600 mb-8">
-                Tell us a bit about yourself
+              <p className="text-center text-gray-600 mb-8">
+                First off, let's create your account:
               </p>
 
               {/* LinkedIn Login Button */}
@@ -772,11 +772,11 @@ function OnboardingContent() {
           {/* Step 2: Profile Picture */}
           {step === 2 && (
             <div className="backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 animate-fadeIn" style={getFormBackgroundStyle()}>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Add your profile picture
+              <h2 className="text-center text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Hey {formData.firstName}!
               </h2>
-              <p className="text-gray-600 mb-8">
-                Help people recognize you
+              <p className="text-center text-gray-600 mb-8">
+                Please add a profile pic and choose a username.
               </p>
 
               <form onSubmit={handleStep2Submit} className="space-y-6">
@@ -807,7 +807,7 @@ function OnboardingContent() {
                 </div>
 
                 {/* Username Field */}
-                <div className="max-w-md mx-auto">
+                <div className="mx-auto">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Choose your username
                   </label>
@@ -871,7 +871,7 @@ function OnboardingContent() {
                 </div>
 
                 {/* Phone Number Field */}
-                <div className="max-w-md mx-auto">
+                <div className="mx-auto">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Phone Number
                   </label>

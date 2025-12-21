@@ -988,14 +988,8 @@ export default function ProfilePage() {
               {isOwner && (
                 <>
                   <button
-                    onClick={() => router.push('/dashboard')}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
-                  >
-                    Go to Dashboard
-                  </button>
-                  <button
                     onClick={() => router.push('/onboarding')}
-                    className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
                   >
                     Edit Profile
                   </button>

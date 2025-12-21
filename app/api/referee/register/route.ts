@@ -82,29 +82,55 @@ export async function POST(req: Request) {
     const profilePicture = validatedData.profilePicture?.trim() || null
     const statementSummary = validatedData.statementSummary?.trim() || null
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          email ? { email } : { id: 'never-match' },
-          phone ? { phone } : { id: 'never-match' },
-        ],
-      },
-    })
+    // Check if user already exists - prefer userId if provided (user is logged in)
+    let existingUser = null
+    if (validatedData.userId) {
+      existingUser = await prisma.user.findUnique({
+        where: { id: validatedData.userId },
+      })
+    }
+
+    // If no userId or user not found, try email/phone lookup
+    if (!existingUser) {
+      existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            email ? { email } : { id: 'never-match' },
+            phone ? { phone } : { id: 'never-match' },
+          ],
+        },
+      })
+    }
 
     if (existingUser) {
       // User exists - update their information
-      // Check if email/phone/username are being changed to avoid conflicts with other users
+      // Only update fields that are explicitly provided (not undefined)
       const updateData: any = {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
-        profilePicture: profilePicture !== null ? profilePicture : undefined,
-        statementSummary,
-        skills: validatedData.skills ? JSON.stringify(validatedData.skills) : null,
-        companyName: validatedData.companyName,
-        achievement: validatedData.achievement,
-        achievementMethod: validatedData.achievementMethod,
-        introRequest: validatedData.introRequest,
+      }
+
+      // Only update optional fields if they are explicitly provided
+      if (profilePicture !== null) {
+        updateData.profilePicture = profilePicture
+      }
+      if (statementSummary !== undefined) {
+        updateData.statementSummary = statementSummary
+      }
+      if (validatedData.skills !== undefined) {
+        updateData.skills = validatedData.skills ? JSON.stringify(validatedData.skills) : null
+      }
+      if (validatedData.companyName !== undefined) {
+        updateData.companyName = validatedData.companyName
+      }
+      if (validatedData.achievement !== undefined) {
+        updateData.achievement = validatedData.achievement
+      }
+      if (validatedData.achievementMethod !== undefined) {
+        updateData.achievementMethod = validatedData.achievementMethod
+      }
+      if (validatedData.introRequest !== undefined) {
+        updateData.introRequest = validatedData.introRequest
       }
 
       // Only update email if it's different from current and not null

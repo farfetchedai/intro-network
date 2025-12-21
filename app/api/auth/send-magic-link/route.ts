@@ -5,7 +5,7 @@ import { sendEmail } from '@/lib/email'
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json()
+    const { email, redirectUrl, createIfNotExists } = await req.json()
 
     if (!email) {
       return NextResponse.json(
@@ -15,9 +15,21 @@ export async function POST(req: Request) {
     }
 
     // Find user by email
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email },
     })
+
+    // If user doesn't exist and createIfNotExists is true, create a new account
+    if (!user && createIfNotExists) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          firstName: '',
+          lastName: '',
+          userType: 'REFEREE',
+        },
+      })
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -30,16 +42,21 @@ export async function POST(req: Request) {
     const token = crypto.randomBytes(32).toString('hex')
     const expiry = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
 
-    // Save token to database
+    // Save token and optional redirect URL to database
     await prisma.user.update({
       where: { id: user.id },
       data: {
         magicLinkToken: token,
         magicLinkExpiry: expiry,
+        magicLinkRedirect: redirectUrl || null,
       },
     })
 
-    const magicLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify?token=${token}`
+    // Include redirect URL in magic link if provided
+    let magicLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify?token=${token}`
+    if (redirectUrl) {
+      magicLink += `&redirect=${encodeURIComponent(redirectUrl)}`
+    }
 
     // Send email using unified email utility
     try {

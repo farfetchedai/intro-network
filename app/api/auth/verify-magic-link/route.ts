@@ -32,12 +32,16 @@ export async function POST(req: Request) {
       )
     }
 
-    // Clear the token (single use)
+    // Save redirect URL before clearing
+    const redirectUrl = user.magicLinkRedirect
+
+    // Clear the token and redirect (single use)
     await prisma.user.update({
       where: { id: user.id },
       data: {
         magicLinkToken: null,
         magicLinkExpiry: null,
+        magicLinkRedirect: null,
       },
     })
 
@@ -50,6 +54,7 @@ export async function POST(req: Request) {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
+        magicLinkRedirect: redirectUrl,
       },
     })
 

@@ -45,6 +45,7 @@ model User {
   // Magic link authentication
   magicLinkToken     String?   @unique
   magicLinkExpiry    DateTime?
+  magicLinkRedirect  String?   // URL to redirect to after login
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

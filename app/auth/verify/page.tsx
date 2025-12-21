@@ -11,6 +11,7 @@ function VerifyContent() {
 
   useEffect(() => {
     const token = searchParams.get('token')
+    const redirect = searchParams.get('redirect')
 
     if (!token) {
       setStatus('error')
@@ -18,10 +19,10 @@ function VerifyContent() {
       return
     }
 
-    verifyToken(token)
+    verifyToken(token, redirect)
   }, [searchParams])
 
-  const verifyToken = async (token: string) => {
+  const verifyToken = async (token: string, redirectUrl: string | null) => {
     try {
       const response = await fetch('/api/auth/verify-magic-link', {
         method: 'POST',
@@ -63,9 +64,13 @@ function VerifyContent() {
 
         setStatus('success')
 
-        // Redirect to onboarding step 2 after a short delay (user already completed step 1)
+        // Determine redirect destination
+        // Priority: 1. redirectUrl from magic link, 2. user's saved redirect, 3. onboarding
+        const finalRedirect = redirectUrl || data.user.magicLinkRedirect || '/onboarding?fromMagicLink=true'
+
+        // Redirect after a short delay
         setTimeout(() => {
-          router.push('/onboarding?fromMagicLink=true')
+          router.push(finalRedirect)
         }, 2000)
       } else {
         setStatus('error')

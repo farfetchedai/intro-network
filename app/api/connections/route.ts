@@ -24,6 +24,7 @@ export async function GET(req: Request) {
             id: true,
             firstName: true,
             lastName: true,
+            email: true,
             username: true,
             profilePicture: true,
             companyName: true,

@@ -49,9 +49,16 @@ function FirstDegreeContent() {
     email: string
     phone: string
     company: string
+    linkedUser?: {
+      id: string
+      username: string | null
+      profilePicture: string | null
+      hasCompletedOnboarding: boolean
+    } | null
   }>>([])
 
   const [firstDegreeUserId, setFirstDegreeUserId] = useState('')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [errorMessages, setErrorMessages] = useState<string[]>([])
   const [existingReferrals, setExistingReferrals] = useState<Array<any>>([])
   const [hasExistingReferrals, setHasExistingReferrals] = useState(false)
@@ -373,45 +380,33 @@ function FirstDegreeContent() {
               const authData = await authResponse.json()
               console.log('[Pre-populate] Auth data:', authData)
 
-              if (authData.success && authData.userId) {
-                console.log('[Pre-populate] User is logged in with ID:', authData.userId)
+              // /api/auth/me returns { success: true, user: { id, firstName, ... } }
+              if (authData.success && authData.user) {
+                console.log('[Pre-populate] User is logged in with ID:', authData.user.id)
 
-                // Fetch logged-in user's data
-                const userResponse = await fetch(`/api/user?userId=${authData.userId}`)
-                console.log('[Pre-populate] User response status:', userResponse.status)
+                // User data is already in authData.user, no need for separate fetch
+                console.log('[Pre-populate] Setting first degree info:', {
+                  firstName: authData.user.firstName,
+                  lastName: authData.user.lastName,
+                  email: authData.user.email,
+                  phone: authData.user.phone,
+                })
 
-                if (userResponse.ok) {
-                  const userData = await userResponse.json()
-                  console.log('[Pre-populate] User data:', userData)
-
-                  if (userData.user) {
-                    console.log('[Pre-populate] Setting first degree info:', {
-                      firstName: userData.user.firstName,
-                      lastName: userData.user.lastName,
-                      email: userData.user.email,
-                      phone: userData.user.phone,
-                    })
-
-                    setFirstDegreeInfo({
-                      firstName: userData.user.firstName || '',
-                      lastName: userData.user.lastName || '',
-                      email: userData.user.email || '',
-                      phone: userData.user.phone || '',
-                    })
-                    setFirstDegreeUserId(userData.user.id)
-                    setContactLoaded(true)
-                    console.log('[Pre-populate] Successfully pre-populated user data')
-                  } else {
-                    console.log('[Pre-populate] No user object in response')
-                  }
-                } else {
-                  console.log('[Pre-populate] User response not ok:', await userResponse.text())
-                }
+                setFirstDegreeInfo({
+                  firstName: authData.user.firstName || '',
+                  lastName: authData.user.lastName || '',
+                  email: authData.user.email || '',
+                  phone: authData.user.phone || '',
+                })
+                setFirstDegreeUserId(authData.user.id)
+                setContactLoaded(true)
+                setIsLoggedIn(true)
+                console.log('[Pre-populate] Successfully pre-populated user data')
               } else {
                 console.log('[Pre-populate] User not authenticated or invalid auth data')
               }
             } else {
-              console.log('[Pre-populate] Auth response not ok:', await authResponse.text())
+              console.log('[Pre-populate] Auth response not ok (user not logged in)')
             }
           } catch (authError) {
             console.error('[Pre-populate] Error fetching logged-in user data:', authError)
@@ -484,6 +479,7 @@ function FirstDegreeContent() {
         email: c.email || '',
         phone: c.phone || '',
         company: c.company || '',
+        linkedUser: c.linkedUser || null,
       })))
     }
   }
@@ -639,7 +635,12 @@ function FirstDegreeContent() {
     if (step === 2) bg = brandingSettings.flowBStep2Background
     if (step === 3) bg = brandingSettings.flowBStep3Background
     if (step === 4) bg = brandingSettings.flowBStep4Background
-    if (bg.startsWith('#') || bg.startsWith('rgb')) return { backgroundColor: bg }
+    if (bg.startsWith('#') || bg.startsWith('rgb')) {
+      return {
+        backgroundColor: bg,
+        transition: 'background-color 700ms ease-in-out'
+      }
+    }
     return {}
   }
 
@@ -680,7 +681,10 @@ function FirstDegreeContent() {
   ]
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`} style={getStepBackgroundStyle()}>
+    <div
+      className={`min-h-screen flex flex-col bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`}
+      style={getStepBackgroundStyle()}
+    >
       {/* Main Header */}
       <Header />
 
@@ -692,15 +696,37 @@ function FirstDegreeContent() {
         <div
           className="min-h-full flex items-center justify-center p-4 lg:p-8"
         >
-          <div className={`w-full max-w-3xl transition-all duration-500 ${
-            direction === 'down' ? 'animate-slideDown' : 'animate-slideUp'
-          }`}>
+          <div key={step} className="w-full max-w-3xl animate-fadeIn">
             <div className="backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-12" style={getFormBackgroundStyle()}>
               {step === 1 && (
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                    {referee?.firstName} would be most grateful for some intros
-                  </h2>
+                  {/* Referee Profile Header */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <a href={`/${referee?.username || refereeId}`} className="flex-shrink-0">
+                      {referee?.profilePicture ? (
+                        <img
+                          src={referee.profilePicture}
+                          alt={`${referee?.firstName} ${referee?.lastName}`}
+                          className="w-16 h-16 rounded-full object-cover ring-2 ring-purple-200 hover:ring-purple-400 transition-all"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold text-xl ring-2 ring-purple-200 hover:ring-purple-400 transition-all">
+                          {referee?.firstName?.charAt(0)}{referee?.lastName?.charAt(0)}
+                        </div>
+                      )}
+                    </a>
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900">
+                        <a
+                          href={`/${referee?.username || refereeId}`}
+                          className="hover:text-purple-600 transition-colors"
+                        >
+                          {referee?.firstName} {referee?.lastName}
+                        </a>
+                        {' '}would be most grateful for some intros
+                      </h2>
+                    </div>
+                  </div>
                   <p className="text-lg text-gray-700 mb-8">
                     NotWhatButWho makes it almost easy to connect people in your network.
                   </p>
@@ -758,8 +784,27 @@ function FirstDegreeContent() {
                   </div>
 
                   <form onSubmit={handleStep1Submit} className="space-y-6">
-                    {contactLoaded ? (
-                      // Display pre-loaded contact info
+                    {isLoggedIn ? (
+                      // Logged-in user - show simple welcome message, no input fields needed
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0">
+                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-lg font-semibold text-green-900">
+                              Welcome back, {firstDegreeInfo.firstName}!
+                            </p>
+                            <p className="text-sm text-green-700">
+                              You're logged in and ready to help {referee?.firstName}.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : contactLoaded ? (
+                      // Contact info pre-loaded from URL parameter
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                         <p className="text-sm font-semibold text-blue-900 mb-3">
                           Welcome back, {firstDegreeInfo.firstName}!
@@ -1215,18 +1260,49 @@ function FirstDegreeContent() {
                         )}
                         {referrals.map((referral, index) => {
                           const isContacted = referral.id && contactedIds.has(referral.id)
+                          const hasProfile = referral.linkedUser?.username
 
                           return (
                             <div
                               key={referral.id || index}
                               className="flex items-center gap-4 bg-white border-2 border-gray-200 rounded-xl p-4"
                             >
+                              {/* Profile Picture / Avatar */}
+                              {hasProfile ? (
+                                <a href={`/${referral.linkedUser?.username}`} className="flex-shrink-0">
+                                  {referral.linkedUser?.profilePicture ? (
+                                    <img
+                                      src={referral.linkedUser.profilePicture}
+                                      alt={`${referral.firstName} ${referral.lastName}`}
+                                      className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-200 hover:ring-purple-400 transition-all"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold ring-2 ring-purple-200 hover:ring-purple-400 transition-all">
+                                      {referral.firstName.charAt(0)}{referral.lastName.charAt(0)}
+                                    </div>
+                                  )}
+                                </a>
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold flex-shrink-0">
+                                  {referral.firstName.charAt(0)}{referral.lastName.charAt(0)}
+                                </div>
+                              )}
+
                               <div className="flex-1 grid grid-cols-4 gap-3 items-center">
                                 <div>
                                   <p className="text-xs text-gray-500 mb-1">Name</p>
-                                  <p className="font-semibold text-gray-900">
-                                    {referral.firstName} {referral.lastName}
-                                  </p>
+                                  {hasProfile ? (
+                                    <a
+                                      href={`/${referral.linkedUser?.username}`}
+                                      className="font-semibold text-purple-600 hover:text-purple-800 hover:underline"
+                                    >
+                                      {referral.firstName} {referral.lastName}
+                                    </a>
+                                  ) : (
+                                    <p className="font-semibold text-gray-900">
+                                      {referral.firstName} {referral.lastName}
+                                    </p>
+                                  )}
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-500 mb-1">Email</p>
@@ -1336,6 +1412,23 @@ function FirstDegreeContent() {
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   )
 }

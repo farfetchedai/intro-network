@@ -101,6 +101,7 @@ export default function DashboardPage() {
   const [pendingReceived, setPendingReceived] = useState<ConnectionRequest[]>([])
   const [pendingSent, setPendingSent] = useState<ConnectionRequest[]>([])
   const [respondingTo, setRespondingTo] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     // Get current user from session cookie
@@ -173,17 +174,18 @@ export default function DashboardPage() {
       })
       const data = await response.json()
       if (data.success) {
+        setActionError('')
         const request = pendingReceived.find(r => r.id === requestId)
         setPendingReceived(prev => prev.filter(r => r.id !== requestId))
         if (action === 'accept' && request?.fromUser) {
           setMyConnections(prev => [request.fromUser!, ...prev])
         }
       } else {
-        alert(data.error || 'Failed to respond to request')
+        setActionError(data.error || 'Failed to respond to request. Please try again.')
       }
     } catch (err) {
       console.error('Failed to respond to request:', err)
-      alert('Failed to respond to request')
+      setActionError('An unexpected error occurred. Please try again.')
     } finally {
       setRespondingTo(null)
     }
@@ -200,13 +202,14 @@ export default function DashboardPage() {
       })
 
       if (response.ok) {
+        setActionError('')
         setContacts(contacts.filter((c) => c.id !== contactId))
       } else {
-        alert('Failed to delete contact')
+        setActionError('Failed to delete contact. Please try again.')
       }
     } catch (error) {
       console.error('Error deleting contact:', error)
-      alert('An error occurred')
+      setActionError('An unexpected error occurred while deleting the contact.')
     }
   }
 
@@ -327,6 +330,21 @@ export default function DashboardPage() {
               View All →
             </a>
           </div>
+
+          {/* Error Banner */}
+          {actionError && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-red-700 font-medium text-sm">{actionError}</p>
+              <button onClick={() => setActionError('')} className="ml-auto text-red-500 hover:text-red-700">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Requests Received */}

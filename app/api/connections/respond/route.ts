@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { sendEmail } from '@/lib/email'
-import { notifyConnectionAccepted, notifyConnectionDeclined } from '@/lib/notifications'
+import { notifyConnectionAccepted, notifyConnectionDeclined, notifyNowConnected } from '@/lib/notifications'
 
 const respondSchema = z.object({
   requestId: z.string().optional(),
@@ -94,12 +94,21 @@ export async function POST(req: Request) {
         }),
       ])
 
-      // Create in-app notification for the requester
-      await notifyConnectionAccepted(connectionRequest.fromUserId, {
+      // Create in-app notifications for both users
+      // Notify the requester that their request was accepted
+      await notifyNowConnected(connectionRequest.fromUserId, {
         id: connectionRequest.toUserId,
         firstName: connectionRequest.toUser.firstName,
         lastName: connectionRequest.toUser.lastName,
         username: connectionRequest.toUser.username,
+      })
+
+      // Notify the acceptor that they are now connected
+      await notifyNowConnected(connectionRequest.toUserId, {
+        id: connectionRequest.fromUserId,
+        firstName: connectionRequest.fromUser.firstName,
+        lastName: connectionRequest.fromUser.lastName,
+        username: connectionRequest.fromUser.username,
       })
 
       // Send acceptance notification email

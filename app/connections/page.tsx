@@ -58,6 +58,7 @@ interface ConnectionRequest {
 
 export default function ConnectionsPage() {
   const router = useRouter()
+  const [requestError, setRequestError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType>('requests')
   const [userId, setUserId] = useState('')
@@ -173,17 +174,18 @@ export default function ConnectionsPage() {
       })
       const data = await response.json()
       if (data.success) {
+        setRequestError('')
         const request = pendingReceived.find(r => r.id === requestId)
         setPendingReceived(prev => prev.filter(r => r.id !== requestId))
         if (action === 'accept' && request?.fromUser) {
           setMyConnections(prev => [request.fromUser!, ...prev])
         }
       } else {
-        alert(data.error || 'Failed to respond to request')
+        setRequestError(data.error || 'Failed to respond to request. Please try again.')
       }
     } catch (err) {
       console.error('Failed to respond to request:', err)
-      alert('Failed to respond to request')
+      setRequestError('An unexpected error occurred. Please try again.')
     } finally {
       setRespondingTo(null)
     }
@@ -235,8 +237,25 @@ export default function ConnectionsPage() {
     }
   }
 
+  // Deduplicate contacts by email (keep first occurrence)
+  const deduplicatedContacts = contacts.reduce((acc, contact) => {
+    // Skip if we already have a contact with this email
+    if (contact.email) {
+      const existingIndex = acc.findIndex(c => c.email?.toLowerCase() === contact.email?.toLowerCase())
+      if (existingIndex !== -1) {
+        // If the new one has linkedUser and existing doesn't, replace it
+        if (contact.linkedUser && !acc[existingIndex].linkedUser) {
+          acc[existingIndex] = contact
+        }
+        return acc
+      }
+    }
+    acc.push(contact)
+    return acc
+  }, [] as Contact[])
+
   // Filter contacts based on search query
-  const filteredContacts = contacts.filter((contact) => {
+  const filteredContacts = deduplicatedContacts.filter((contact) => {
     if (!searchQuery.trim()) return true
     const query = searchQuery.toLowerCase()
     return (
@@ -317,9 +336,9 @@ export default function ConnectionsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 My Contacts
-                {contacts.length > 0 && (
+                {deduplicatedContacts.length > 0 && (
                   <span className="ml-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-                    {contacts.length}
+                    {deduplicatedContacts.length}
                   </span>
                 )}
               </span>
@@ -347,6 +366,21 @@ export default function ConnectionsPage() {
           {/* Requests Tab Content */}
           {activeTab === 'requests' && (
             <div className="space-y-6">
+              {/* Error Banner */}
+              {requestError && (
+                <div className="p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-700 font-medium text-sm">{requestError}</p>
+                  <button onClick={() => setRequestError('')} className="ml-auto text-red-500 hover:text-red-700">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
               {/* Pending Received */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -570,7 +604,7 @@ export default function ConnectionsPage() {
                   </svg>
                   <p className="text-gray-600">Loading contacts...</p>
                 </div>
-              ) : contacts.length === 0 ? (
+              ) : deduplicatedContacts.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-md p-12 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -597,59 +631,86 @@ export default function ConnectionsPage() {
               ) : (
                 <div className="bg-white rounded-xl shadow-md overflow-hidden">
                   <div className="divide-y divide-gray-200">
-                    {filteredContacts.map((contact) => (
-                      <div key={contact.id} className="p-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-4">
-                          {contact.linkedUser?.profilePicture ? (
-                            <img
-                              src={contact.linkedUser.profilePicture}
-                              alt={`${contact.firstName} ${contact.lastName}`}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                              {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900">
-                              {contact.firstName} {contact.lastName}
-                            </p>
-                            {contact.company && (
-                              <p className="text-sm text-gray-600">{contact.company}</p>
+                    {filteredContacts.map((contact) => {
+                      const hasBusinessCard = contact.linkedUser?.username && contact.linkedUser?.hasCompletedOnboarding
+                      const profileUrl = hasBusinessCard ? `/${contact.linkedUser!.username}` : null
+
+                      return (
+                        <div key={contact.id} className="p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center gap-4">
+                            {/* Profile Picture - clickable if has Business Card */}
+                            {profileUrl ? (
+                              <a href={profileUrl} className="flex-shrink-0">
+                                {contact.linkedUser?.profilePicture ? (
+                                  <img
+                                    src={contact.linkedUser.profilePicture}
+                                    alt={`${contact.firstName} ${contact.lastName}`}
+                                    className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-200 hover:ring-purple-400 transition-all"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg ring-2 ring-purple-200 hover:ring-purple-400 transition-all">
+                                    {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                                  </div>
+                                )}
+                              </a>
+                            ) : contact.linkedUser?.profilePicture ? (
+                              <img
+                                src={contact.linkedUser.profilePicture}
+                                alt={`${contact.firstName} ${contact.lastName}`}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                                {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                              </div>
                             )}
-                            <div className="flex items-center gap-4 mt-1">
-                              {contact.email && (
-                                <a href={`mailto:${contact.email}`} className="text-sm text-blue-600 hover:underline">
-                                  {contact.email}
+                            <div className="flex-1 min-w-0">
+                              {/* Name - clickable if has Business Card */}
+                              {profileUrl ? (
+                                <a href={profileUrl} className="font-semibold text-purple-600 hover:text-purple-800 hover:underline">
+                                  {contact.firstName} {contact.lastName}
+                                </a>
+                              ) : (
+                                <p className="font-semibold text-gray-900">
+                                  {contact.firstName} {contact.lastName}
+                                </p>
+                              )}
+                              {contact.company && (
+                                <p className="text-sm text-gray-600">{contact.company}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-1">
+                                {contact.email && (
+                                  <a href={`mailto:${contact.email}`} className="text-sm text-blue-600 hover:underline">
+                                    {contact.email}
+                                  </a>
+                                )}
+                                {contact.phone && (
+                                  <span className="text-sm text-gray-500">{contact.phone}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {hasBusinessCard && (
+                                <a
+                                  href={profileUrl!}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-medium rounded-lg hover:shadow-md transition-all"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                                  </svg>
+                                  View Card
                                 </a>
                               )}
-                              {contact.phone && (
-                                <span className="text-sm text-gray-500">{contact.phone}</span>
+                              {contact.degreeType && (
+                                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                  {contact.degreeType === 'FIRST_DEGREE' ? '1st Degree' : contact.degreeType === 'SECOND_DEGREE' ? '2nd Degree' : contact.degreeType}
+                                </span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {contact.linkedUser?.username && contact.linkedUser?.hasCompletedOnboarding && (
-                              <a
-                                href={`/${contact.linkedUser.username}`}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-medium rounded-lg hover:shadow-md transition-all"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                                </svg>
-                                View Card
-                              </a>
-                            )}
-                            {contact.degreeType && (
-                              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                {contact.degreeType === 'FIRST_DEGREE' ? '1st Degree' : contact.degreeType}
-                              </span>
-                            )}
-                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}

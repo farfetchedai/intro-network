@@ -51,8 +51,11 @@ function OnboardingContent() {
 
   // Form validation errors
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
-  const [generalError, setGeneralError] = useState<string>('')
+  const [formError, setFormError] = useState<string>('')
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+
+  // Sign In mode toggle for Step 1
+  const [isSignInMode, setIsSignInMode] = useState(false)
 
   // AI Profile toggle
   const [hasExistingAIProfile, setHasExistingAIProfile] = useState(false)
@@ -235,11 +238,41 @@ function OnboardingContent() {
     const linkedInParam = searchParams.get('linkedin')
     const fromMagicLink = searchParams.get('fromMagicLink')
 
+    // Function to handle pending connection requests
+    const processPendingConnection = async () => {
+      const pendingConnectionData = localStorage.getItem('pendingConnection')
+      if (pendingConnectionData) {
+        try {
+          const pendingConnection = JSON.parse(pendingConnectionData)
+          // Send a connection request (with email notification)
+          const connectionResponse = await fetch('/api/connections/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              toUserId: pendingConnection.userId,
+              note: `Hi! I'd love to connect with you.`,
+            }),
+          })
+          const connectionData = await connectionResponse.json()
+          if (connectionData.success) {
+            console.log(`Connection request sent to ${pendingConnection.firstName} ${pendingConnection.lastName}`)
+          }
+          // Clear pending connection regardless of success
+          localStorage.removeItem('pendingConnection')
+        } catch (error) {
+          console.error('Error sending connection request:', error)
+          localStorage.removeItem('pendingConnection')
+        }
+      }
+    }
+
     if (linkedInParam === 'connected') {
       setLinkedInConnected(true)
       // User just logged in via LinkedIn - skip to step 2
       // The user data will be fetched by fetchCurrentUser effect
       setStep(2)
+      // Process any pending connection request from before login
+      processPendingConnection()
       // Clean up the URL
       const url = new URL(window.location.href)
       url.searchParams.delete('linkedin')
@@ -248,6 +281,8 @@ function OnboardingContent() {
       // User just verified via magic link - skip to step 2
       // They already completed step 1 before magic link was sent
       setStep(2)
+      // Process any pending connection request from before login
+      processPendingConnection()
       // Clean up the URL
       const url = new URL(window.location.href)
       url.searchParams.delete('fromMagicLink')
@@ -281,6 +316,7 @@ function OnboardingContent() {
 
     // Clear previous errors
     setValidationErrors({})
+    setFormError('')
 
     try {
       // Combine country code and phone number
@@ -319,25 +355,28 @@ function OnboardingContent() {
           // New user or logged-in user - proceed to step 2
           setUserId(data.user.id)
 
-          // Handle pending connection from profile page
+          // Handle pending connection request from profile page
           const pendingConnectionData = localStorage.getItem('pendingConnection')
           if (pendingConnectionData) {
             try {
               const pendingConnection = JSON.parse(pendingConnectionData)
-              // Create the connection
-              const connectionResponse = await fetch('/api/user/add-connection', {
+              // Send a connection request (with email notification)
+              const connectionResponse = await fetch('/api/connections/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetUserId: pendingConnection.userId }),
+                body: JSON.stringify({
+                  toUserId: pendingConnection.userId,
+                  note: `Hi! I just created my account and would love to connect with you.`,
+                }),
               })
               const connectionData = await connectionResponse.json()
               if (connectionData.success) {
-                console.log(`Connected with ${pendingConnection.firstName} ${pendingConnection.lastName}`)
+                console.log(`Connection request sent to ${pendingConnection.firstName} ${pendingConnection.lastName}`)
               }
               // Clear pending connection regardless of success
               localStorage.removeItem('pendingConnection')
             } catch (error) {
-              console.error('Error processing pending connection:', error)
+              console.error('Error sending connection request:', error)
               localStorage.removeItem('pendingConnection')
             }
           }
@@ -355,21 +394,88 @@ function OnboardingContent() {
             }
           })
           setValidationErrors(errors)
+          // Build a user-friendly error message
+          const errorMessages = Object.values(errors)
+          if (errorMessages.length > 0) {
+            setFormError(errorMessages.join('. '))
+          } else {
+            setFormError(data.error || 'Please check the form and try again.')
+          }
+        } else {
+          setFormError(data.error || 'Failed to create account. Please check the form and try again.')
         }
-        alert(data.error || 'Failed to create account. Please check the form for errors.')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('An error occurred')
+      setFormError('An unexpected error occurred. Please try again.')
+    }
+  }
+
+  const handleSignInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Clear previous errors
+    setValidationErrors({})
+    setFormError('')
+
+    if (!formData.email) {
+      setFormError('Please enter your email address.')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/send-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          redirectUrl: '/onboarding?fromMagicLink=true',
+          createIfNotExists: false,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setUserEmail(formData.email)
+        setMagicLinkSent(true)
+        if (data.devLink) {
+          setDevLink(data.devLink)
+        }
+      } else {
+        if (data.error === 'User not found') {
+          setFormError('No account found with this email address. Please register instead.')
+        } else {
+          setFormError(data.error || 'Failed to send login link. Please try again.')
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      setFormError('An unexpected error occurred. Please try again.')
     }
   }
 
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Check if username is available before continuing
+    // Clear previous errors
+    setValidationErrors({})
+    setFormError('')
+
+    // Validate profile picture
+    if (!profilePicturePreview) {
+      setFormError('Please upload a profile picture to continue.')
+      return
+    }
+
+    // Validate username
+    if (!username || username.length < 3) {
+      setFormError('Please enter a username with at least 3 characters.')
+      return
+    }
+
     if (usernameAvailable !== true) {
-      alert('Please choose an available username')
+      setFormError('This username is not available. Please choose a different one.')
       return
     }
 
@@ -395,12 +501,30 @@ function OnboardingContent() {
         const data = await response.json()
 
         if (!data.success) {
-          alert(data.error || 'Failed to save profile')
+          // Parse validation errors
+          if (data.details && Array.isArray(data.details)) {
+            const errors: Record<string, string> = {}
+            data.details.forEach((detail: any) => {
+              if (detail.path && detail.path.length > 0) {
+                const fieldName = detail.path[0]
+                errors[fieldName] = detail.message
+              }
+            })
+            setValidationErrors(errors)
+            const errorMessages = Object.values(errors)
+            if (errorMessages.length > 0) {
+              setFormError(errorMessages.join('. '))
+            } else {
+              setFormError(data.error || 'Please check your information and try again.')
+            }
+          } else {
+            setFormError(data.error || 'Failed to save profile. Please try again.')
+          }
           return
         }
       } catch (error) {
         console.error('Error saving profile:', error)
-        alert('Failed to save profile')
+        setFormError('An unexpected error occurred while saving your profile. Please try again.')
         return
       }
     }
@@ -413,8 +537,20 @@ function OnboardingContent() {
 
     // Clear previous errors
     setValidationErrors({})
+    setFormError('')
 
     const skills = [skill1, skill2].filter(s => s.trim() !== '')
+
+    // Validate required fields
+    if (!skill1.trim()) {
+      setFormError('Please enter your primary skill.')
+      return
+    }
+
+    if (!introRequest.trim()) {
+      setFormError('Please tell us what kind of introductions you\'re looking for.')
+      return
+    }
 
     try {
       // Combine country code and phone number
@@ -449,12 +585,19 @@ function OnboardingContent() {
             }
           })
           setValidationErrors(errors)
+          const errorMessages = Object.values(errors)
+          if (errorMessages.length > 0) {
+            setFormError(errorMessages.join('. '))
+          } else {
+            setFormError(data.error || 'Please check your information and try again.')
+          }
+        } else {
+          setFormError(data.error || 'Failed to update profile. Please try again.')
         }
-        alert(data.error || 'Failed to update profile. Please check the form for errors.')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('An error occurred')
+      setFormError('An unexpected error occurred. Please try again.')
     }
   }
 
@@ -463,8 +606,27 @@ function OnboardingContent() {
 
     // Clear previous errors
     setValidationErrors({})
-    setGeneralError('')
+    setFormError('')
     setIsGeneratingAI(true)
+
+    // Validate required fields
+    if (!achievement.company.trim()) {
+      setFormError('Please enter your company name.')
+      setIsGeneratingAI(false)
+      return
+    }
+
+    if (!achievement.achievement.trim()) {
+      setFormError('Please describe your achievement.')
+      setIsGeneratingAI(false)
+      return
+    }
+
+    if (!achievement.achievementMethod.trim()) {
+      setFormError('Please describe how you achieved it.')
+      setIsGeneratingAI(false)
+      return
+    }
 
     const skills = [skill1, skill2].filter(s => s.trim() !== '')
 
@@ -580,19 +742,19 @@ function OnboardingContent() {
             }
           })
           setValidationErrors(errors)
-
-          // Only show general error if there are no field-specific errors
-          if (Object.keys(errors).length === 0) {
-            setGeneralError(data.error || 'Failed to complete profile')
+          const errorMessages = Object.values(errors)
+          if (errorMessages.length > 0) {
+            setFormError(errorMessages.join('. '))
+          } else {
+            setFormError(data.error || 'Please check your information and try again.')
           }
         } else {
-          // No validation details, show general error
-          setGeneralError(data.error || 'Failed to complete profile')
+          setFormError(data.error || 'Failed to complete profile. Please try again.')
         }
       }
     } catch (error) {
       console.error('Error:', error)
-      setGeneralError('An error occurred while saving your profile')
+      setFormError('An unexpected error occurred while saving your profile. Please try again.')
     } finally {
       setIsGeneratingAI(false)
     }
@@ -629,7 +791,10 @@ function OnboardingContent() {
     if (step === 4) bg = brandingSettings.flowCStep4Background
 
     if (bg.startsWith('#') || bg.startsWith('rgb')) {
-      return { backgroundColor: bg }
+      return {
+        backgroundColor: bg,
+        transition: 'background-color 700ms ease-in-out'
+      }
     }
     return {}
   }
@@ -662,11 +827,51 @@ function OnboardingContent() {
           {step === 1 && (
             <div className="backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 animate-fadeIn" style={getFormBackgroundStyle()}>
               <h2 className="text-center text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Let's get started
+                {isSignInMode ? 'Please Sign In' : "Let's get started"}
               </h2>
               <p className="text-center text-gray-600 mb-8">
-                First off, let's create your account:
+                {isSignInMode ? (
+                  <>
+                    or{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSignInMode(false)
+                        setFormError('')
+                        setMagicLinkSent(false)
+                      }}
+                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                    >
+                      click here to Register
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    First off, let's create your account.{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSignInMode(true)
+                        setFormError('')
+                        setMagicLinkSent(false)
+                      }}
+                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                    >
+                      Already have an account? Sign In
+                    </button>
+                  </>
+                )}
               </p>
+
+              {/* Error Banner */}
+              {formError && step === 1 && (
+                <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-700 font-medium text-sm">{formError}</p>
+                </div>
+              )}
 
               {/* LinkedIn Login Button */}
               {!magicLinkSent && (
@@ -684,7 +889,9 @@ function OnboardingContent() {
 
                   <div className="flex items-center my-6">
                     <div className="flex-1 border-t border-gray-300"></div>
-                    <span className="px-4 text-gray-500 text-sm">or enter manually</span>
+                    <span className="px-4 text-gray-500 text-sm">
+                      {isSignInMode ? 'or login with your Email' : 'or enter manually'}
+                    </span>
                     <div className="flex-1 border-t border-gray-300"></div>
                   </div>
                 </>
@@ -701,13 +908,13 @@ function OnboardingContent() {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-green-900 mb-2">
-                        Welcome back!
+                        {isSignInMode ? 'Check your Email' : 'Welcome back!'}
                       </h3>
                       <p className="text-green-800 mb-3">
                         We've sent a login link to <strong>{userEmail}</strong>
                       </p>
                       <p className="text-green-700 text-sm mb-3">
-                        Please check your email and click the link to access your account. The link will expire in 15 minutes.
+                        Please check your email and click the link to {isSignInMode ? 'sign in' : 'access your account'}. The link will expire in 15 minutes.
                       </p>
                       {devLink && (
                         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
@@ -727,34 +934,37 @@ function OnboardingContent() {
                 </div>
               )}
 
-              <form onSubmit={handleStep1Submit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                      required
-                    />
-                  </div>
+              <form onSubmit={isSignInMode ? handleSignInSubmit : handleStep1Submit} className="space-y-6">
+                {/* Name fields - only show in Register mode */}
+                {!isSignInMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                      required
-                    />
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -773,7 +983,7 @@ function OnboardingContent() {
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
                 >
-                  Continue →
+                  {isSignInMode ? 'Sign In' : 'Continue →'}
                 </button>
               </form>
             </div>
@@ -788,6 +998,16 @@ function OnboardingContent() {
               <p className="text-center text-gray-600 mb-8">
                 Please add a profile pic and choose a username.
               </p>
+
+              {/* Error Banner */}
+              {formError && step === 2 && (
+                <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-700 font-medium text-sm">{formError}</p>
+                </div>
+              )}
 
               <form onSubmit={handleStep2Submit} className="space-y-6">
                 <div className="flex flex-col items-center justify-center">
@@ -932,6 +1152,16 @@ function OnboardingContent() {
                 What are you great at?
               </p>
 
+              {/* Error Banner */}
+              {formError && step === 3 && (
+                <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-700 font-medium text-sm">{formError}</p>
+                </div>
+              )}
+
               <form onSubmit={handleStep3Submit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1003,10 +1233,13 @@ function OnboardingContent() {
                 What are you most proud of?
               </p>
 
-              {/* General error banner */}
-              {generalError && (
-                <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 rounded-xl">
-                  <p className="text-red-700 font-medium">{generalError}</p>
+              {/* Error Banner */}
+              {formError && step === 4 && (
+                <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-700 font-medium text-sm">{formError}</p>
                 </div>
               )}
 

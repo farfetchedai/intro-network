@@ -4,6 +4,7 @@ export type NotificationType =
   | 'CONNECTION_REQUEST'
   | 'CONNECTION_ACCEPTED'
   | 'CONNECTION_DECLINED'
+  | 'NOW_CONNECTED'
   | 'INTRO_REQUEST'
   | 'INTRO_ACCEPTED'
   | 'INTRO_DECLINED'
@@ -77,6 +78,20 @@ export async function notifyConnectionDeclined(
     message: `${fromUser.firstName} ${fromUser.lastName} declined your connection request`,
     link: '/connections',
     fromUserId: fromUser.id,
+  })
+}
+
+export async function notifyNowConnected(
+  toUserId: string,
+  connectedUser: { id: string; firstName: string; lastName: string; username?: string | null }
+) {
+  return createNotification({
+    userId: toUserId,
+    type: 'NOW_CONNECTED',
+    title: 'New connection',
+    message: `You are now connected to ${connectedUser.firstName} ${connectedUser.lastName}`,
+    link: connectedUser.username ? `/${connectedUser.username}` : '/connections',
+    fromUserId: connectedUser.id,
   })
 }
 

@@ -30,32 +30,79 @@ export async function POST(req: Request) {
     const newContacts = validatedData.contacts.filter(contact => !contact.id)
 
     // Only create new contacts if there are any
-    let contacts = []
     if (newContacts.length > 0) {
-      contacts = await prisma.$transaction(
-        newContacts.map((contact) =>
-          prisma.contact.create({
-            data: {
-              userId: validatedData.userId,
-              firstName: contact.firstName,
-              lastName: contact.lastName,
-              email: contact.email || undefined,
-              phone: contact.phone || undefined,
-              company: contact.company || undefined,
-              degreeType: 'FIRST_DEGREE',
-            },
-          })
-        )
+      // Get existing contacts for this user to check for duplicates
+      const existingContacts = await prisma.contact.findMany({
+        where: { userId: validatedData.userId },
+        select: { email: true },
+      })
+      const existingEmails = new Set(
+        existingContacts
+          .filter(c => c.email)
+          .map(c => c.email!.toLowerCase())
       )
+
+      // Filter out contacts that already exist by email
+      const uniqueNewContacts = newContacts.filter(contact => {
+        if (!contact.email) return true // Allow contacts without email
+        return !existingEmails.has(contact.email.toLowerCase())
+      })
+
+      // Create only unique new contacts
+      if (uniqueNewContacts.length > 0) {
+        await prisma.$transaction(
+          uniqueNewContacts.map((contact) =>
+            prisma.contact.create({
+              data: {
+                userId: validatedData.userId,
+                firstName: contact.firstName,
+                lastName: contact.lastName,
+                email: contact.email || undefined,
+                phone: contact.phone || undefined,
+                company: contact.company || undefined,
+                degreeType: 'FIRST_DEGREE',
+              },
+            })
+          )
+        )
+      }
     }
 
-    // Fetch all contacts for this user to return
+    // Fetch all contacts for this user to return (with linkedUser data)
     const allContacts = await prisma.contact.findMany({
       where: { userId: validatedData.userId },
+      include: {
+        contact: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true,
+            skills: true,
+            companyName: true,
+            achievement: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ success: true, contacts: allContacts })
+    // Transform contacts to include linked user info
+    const transformedContacts = allContacts.map((c) => ({
+      ...c,
+      linkedUser: c.contact ? {
+        id: c.contact.id,
+        username: c.contact.username,
+        firstName: c.contact.firstName,
+        lastName: c.contact.lastName,
+        profilePicture: c.contact.profilePicture,
+        hasCompletedOnboarding: !!(c.contact.skills || c.contact.companyName || c.contact.achievement),
+      } : null,
+      contact: undefined,
+    }))
+
+    return NextResponse.json({ success: true, contacts: transformedContacts })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -104,19 +151,75 @@ export async function GET(req: Request) {
       },
     })
 
+    // Get all contact emails to find matching users
+    const contactEmails = contacts
+      .filter(c => c.email && !c.contactId)
+      .map(c => c.email!.toLowerCase())
+
+    // Find users by email for contacts that don't have a contactId linked
+    const usersByEmail: Record<string, any> = {}
+    if (contactEmails.length > 0) {
+      const matchingUsers = await prisma.user.findMany({
+        where: {
+          email: {
+            in: contactEmails,
+            mode: 'insensitive',
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          profilePicture: true,
+          skills: true,
+          companyName: true,
+          achievement: true,
+        },
+      })
+
+      // Index by lowercase email
+      matchingUsers.forEach(user => {
+        if (user.email) {
+          usersByEmail[user.email.toLowerCase()] = user
+        }
+      })
+    }
+
     // Transform contacts to include linked user info
-    const transformedContacts = contacts.map((c) => ({
-      ...c,
-      linkedUser: c.contact ? {
+    const transformedContacts = contacts.map((c) => {
+      // First check if there's a direct contactId link
+      let linkedUser = c.contact ? {
         id: c.contact.id,
         username: c.contact.username,
         firstName: c.contact.firstName,
         lastName: c.contact.lastName,
         profilePicture: c.contact.profilePicture,
         hasCompletedOnboarding: !!(c.contact.skills || c.contact.companyName || c.contact.achievement),
-      } : null,
-      contact: undefined, // Remove the raw contact relation from response
-    }))
+      } : null
+
+      // If no direct link, try to match by email
+      if (!linkedUser && c.email) {
+        const matchedUser = usersByEmail[c.email.toLowerCase()]
+        if (matchedUser) {
+          linkedUser = {
+            id: matchedUser.id,
+            username: matchedUser.username,
+            firstName: matchedUser.firstName,
+            lastName: matchedUser.lastName,
+            profilePicture: matchedUser.profilePicture,
+            hasCompletedOnboarding: !!(matchedUser.skills || matchedUser.companyName || matchedUser.achievement),
+          }
+        }
+      }
+
+      return {
+        ...c,
+        linkedUser,
+        contact: undefined, // Remove the raw contact relation from response
+      }
+    })
 
     return NextResponse.json({ contacts: transformedContacts })
   } catch (error) {

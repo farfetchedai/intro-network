@@ -39,25 +39,28 @@ function VerifyContent() {
         localStorage.setItem('userId', data.user.id)
         localStorage.setItem('userName', `${data.user.firstName} ${data.user.lastName}`)
 
-        // Handle pending connection from profile page (for existing users logging in)
+        // Handle pending connection request from profile page (for existing users logging in)
         const pendingConnectionData = localStorage.getItem('pendingConnection')
         if (pendingConnectionData) {
           try {
             const pendingConnection = JSON.parse(pendingConnectionData)
-            // Create the connection
-            const connectionResponse = await fetch('/api/user/add-connection', {
+            // Send a connection request (with email notification)
+            const connectionResponse = await fetch('/api/connections/request', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ targetUserId: pendingConnection.userId }),
+              body: JSON.stringify({
+                toUserId: pendingConnection.userId,
+                note: `Hi! I'd love to connect with you.`,
+              }),
             })
             const connectionData = await connectionResponse.json()
             if (connectionData.success) {
-              console.log(`Connected with ${pendingConnection.firstName} ${pendingConnection.lastName}`)
+              console.log(`Connection request sent to ${pendingConnection.firstName} ${pendingConnection.lastName}`)
             }
             // Clear pending connection regardless of success
             localStorage.removeItem('pendingConnection')
           } catch (error) {
-            console.error('Error processing pending connection:', error)
+            console.error('Error sending connection request:', error)
             localStorage.removeItem('pendingConnection')
           }
         }

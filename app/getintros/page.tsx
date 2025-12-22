@@ -12,6 +12,7 @@ export default function GetIntrosPage() {
   const [userName, setUserName] = useState({ firstName: '', lastName: '', statementSummary: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
 
   // Contact form - start with one empty row ready for input
   const [contacts, setContacts] = useState<Array<{
@@ -21,6 +22,12 @@ export default function GetIntrosPage() {
     email: string
     phone: string
     company: string
+    linkedUser?: {
+      id: string
+      username: string | null
+      profilePicture: string | null
+      hasCompletedOnboarding: boolean
+    } | null
   }>>([{ firstName: '', lastName: '', email: '', phone: '', company: '' }])
 
   // Track existing contacts from database
@@ -31,8 +38,29 @@ export default function GetIntrosPage() {
     email: string
     phone: string
     company: string
+    linkedUser?: {
+      id: string
+      username: string | null
+      profilePicture: string | null
+      hasCompletedOnboarding: boolean
+    } | null
   }>>([])
   const [hasExistingContacts, setHasExistingContacts] = useState(false)
+
+  // Track connections (platform users who have connected)
+  const [existingConnections, setExistingConnections] = useState<Array<{
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    username: string | null
+    profilePicture: string | null
+    companyName: string | null
+  }>>([])
+  const [hasExistingConnections, setHasExistingConnections] = useState(false)
+
+  // Track if user has loaded their connections (to hide the Load Connections button)
+  const [hasLoadedConnections, setHasLoadedConnections] = useState(false)
 
   // Email/SMS templates
   const [emailSubject, setEmailSubject] = useState('Introduction Request')
@@ -48,6 +76,9 @@ export default function GetIntrosPage() {
 
   // Track which contacts have been sent to
   const [sentContactIndices, setSentContactIndices] = useState<Set<number>>(new Set())
+
+  // Track which contacts are in edit mode (for editing email/phone)
+  const [editingContactIndices, setEditingContactIndices] = useState<Set<number>>(new Set())
 
   // Modal state for template editing
   const [showEmailEditor, setShowEmailEditor] = useState(false)
@@ -98,6 +129,17 @@ export default function GetIntrosPage() {
                 }
               })
               .catch(err => console.error('Failed to fetch existing contacts:', err))
+
+            // Fetch connections (platform users who have connected with this user)
+            fetch('/api/connections')
+              .then(res => res.json())
+              .then(data => {
+                if (data.success && data.connections && data.connections.length > 0) {
+                  setExistingConnections(data.connections)
+                  setHasExistingConnections(true)
+                }
+              })
+              .catch(err => console.error('Failed to fetch connections:', err))
           }
         }
       } catch (error) {
@@ -167,30 +209,131 @@ export default function GetIntrosPage() {
 
   const handleRemoveContact = (index: number) => {
     setContacts(contacts.filter((_, i) => i !== index))
+    // Also remove from editing set if present
+    setEditingContactIndices(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(index)
+      return newSet
+    })
   }
 
-  const handleLoadPreviousContacts = () => {
-    if (existingContacts.length > 0) {
-      setContacts(existingContacts.map(c => ({
+  const toggleEditContact = (index: number) => {
+    setEditingContactIndices(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
+  // Check if a contact is a "loaded" contact (has data) vs empty new contact
+  const isLoadedContact = (contact: typeof contacts[0]) => {
+    return contact.firstName && contact.lastName
+  }
+
+  // Calculate deduplicated contact count (contacts that aren't already in connections)
+  const getDeduplicatedContactCount = () => {
+    const connectionUserIds = new Set(existingConnections.map(c => c.id))
+    const connectionEmails = new Set(existingConnections.map(c => c.email?.toLowerCase()).filter(Boolean))
+    const seenEmails = new Set<string>()
+
+    let count = 0
+    existingContacts.forEach(c => {
+      // Skip if linked to a connection
+      if (c.linkedUser?.id && connectionUserIds.has(c.linkedUser.id)) {
+        return
+      }
+      // Skip if email matches a connection
+      if (c.email && connectionEmails.has(c.email.toLowerCase())) {
+        return
+      }
+      // Skip if duplicate email within contacts
+      if (c.email && seenEmails.has(c.email.toLowerCase())) {
+        return
+      }
+      if (c.email) {
+        seenEmails.add(c.email.toLowerCase())
+      }
+      count++
+    })
+    return count
+  }
+
+  const handleLoadConnections = () => {
+    const loadedContacts: typeof contacts = []
+
+    // Track which user IDs and emails we've already added (to avoid duplicates)
+    const addedUserIds = new Set<string>()
+    const addedEmails = new Set<string>()
+
+    // First, add all connections (platform users)
+    existingConnections.forEach(conn => {
+      addedUserIds.add(conn.id)
+      if (conn.email) {
+        addedEmails.add(conn.email.toLowerCase())
+      }
+      loadedContacts.push({
+        firstName: conn.firstName,
+        lastName: conn.lastName,
+        email: conn.email || '',
+        phone: '',
+        company: conn.companyName || '',
+        linkedUser: {
+          id: conn.id,
+          username: conn.username,
+          profilePicture: conn.profilePicture,
+          hasCompletedOnboarding: true,
+        },
+      })
+    })
+
+    // Then add contacts that aren't already in connections
+    existingContacts.forEach(c => {
+      // Skip if this contact is linked to a user we've already added
+      if (c.linkedUser?.id && addedUserIds.has(c.linkedUser.id)) {
+        return
+      }
+
+      // Skip if this contact has the same email as someone we've already added
+      if (c.email && addedEmails.has(c.email.toLowerCase())) {
+        return
+      }
+
+      // Track this email to avoid duplicates within contacts
+      if (c.email) {
+        addedEmails.add(c.email.toLowerCase())
+      }
+
+      loadedContacts.push({
         id: c.id,
         firstName: c.firstName,
         lastName: c.lastName,
         email: c.email || '',
         phone: c.phone || '',
         company: c.company || '',
-      })))
+        linkedUser: c.linkedUser || null,
+      })
+    })
+
+    if (loadedContacts.length > 0) {
+      setContacts(loadedContacts)
     }
+    setHasLoadedConnections(true)
   }
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFormError('')
 
     console.log('[GetIntros] Submit - userId:', userId)
 
     if (!userId) {
       console.log('[GetIntros] No userId found, redirecting to /referee')
-      alert('Please log in first')
-      router.push('/referee')
+      setFormError('Please log in to continue.')
+      setTimeout(() => router.push('/referee'), 2000)
       return
     }
 
@@ -199,7 +342,7 @@ export default function GetIntrosPage() {
     )
 
     if (validContacts.length === 0) {
-      alert('Please add at least one contact with name and email or phone')
+      setFormError('Please add at least one contact with a first name, last name, and either an email or phone number.')
       return
     }
 
@@ -224,18 +367,19 @@ export default function GetIntrosPage() {
             email: c.email || '',
             phone: c.phone || '',
             company: c.company || '',
+            linkedUser: c.linkedUser || null,
           })))
         }
         // Move to step 2
         setStep(2)
         setIsSubmitting(false)
       } else {
-        alert(data.error || 'Failed to add contacts')
+        setFormError(data.error || 'Failed to save contacts. Please try again.')
         setIsSubmitting(false)
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('An error occurred')
+      setFormError('An unexpected error occurred. Please try again.')
       setIsSubmitting(false)
     }
   }
@@ -369,6 +513,14 @@ export default function GetIntrosPage() {
       // Remove any remaining unreplaced placeholders
       .replace(/\{[^}]+\}/g, '[placeholder]')
 
+    // Convert line breaks to HTML
+    // First, convert double newlines (paragraph breaks) to paragraph tags
+    // Then convert remaining single newlines to <br> tags
+    previewHtml = previewHtml
+      .split(/\n\n+/)
+      .map(paragraph => `<p style="margin-bottom: 1em;">${paragraph.replace(/\n/g, '<br>')}</p>`)
+      .join('')
+
     return previewHtml
   }
 
@@ -402,6 +554,7 @@ export default function GetIntrosPage() {
 
   const handleSendRequests = async (contactIndex?: number) => {
     setIsSubmitting(true)
+    setFormError('')
 
     try {
       // Determine which contact(s) to send to
@@ -410,7 +563,7 @@ export default function GetIntrosPage() {
         // Individual contact
         const contact = contacts[contactIndex]
         if (!contact.id) {
-          alert('Contact ID not found. Please try again.')
+          setFormError('Unable to send to this contact. Please go back and re-add your contacts.')
           setIsSubmitting(false)
           return
         }
@@ -419,7 +572,7 @@ export default function GetIntrosPage() {
         // All contacts
         contactIds = contacts.filter(c => c.id).map(c => c.id!)
         if (contactIds.length === 0) {
-          alert('No contacts found')
+          setFormError('No contacts found. Please go back and add your contacts again.')
           setIsSubmitting(false)
           return
         }
@@ -453,12 +606,12 @@ export default function GetIntrosPage() {
           setIsSubmitting(false)
         }
       } else {
-        alert(data.error || 'Failed to send requests')
+        setFormError(data.error || 'Failed to send requests. Please try again.')
         setIsSubmitting(false)
       }
     } catch (error) {
       console.error('Error sending requests:', error)
-      alert('An error occurred')
+      setFormError('An unexpected error occurred while sending requests. Please try again.')
       setIsSubmitting(false)
     }
   }
@@ -480,7 +633,10 @@ export default function GetIntrosPage() {
     if (step === 3) bg = brandingSettings.flowAStep3Background
 
     if (bg.startsWith('#') || bg.startsWith('rgb')) {
-      return { backgroundColor: bg }
+      return {
+        backgroundColor: bg,
+        transition: 'background-color 700ms ease-in-out'
+      }
     }
     return {}
   }
@@ -526,7 +682,17 @@ export default function GetIntrosPage() {
                   Who can help introduce you to people in their network?
                 </p>
 
-                {hasExistingContacts && contacts.length === 0 && (
+                {/* Error Banner */}
+                {formError && step === 1 && (
+                  <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                    <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-red-700 font-medium text-sm">{formError}</p>
+                  </div>
+                )}
+
+                {(hasExistingContacts || hasExistingConnections) && !hasLoadedConnections && (
                   <div className="mb-6 bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -543,106 +709,258 @@ export default function GetIntrosPage() {
                         </svg>
                         <div>
                           <p className="text-sm font-semibold text-emerald-800">
-                            You have {existingContacts.length} saved contact{existingContacts.length !== 1 ? 's' : ''}
+                            {(() => {
+                              const connectionCount = existingConnections.length
+                              const contactCount = getDeduplicatedContactCount()
+                              if (connectionCount > 0 && contactCount > 0) {
+                                return <>You have {connectionCount} connection{connectionCount !== 1 ? 's' : ''} and {contactCount} contact{contactCount !== 1 ? 's' : ''}</>
+                              } else if (connectionCount > 0) {
+                                return <>You have {connectionCount} connection{connectionCount !== 1 ? 's' : ''}</>
+                              } else {
+                                return <>You have {contactCount} contact{contactCount !== 1 ? 's' : ''}</>
+                              }
+                            })()}
                           </p>
                           <p className="text-xs text-emerald-700 mt-0.5">
-                            Load your previous contacts to continue where you left off
+                            Load your network to request introductions from them
                           </p>
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={handleLoadPreviousContacts}
+                        onClick={handleLoadConnections}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap"
                       >
-                        Load Previous Contacts
+                        Load Connections
                       </button>
                     </div>
                   </div>
                 )}
 
                 <form onSubmit={handleStep1Submit} className="space-y-6">
-                  {contacts.map((contact, index) => (
-                    <div
-                      key={index}
-                      className="border-2 border-gray-200 rounded-2xl p-6 bg-white"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            First Name
-                          </label>
-                          <input
-                            type="text"
-                            value={contact.firstName}
-                            onChange={(e) =>
-                              handleContactChange(index, 'firstName', e.target.value)
-                            }
-                            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Last Name
-                          </label>
-                          <input
-                            type="text"
-                            value={contact.lastName}
-                            onChange={(e) =>
-                              handleContactChange(index, 'lastName', e.target.value)
-                            }
-                            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Email
-                          </label>
-                          <input
-                            type="email"
-                            value={contact.email}
-                            onChange={(e) =>
-                              handleContactChange(index, 'email', e.target.value)
-                            }
-                            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Phone
-                          </label>
-                          <input
-                            type="tel"
-                            value={contact.phone}
-                            onChange={(e) =>
-                              handleContactChange(index, 'phone', e.target.value)
-                            }
-                            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Company
-                          </label>
-                          <input
-                            type="text"
-                            value={contact.company}
-                            onChange={(e) =>
-                              handleContactChange(index, 'company', e.target.value)
-                            }
-                            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveContact(index)}
-                        className="text-red-600 text-sm font-semibold hover:text-red-700"
+                  {contacts.map((contact, index) => {
+                    const isLoaded = isLoadedContact(contact)
+                    const isEditing = editingContactIndices.has(index)
+                    const hasProfile = contact.linkedUser?.username
+
+                    return (
+                      <div
+                        key={index}
+                        className="border-2 border-gray-200 rounded-2xl p-6 bg-white"
                       >
-                        Remove Contact
-                      </button>
-                    </div>
-                  ))}
+                        {isLoaded ? (
+                          // Rendered view for loaded contacts
+                          <>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                {/* Profile Picture */}
+                                {hasProfile ? (
+                                  <a href={`/${contact.linkedUser?.username}`} className="flex-shrink-0">
+                                    {contact.linkedUser?.profilePicture ? (
+                                      <img
+                                        src={contact.linkedUser.profilePicture}
+                                        alt={`${contact.firstName} ${contact.lastName}`}
+                                        className="w-14 h-14 rounded-full object-cover ring-2 ring-purple-200 hover:ring-purple-400 transition-all"
+                                      />
+                                    ) : (
+                                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-200 hover:ring-purple-400 transition-all">
+                                        {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                                      </div>
+                                    )}
+                                  </a>
+                                ) : (
+                                  <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg flex-shrink-0">
+                                    {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                                  </div>
+                                )}
+
+                                {/* Name and Contact Info */}
+                                <div className="flex-1">
+                                  {hasProfile ? (
+                                    <a
+                                      href={`/${contact.linkedUser?.username}`}
+                                      className="text-lg font-semibold text-purple-600 hover:text-purple-800 hover:underline"
+                                    >
+                                      {contact.firstName} {contact.lastName}
+                                    </a>
+                                  ) : (
+                                    <p className="text-lg font-semibold text-gray-900">
+                                      {contact.firstName} {contact.lastName}
+                                    </p>
+                                  )}
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">
+                                    {contact.email && (
+                                      <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        {contact.email}
+                                      </span>
+                                    )}
+                                    {contact.phone && (
+                                      <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        {contact.phone}
+                                      </span>
+                                    )}
+                                    {contact.company && (
+                                      <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        </svg>
+                                        {contact.company}
+                                      </span>
+                                    )}
+                                    {!contact.email && !contact.phone && (
+                                      <span className="text-amber-600 italic">No contact info</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleEditContact(index)}
+                                  className={`p-2 rounded-lg transition-all duration-200 ${
+                                    isEditing
+                                      ? 'bg-emerald-100 text-emerald-600'
+                                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                                  }`}
+                                  title={isEditing ? 'Done editing' : 'Edit contact info'}
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveContact(index)}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                  title="Remove contact"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Editable fields (shown when editing) */}
+                            {isEditing && (
+                              <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Email
+                                  </label>
+                                  <input
+                                    type="email"
+                                    value={contact.email}
+                                    onChange={(e) => handleContactChange(index, 'email', e.target.value)}
+                                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                    placeholder="email@example.com"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Phone
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    value={contact.phone}
+                                    onChange={(e) => handleContactChange(index, 'phone', e.target.value)}
+                                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                    placeholder="+1 (555) 000-0000"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          // Full input form for new empty contacts
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                  First Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={contact.firstName}
+                                  onChange={(e) =>
+                                    handleContactChange(index, 'firstName', e.target.value)
+                                  }
+                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                  Last Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={contact.lastName}
+                                  onChange={(e) =>
+                                    handleContactChange(index, 'lastName', e.target.value)
+                                  }
+                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                  Email
+                                </label>
+                                <input
+                                  type="email"
+                                  value={contact.email}
+                                  onChange={(e) =>
+                                    handleContactChange(index, 'email', e.target.value)
+                                  }
+                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                  Phone
+                                </label>
+                                <input
+                                  type="tel"
+                                  value={contact.phone}
+                                  onChange={(e) =>
+                                    handleContactChange(index, 'phone', e.target.value)
+                                  }
+                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                  Company
+                                </label>
+                                <input
+                                  type="text"
+                                  value={contact.company}
+                                  onChange={(e) =>
+                                    handleContactChange(index, 'company', e.target.value)
+                                  }
+                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                />
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveContact(index)}
+                              className="text-red-600 text-sm font-semibold hover:text-red-700"
+                            >
+                              Remove Contact
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
 
                   <button
                     type="button"
@@ -681,6 +999,16 @@ export default function GetIntrosPage() {
                 <p className="text-gray-600 mb-8 text-center text-lg">
                   Review and customize your introduction request
                 </p>
+
+                {/* Error Banner */}
+                {formError && step === 2 && (
+                  <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3">
+                    <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-red-700 font-medium text-sm">{formError}</p>
+                  </div>
+                )}
 
                 <div className="space-y-6">
                   {/* Preview As Dropdown */}
@@ -777,19 +1105,51 @@ export default function GetIntrosPage() {
                     <div className="space-y-2">
                       {contacts.map((contact, index) => {
                         const isSent = sentContactIndices.has(index)
+                        const hasProfile = contact.linkedUser?.username
                         return (
                           <div
                             key={index}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                           >
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                {contact.firstName} {contact.lastName}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {contact.email || contact.phone}
-                                {contact.company && ` • ${contact.company}`}
-                              </p>
+                            <div className="flex items-center gap-3">
+                              {/* Profile Picture / Avatar */}
+                              {hasProfile ? (
+                                <a href={`/${contact.linkedUser?.username}`} className="flex-shrink-0">
+                                  {contact.linkedUser?.profilePicture ? (
+                                    <img
+                                      src={contact.linkedUser.profilePicture}
+                                      alt={`${contact.firstName} ${contact.lastName}`}
+                                      className="w-10 h-10 rounded-full object-cover ring-2 ring-purple-200 hover:ring-purple-400 transition-all"
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm ring-2 ring-purple-200 hover:ring-purple-400 transition-all">
+                                      {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                                    </div>
+                                  )}
+                                </a>
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-sm flex-shrink-0">
+                                  {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                                </div>
+                              )}
+                              <div>
+                                {hasProfile ? (
+                                  <a
+                                    href={`/${contact.linkedUser?.username}`}
+                                    className="font-semibold text-purple-600 hover:text-purple-800 hover:underline"
+                                  >
+                                    {contact.firstName} {contact.lastName}
+                                  </a>
+                                ) : (
+                                  <p className="font-semibold text-gray-900">
+                                    {contact.firstName} {contact.lastName}
+                                  </p>
+                                )}
+                                <p className="text-sm text-gray-600">
+                                  {contact.email || contact.phone}
+                                  {contact.company && ` • ${contact.company}`}
+                                </p>
+                              </div>
                             </div>
                             <button
                               onClick={() => handleSendRequests(index)}

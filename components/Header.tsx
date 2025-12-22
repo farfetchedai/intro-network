@@ -208,6 +208,9 @@ export default function Header() {
     { label: 'Settings', href: '/settings' },
   ] : []
 
+  // Check if user has completed onboarding (has profile picture, skills, company, or achievement)
+  const hasCompletedOnboarding = user && !!(user.profilePicture || user.skills || user.companyName || user.achievement)
+
   return (
     <>
       <header className="sticky top-0 z-50">
@@ -238,7 +241,7 @@ export default function Header() {
                   href="/getintros"
                   className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Get Started
+                  {hasCompletedOnboarding ? 'Get Intros' : 'Get Started'}
                 </Link>
 
                 {/* Notifications Bell */}
@@ -462,7 +465,7 @@ export default function Header() {
                     className="block w-full mb-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-center transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Get Started
+                    {hasCompletedOnboarding ? 'Get Intros' : 'Get Started'}
                   </Link>
                   {userMenuItems.map((item) => (
                     <Link

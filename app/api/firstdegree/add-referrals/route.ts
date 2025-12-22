@@ -83,19 +83,50 @@ export async function POST(req: Request) {
           })
         }
 
-        // Add as contact to first degree user
-        const contact = await prisma.contact.create({
-          data: {
+        // Check if contact already exists to avoid duplicates
+        // First check by contactId, then by email/name match
+        let contact = await prisma.contact.findFirst({
+          where: {
             userId: firstDegreeUser.id,
-            contactId: referralUser.id,
-            firstName: referral.firstName,
-            lastName: referral.lastName,
-            email: referral.email || undefined,
-            phone: referral.phone || undefined,
-            company: referral.company || undefined,
-            degreeType: 'SECOND_DEGREE',
+            OR: [
+              { contactId: referralUser.id },
+              {
+                firstName: referral.firstName,
+                lastName: referral.lastName,
+                email: referral.email || undefined,
+              },
+            ],
           },
         })
+
+        if (contact) {
+          // Update existing contact (also set contactId if it was previously null)
+          contact = await prisma.contact.update({
+            where: { id: contact.id },
+            data: {
+              contactId: referralUser.id,
+              firstName: referral.firstName,
+              lastName: referral.lastName,
+              email: referral.email || undefined,
+              phone: referral.phone || undefined,
+              company: referral.company || undefined,
+            },
+          })
+        } else {
+          // Create new contact
+          contact = await prisma.contact.create({
+            data: {
+              userId: firstDegreeUser.id,
+              contactId: referralUser.id,
+              firstName: referral.firstName,
+              lastName: referral.lastName,
+              email: referral.email || undefined,
+              phone: referral.phone || undefined,
+              company: referral.company || undefined,
+              degreeType: 'SECOND_DEGREE',
+            },
+          })
+        }
 
         return {
           referralUser,

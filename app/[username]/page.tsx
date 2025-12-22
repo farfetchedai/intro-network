@@ -6,6 +6,22 @@ import { QRCodeSVG } from 'qrcode.react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ConnectModal from '@/components/ConnectModal'
+import CareerHistoryList from '@/components/CareerHistoryList'
+import CareerEntryForm from '@/components/CareerEntryForm'
+import ResumeImportPreview, { ParsedCareerEntry } from '@/components/ResumeImportPreview'
+
+interface CareerEntry {
+  id: string
+  title: string
+  companyName: string
+  companyLogoUrl?: string | null
+  location?: string | null
+  description?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  isCurrent: boolean
+  importedFromLinkedIn: boolean
+}
 
 // Helper function to determine background style
 function getBackgroundStyle(background: string): { className?: string; style?: React.CSSProperties } {
@@ -34,6 +50,7 @@ interface UserProfile {
   twitterUrl: string | null
   facebookUrl: string | null
   instagramUrl: string | null
+  tiktokUrl: string | null
   websiteUrl: string | null
   skills: string | null
   companyName: string | null
@@ -94,6 +111,34 @@ export default function ProfilePage() {
     cardBoxBgSwatches: ['#ffffff', '#f9fafb', '#fef3c7', '#fce7f3', '#ecfdf5', '#1f2937'],
     cardTextSwatches: ['#111827', '#374151', '#6b7280', '#ffffff', '#1e40af', '#7c3aed'],
   })
+
+  // Career history state
+  const [showCareerSection, setShowCareerSection] = useState(false)
+  const [careerHistory, setCareerHistory] = useState<CareerEntry[]>([])
+  const [careerLoading, setCareerLoading] = useState(false)
+  const [showCareerForm, setShowCareerForm] = useState(false)
+  const [editingCareerEntry, setEditingCareerEntry] = useState<CareerEntry | null>(null)
+  const [careerFormLoading, setCareerFormLoading] = useState(false)
+
+  // Resume import state
+  const [resumeImporting, setResumeImporting] = useState(false)
+  const [parsedResumeEntries, setParsedResumeEntries] = useState<ParsedCareerEntry[] | null>(null)
+  const [resumeImportError, setResumeImportError] = useState<string | null>(null)
+  const [resumeSaving, setResumeSaving] = useState(false)
+
+  // Social links editing state
+  const [showSocialLinksPanel, setShowSocialLinksPanel] = useState(false)
+  const [editingSocialLinks, setEditingSocialLinks] = useState({
+    email: '',
+    phone: '',
+    linkedinUrl: '',
+    twitterUrl: '',
+    facebookUrl: '',
+    instagramUrl: '',
+    tiktokUrl: '',
+    websiteUrl: '',
+  })
+  const [isSavingSocialLinks, setIsSavingSocialLinks] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,6 +201,17 @@ export default function ProfilePage() {
             setConnectionStatus(connectionData.status)
           }
           setConnectionChecked(true)
+
+          // Fetch career history for this profile (visible to all users)
+          try {
+            const careerResponse = await fetch(`/api/career?userId=${data.user.id}`)
+            const careerData = await careerResponse.json()
+            if (careerData.success) {
+              setCareerHistory(careerData.careerHistory || [])
+            }
+          } catch (err) {
+            console.error('Failed to fetch career history:', err)
+          }
 
           // Check if logged-in user is the owner of this profile
           if (loggedIn && authData.user.id === data.user.id) {
@@ -456,6 +512,195 @@ export default function ProfilePage() {
     setCustomBgImage('')
   }
 
+  // Career history functions
+  const fetchCareerHistory = async () => {
+    setCareerLoading(true)
+    try {
+      const response = await fetch('/api/career')
+      const data = await response.json()
+      if (data.success) {
+        setCareerHistory(data.careerHistory || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch career history:', err)
+    } finally {
+      setCareerLoading(false)
+    }
+  }
+
+  const handleAddCareerEntry = async (formData: any) => {
+    setCareerFormLoading(true)
+    try {
+      const response = await fetch('/api/career', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setCareerHistory([data.careerEntry, ...careerHistory])
+        setShowCareerForm(false)
+      }
+    } catch (err) {
+      console.error('Failed to add career entry:', err)
+    } finally {
+      setCareerFormLoading(false)
+    }
+  }
+
+  const handleUpdateCareerEntry = async (formData: any) => {
+    if (!editingCareerEntry) return
+    setCareerFormLoading(true)
+    try {
+      const response = await fetch(`/api/career/${editingCareerEntry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setCareerHistory(careerHistory.map(entry =>
+          entry.id === editingCareerEntry.id ? data.careerEntry : entry
+        ))
+        setEditingCareerEntry(null)
+      }
+    } catch (err) {
+      console.error('Failed to update career entry:', err)
+    } finally {
+      setCareerFormLoading(false)
+    }
+  }
+
+  const handleDeleteCareerEntry = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this position?')) return
+    try {
+      const response = await fetch(`/api/career/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (data.success) {
+        setCareerHistory(careerHistory.filter(entry => entry.id !== id))
+      }
+    } catch (err) {
+      console.error('Failed to delete career entry:', err)
+    }
+  }
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setResumeImportError(null)
+    setResumeImporting(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/career/import-resume', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setParsedResumeEntries(data.entries)
+      } else {
+        setResumeImportError(data.error || 'Failed to parse resume')
+      }
+    } catch (err) {
+      console.error('Resume upload error:', err)
+      setResumeImportError('Failed to upload resume. Please try again.')
+    } finally {
+      setResumeImporting(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleImportResumeEntries = async (entries: ParsedCareerEntry[]) => {
+    setResumeSaving(true)
+    try {
+      const response = await fetch('/api/career/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entries }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setCareerHistory([...data.careerEntries, ...careerHistory])
+        setParsedResumeEntries(null)
+      } else {
+        setResumeImportError(data.error || 'Failed to save career entries')
+      }
+    } catch (err) {
+      console.error('Resume import save error:', err)
+      setResumeImportError('Failed to save career entries. Please try again.')
+    } finally {
+      setResumeSaving(false)
+    }
+  }
+
+  const handleToggleCareerSection = () => {
+    if (!showCareerSection && careerHistory.length === 0 && isOwner) {
+      fetchCareerHistory()
+    }
+    setShowCareerSection(!showCareerSection)
+  }
+
+  const handleResumeIconClick = () => {
+    if (!isLoggedIn) {
+      // Show login modal for logged-out users
+      setShowLoginModal(true)
+      setLoginEmail('')
+      setLoginError('')
+      setLoginSuccess(false)
+      return
+    }
+    // Toggle career section for logged-in users
+    setShowCareerSection(!showCareerSection)
+  }
+
+  const handleOpenSocialLinksPanel = () => {
+    if (profile) {
+      setEditingSocialLinks({
+        email: profile.email || '',
+        phone: profile.phone || '',
+        linkedinUrl: profile.linkedinUrl || '',
+        twitterUrl: profile.twitterUrl || '',
+        facebookUrl: profile.facebookUrl || '',
+        instagramUrl: profile.instagramUrl || '',
+        tiktokUrl: profile.tiktokUrl || '',
+        websiteUrl: profile.websiteUrl || '',
+      })
+    }
+    setShowSocialLinksPanel(true)
+  }
+
+  const handleSaveSocialLinks = async () => {
+    setIsSavingSocialLinks(true)
+    try {
+      const response = await fetch('/api/user/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingSocialLinks),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setProfile(prev => prev ? { ...prev, ...editingSocialLinks } : null)
+        setShowSocialLinksPanel(false)
+      }
+    } catch (err) {
+      console.error('Failed to save social links:', err)
+    } finally {
+      setIsSavingSocialLinks(false)
+    }
+  }
+
+  // Check if any social links are missing (for showing + button)
+  const hasMissingSocialLinks = !profile?.email || !profile?.phone || !profile?.linkedinUrl ||
+    !profile?.twitterUrl || !profile?.facebookUrl || !profile?.instagramUrl || !profile?.websiteUrl
+
   const bgStyle = getBackgroundStyle(branding.profilePageBackground)
   const formStyle = getBackgroundStyle(branding.profilePageFormBg)
 
@@ -614,16 +859,7 @@ export default function ProfilePage() {
                     <div className="flex gap-3 flex-wrap justify-center mt-4">
                       {profile.statementSummary ? (
                         <>
-                          <button
-                            onClick={handleEditStatement}
-                            disabled={isGeneratingAI || isSavingStatement}
-                            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit
-                          </button>
+                          {/* Regenerate Button - First */}
                           <button
                             onClick={generateAISummary}
                             disabled={isGeneratingAI || isSavingStatement}
@@ -646,7 +882,18 @@ export default function ProfilePage() {
                               </>
                             )}
                           </button>
-                          {/* Colors Button */}
+                          {/* Edit Button - Second */}
+                          <button
+                            onClick={handleEditStatement}
+                            disabled={isGeneratingAI || isSavingStatement}
+                            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                          </button>
+                          {/* Personalize Button - Third */}
                           <button
                             onClick={() => setShowCustomization(!showCustomization)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
@@ -654,12 +901,27 @@ export default function ProfilePage() {
                                 ? 'text-white bg-gradient-to-r from-amber-500 to-orange-500'
                                 : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
                             }`}
-                            title="Customize card colors"
+                            title="Personalize card appearance"
                           >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clipRule="evenodd" />
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
-                            Colors
+                            Personalize
+                          </button>
+                          {/* Resume Button - Fourth */}
+                          <button
+                            onClick={handleToggleCareerSection}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                              showCareerSection
+                                ? 'text-white bg-gradient-to-r from-blue-500 to-indigo-500'
+                                : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                            }`}
+                            title="Add career history"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Resume
                           </button>
                         </>
                       ) : !isGeneratingAI && (
@@ -853,19 +1115,141 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Contact & Social Icons - Centered */}
-            <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
+            {/* Career History Section - visible to all logged-in users */}
+            {isLoggedIn && showCareerSection && (
+              <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Career History
+                  </h4>
+                  {/* Only show editing controls for owner */}
+                  {isOwner && !showCareerForm && !editingCareerEntry && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="resume-upload-card"
+                        accept=".pdf,.docx"
+                        onChange={handleResumeUpload}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => document.getElementById('resume-upload-card')?.click()}
+                        disabled={resumeImporting}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        {resumeImporting ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Parsing...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Import
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setShowCareerForm(true)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Resume Import Error - only for owner */}
+                {isOwner && resumeImportError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-red-700 flex-1">{resumeImportError}</p>
+                      <button onClick={() => setResumeImportError(null)} className="text-red-500 hover:text-red-700">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Career Entry Form - only for owner */}
+                {isOwner && (showCareerForm || editingCareerEntry) && (
+                  <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-white">
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3">
+                      {editingCareerEntry ? 'Edit Position' : 'Add New Position'}
+                    </h5>
+                    <CareerEntryForm
+                      initialData={editingCareerEntry ? {
+                        title: editingCareerEntry.title,
+                        companyName: editingCareerEntry.companyName,
+                        location: editingCareerEntry.location ?? undefined,
+                        description: editingCareerEntry.description ?? undefined,
+                        startDate: editingCareerEntry.startDate ?? undefined,
+                        endDate: editingCareerEntry.endDate ?? undefined,
+                        isCurrent: editingCareerEntry.isCurrent,
+                      } : undefined}
+                      onSubmit={editingCareerEntry ? handleUpdateCareerEntry : handleAddCareerEntry}
+                      onCancel={() => {
+                        setShowCareerForm(false)
+                        setEditingCareerEntry(null)
+                      }}
+                      isEditing={!!editingCareerEntry}
+                      loading={careerFormLoading}
+                    />
+                  </div>
+                )}
+
+                {/* Career History List - editable only for owner */}
+                <CareerHistoryList
+                  entries={careerHistory}
+                  loading={careerLoading}
+                  editable={isOwner}
+                  onEdit={isOwner ? (id) => {
+                    const entry = careerHistory.find(e => e.id === id)
+                    if (entry) setEditingCareerEntry(entry)
+                  } : undefined}
+                  onDelete={isOwner ? handleDeleteCareerEntry : undefined}
+                />
+
+                {careerHistory.length === 0 && !careerLoading && !showCareerForm && isOwner && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No career history yet. Add your work experience or import from a resume.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Contact & Social Icons - Centered with Labels */}
+            <div className="flex items-center justify-center gap-4 flex-wrap mb-6">
               {profile.email && (
                 <a
                   href={isLoggedIn ? `mailto:${profile.email}` : '#'}
                   onClick={(e) => handleIconClick(e, profile.email)}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? profile.email : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Email</span>
                 </a>
               )}
 
@@ -873,12 +1257,15 @@ export default function ProfilePage() {
                 <a
                   href={isLoggedIn ? `tel:${profile.phone}` : '#'}
                   onClick={(e) => handleIconClick(e, profile.phone)}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? profile.phone : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Phone</span>
                 </a>
               )}
 
@@ -888,12 +1275,15 @@ export default function ProfilePage() {
                   onClick={(e) => handleIconClick(e, profile.linkedinUrl)}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? 'LinkedIn' : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>LinkedIn</span>
                 </a>
               )}
 
@@ -903,12 +1293,15 @@ export default function ProfilePage() {
                   onClick={(e) => handleIconClick(e, profile.twitterUrl)}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? 'Twitter' : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Twitter</span>
                 </a>
               )}
 
@@ -918,12 +1311,15 @@ export default function ProfilePage() {
                   onClick={(e) => handleIconClick(e, profile.facebookUrl)}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? 'Facebook' : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Facebook</span>
                 </a>
               )}
 
@@ -933,12 +1329,33 @@ export default function ProfilePage() {
                   onClick={(e) => handleIconClick(e, profile.instagramUrl)}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? 'Instagram' : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Instagram</span>
+                </a>
+              )}
+
+              {profile.tiktokUrl && (
+                <a
+                  href={isLoggedIn ? profile.tiktokUrl : '#'}
+                  onClick={(e) => handleIconClick(e, profile.tiktokUrl)}
+                  target={isLoggedIn ? "_blank" : undefined}
+                  rel={isLoggedIn ? "noopener noreferrer" : undefined}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
+                  title={isLoggedIn ? 'TikTok' : 'Login to see contact details'}
+                >
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>TikTok</span>
                 </a>
               )}
 
@@ -948,15 +1365,196 @@ export default function ProfilePage() {
                   onClick={(e) => handleIconClick(e, profile.websiteUrl)}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white transition-colors cursor-pointer ${isLoggedIn ? 'hover:bg-gray-800' : 'opacity-30'}`}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
                   title={isLoggedIn ? 'Website' : 'Login to see contact details'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v.878A2.988 2.988 0 0110 16a2.988 2.988 0 01-3-2.122V13a2 2 0 00-2-2H4.332z" clipRule="evenodd" />
-                  </svg>
+                  <div className={`w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white ${isLoggedIn ? 'hover:bg-gray-800' : ''}`}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v.878A2.988 2.988 0 0110 16a2.988 2.988 0 01-3-2.122V13a2 2 0 00-2-2H4.332z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Website</span>
                 </a>
               )}
+
+              {/* Resume Icon - shown when career history exists, greyed out for logged-out users */}
+              {careerHistory.length > 0 && (
+                <button
+                  onClick={handleResumeIconClick}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${isLoggedIn ? '' : 'opacity-30'}`}
+                  title={isLoggedIn ? 'View Resume/Career History' : 'Login to view career history'}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${
+                    showCareerSection && isLoggedIn
+                      ? 'bg-blue-600'
+                      : isLoggedIn
+                        ? 'bg-gray-700 hover:bg-gray-800'
+                        : 'bg-gray-700'
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Resume</span>
+                </button>
+              )}
+
+              {/* Add Social Links Button - shown only for owner */}
+              {isOwner && (
+                <button
+                  onClick={handleOpenSocialLinksPanel}
+                  className={`flex flex-col items-center gap-1 transition-colors cursor-pointer`}
+                  title="Add social links"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${
+                    showSocialLinksPanel
+                      ? 'bg-green-600'
+                      : 'bg-gray-700 hover:bg-gray-800'
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-600" style={{ color: effectiveTextColor || undefined }}>Add</span>
+                </button>
+              )}
             </div>
+
+            {/* Social Links Editing Panel */}
+            {isOwner && showSocialLinksPanel && (
+              <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    Edit Social Links
+                  </h4>
+                  <button
+                    onClick={() => setShowSocialLinksPanel(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editingSocialLinks.email}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={editingSocialLinks.phone}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+                    <input
+                      type="url"
+                      value={editingSocialLinks.linkedinUrl}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, linkedinUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Twitter URL</label>
+                    <input
+                      type="url"
+                      value={editingSocialLinks.twitterUrl}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, twitterUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://twitter.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Facebook URL</label>
+                    <input
+                      type="url"
+                      value={editingSocialLinks.facebookUrl}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, facebookUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://facebook.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram URL</label>
+                    <input
+                      type="url"
+                      value={editingSocialLinks.instagramUrl}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, instagramUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://instagram.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">TikTok URL</label>
+                    <input
+                      type="url"
+                      value={editingSocialLinks.tiktokUrl}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, tiktokUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://tiktok.com/@username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                    <input
+                      type="url"
+                      value={editingSocialLinks.websiteUrl}
+                      onChange={(e) => setEditingSocialLinks(prev => ({ ...prev, websiteUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowSocialLinksPanel(false)}
+                    className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveSocialLinks}
+                    disabled={isSavingSocialLinks}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {isSavingSocialLinks ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -1183,6 +1781,16 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Resume Import Preview Modal */}
+      {parsedResumeEntries && (
+        <ResumeImportPreview
+          entries={parsedResumeEntries}
+          onImport={handleImportResumeEntries}
+          onCancel={() => setParsedResumeEntries(null)}
+          loading={resumeSaving}
+        />
       )}
     </div>
   )

@@ -3,15 +3,22 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 
 // GET /api/career - List user's career history
-export async function GET() {
+// Accepts optional ?userId= param to fetch another user's career history (public viewing)
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url)
+    const targetUserId = searchParams.get('userId')
+
     const cookieStore = await cookies()
-    const userId = cookieStore.get('userId')?.value
+    const loggedInUserId = cookieStore.get('userId')?.value
+
+    // If no targetUserId specified, use logged-in user's ID (original behavior)
+    const userId = targetUserId || loggedInUserId
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
+        { success: false, error: 'User ID required' },
+        { status: 400 }
       )
     }
 

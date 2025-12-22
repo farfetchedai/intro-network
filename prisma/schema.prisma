@@ -25,6 +25,7 @@ model User {
   twitterUrl        String?
   facebookUrl       String?
   instagramUrl      String?
+  tiktokUrl         String?
   websiteUrl        String?
 
   // Referee-specific fields

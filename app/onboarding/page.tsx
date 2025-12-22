@@ -827,10 +827,12 @@ function OnboardingContent() {
           {step === 1 && (
             <div className="backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 animate-fadeIn" style={getFormBackgroundStyle()}>
               <h2 className="text-center text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                {isSignInMode ? 'Please Sign In' : "Let's get started"}
+                {userId ? 'Your Details' : isSignInMode ? 'Please Sign In' : "Let's get started"}
               </h2>
               <p className="text-center text-gray-600 mb-8">
-                {isSignInMode ? (
+                {userId ? (
+                  'Review and update your information below'
+                ) : isSignInMode ? (
                   <>
                     or{' '}
                     <button
@@ -890,7 +892,7 @@ function OnboardingContent() {
                   <div className="flex items-center my-6">
                     <div className="flex-1 border-t border-gray-300"></div>
                     <span className="px-4 text-gray-500 text-sm">
-                      {isSignInMode ? 'or login with your Email' : 'or enter manually'}
+                      {userId ? 'or update your details below' : isSignInMode ? 'or login with your Email' : 'or enter manually'}
                     </span>
                     <div className="flex-1 border-t border-gray-300"></div>
                   </div>

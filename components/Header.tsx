@@ -205,7 +205,7 @@ export default function Header() {
     { label: 'Connections', href: '/connections' },
     { label: 'Profile', href: '/profile' },
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Settings', href: '/settings' },
+    ...(user.userType === 'ADMIN' ? [{ label: 'Admin', href: '/admin' }] : []),
   ] : []
 
   // Check if user has completed onboarding (has profile picture, skills, company, or achievement)

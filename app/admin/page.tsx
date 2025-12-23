@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [stats, setStats] = useState({
     totalUsers: 0,
     referees: 0,
@@ -12,20 +14,34 @@ export default function AdminDashboard() {
     totalReferrals: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
-    fetchStats()
+    checkAdminAndFetchStats()
   }, [])
 
-  const fetchStats = async () => {
+  const checkAdminAndFetchStats = async () => {
     try {
+      // Check if user is admin
+      const authResponse = await fetch('/api/auth/check-admin')
+      const authData = await authResponse.json()
+
+      if (!authData.isAdmin) {
+        router.push('/dashboard')
+        return
+      }
+
+      setAuthorized(true)
+
+      // Fetch stats
       const response = await fetch('/api/admin/stats')
       const data = await response.json()
       if (data.success) {
         setStats(data.stats)
       }
     } catch (error) {
-      console.error('Failed to fetch stats:', error)
+      console.error('Failed to load admin page:', error)
+      router.push('/dashboard')
     } finally {
       setLoading(false)
     }
@@ -40,7 +56,7 @@ export default function AdminDashboard() {
     { title: 'Total Referral Requests', value: stats.totalReferrals, icon: '🔄', color: 'bg-teal-500' },
   ]
 
-  if (loading) {
+  if (loading || !authorized) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-500">Loading...</div>

@@ -4,7 +4,8 @@ import type { NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Check if this is an admin route (page or API)
+  // Only check if user is logged in for admin routes
+  // Admin status is checked in individual pages/APIs using lib/adminAuth.ts
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     const userId = request.cookies.get('userId')?.value
 
@@ -19,39 +20,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Check if user is admin by calling an internal API
-    // We need to check the database, but middleware runs on the edge
-    // So we'll make a request to verify admin status
-    try {
-      const baseUrl = request.nextUrl.origin
-      const response = await fetch(`${baseUrl}/api/auth/check-admin`, {
-        headers: {
-          Cookie: `userId=${userId}`,
-        },
-      })
-
-      const data = await response.json()
-
-      if (!data.isAdmin) {
-        if (pathname.startsWith('/api/')) {
-          return NextResponse.json(
-            { error: 'Unauthorized - Admin access required' },
-            { status: 403 }
-          )
-        }
-        // Redirect non-admins to dashboard
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-    } catch (error) {
-      console.error('Admin check failed:', error)
-      if (pathname.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: 'Authorization check failed' },
-          { status: 500 }
-        )
-      }
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+    // Note: Admin status check is now done in individual pages/APIs
+    // using the requireAdmin() function from lib/adminAuth.ts
+    // This avoids the middleware fetch-to-self issue in production
   }
 
   return NextResponse.next()

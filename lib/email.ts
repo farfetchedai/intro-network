@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 
 interface EmailOptions {
   to: string
@@ -14,21 +15,82 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
       throw new Error('API settings not configured')
     }
 
-    // For now, just log the email (you can integrate with SendGrid, AWS SES, etc. later)
-    console.log('Sending email:', {
-      to,
-      subject,
-      html: html.substring(0, 100) + '...',
-    })
+    const provider = settings.emailProvider || 'resend'
 
-    // TODO: Implement actual email sending with your preferred service
-    // Example with SendGrid:
-    // const sgMail = require('@sendgrid/mail')
-    // sgMail.setApiKey(settings.sendgridApiKey)
-    // await sgMail.send({ to, subject, html, from: settings.fromEmail })
+    console.log(`Sending email via ${provider} to: ${to}, subject: ${subject}`)
 
-    // Throw error in development so the dev link shows in the UI
-    throw new Error('Email sending not configured - using development mode')
+    if (provider === 'ses') {
+      // AWS SES
+      if (!settings.sesAccessKeyId || !settings.sesSecretAccessKey || !settings.sesFromEmail) {
+        throw new Error('AWS SES not configured - missing access key, secret key, or from email')
+      }
+
+      const sesClient = new SESClient({
+        region: settings.sesRegion || 'us-east-1',
+        credentials: {
+          accessKeyId: settings.sesAccessKeyId,
+          secretAccessKey: settings.sesSecretAccessKey,
+        },
+      })
+
+      const command = new SendEmailCommand({
+        Source: settings.sesFromEmail,
+        Destination: {
+          ToAddresses: [to],
+        },
+        Message: {
+          Subject: {
+            Data: subject,
+            Charset: 'UTF-8',
+          },
+          Body: {
+            Html: {
+              Data: html,
+              Charset: 'UTF-8',
+            },
+          },
+        },
+      })
+
+      const response = await sesClient.send(command)
+      console.log('SES email sent successfully:', response.MessageId)
+      return { success: true, messageId: response.MessageId }
+
+    } else if (provider === 'resend') {
+      // Resend
+      if (!settings.resendApiKey || !settings.resendFromEmail) {
+        throw new Error('Resend not configured - missing API key or from email')
+      }
+
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: settings.resendFromEmail,
+          to: [to],
+          subject,
+          html,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`Resend API error: ${JSON.stringify(errorData)}`)
+      }
+
+      const data = await response.json()
+      console.log('Resend email sent successfully:', data.id)
+      return { success: true, messageId: data.id }
+
+    } else if (provider === 'gmail') {
+      // Gmail via nodemailer would go here
+      throw new Error('Gmail provider not yet implemented')
+    } else {
+      throw new Error(`Unknown email provider: ${provider}`)
+    }
   } catch (error) {
     console.error('Failed to send email:', error)
     throw error

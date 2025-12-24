@@ -23,6 +23,17 @@ interface CareerEntry {
   importedFromLinkedIn: boolean
 }
 
+interface CardTheme {
+  id: string
+  name: string
+  pageBackground: string
+  cardBackground: string
+  textColor: string
+  profilePictureBorder: string
+  footerBackground: string
+  footerTextColor: string
+}
+
 // Helper function to determine background style
 function getBackgroundStyle(background: string): { className?: string; style?: React.CSSProperties } {
   if (background.startsWith('from-') || background.includes('via-') || background.includes('to-')) {
@@ -60,6 +71,9 @@ interface UserProfile {
   cardBoxBgColor: string | null
   cardTextColor: string | null
   cardBgImage: string | null
+  cardProfileBorderColor: string | null
+  cardFooterBgColor: string | null
+  cardFooterTextColor: string | null
 }
 
 export default function ProfilePage() {
@@ -101,6 +115,9 @@ export default function ProfilePage() {
   const [customBoxBgColor, setCustomBoxBgColor] = useState('')
   const [customTextColor, setCustomTextColor] = useState('')
   const [customBgImage, setCustomBgImage] = useState('')
+  const [customProfileBorderColor, setCustomProfileBorderColor] = useState('')
+  const [customFooterBgColor, setCustomFooterBgColor] = useState('')
+  const [customFooterTextColor, setCustomFooterTextColor] = useState('')
   const [isSavingCustomization, setIsSavingCustomization] = useState(false)
 
   // Branding settings
@@ -111,6 +128,9 @@ export default function ProfilePage() {
     cardBoxBgSwatches: ['#ffffff', '#f9fafb', '#fef3c7', '#fce7f3', '#ecfdf5', '#1f2937'],
     cardTextSwatches: ['#111827', '#374151', '#6b7280', '#ffffff', '#1e40af', '#7c3aed'],
   })
+
+  // Card themes
+  const [cardThemes, setCardThemes] = useState<CardTheme[]>([])
 
   // Career history state
   const [showCareerSection, setShowCareerSection] = useState(false)
@@ -175,6 +195,17 @@ export default function ProfilePage() {
           })
         }
 
+        // Fetch card themes
+        try {
+          const themesResponse = await fetch('/api/admin/themes')
+          const themesData = await themesResponse.json()
+          if (themesData.success && themesData.themes) {
+            setCardThemes(themesData.themes)
+          }
+        } catch (e) {
+          console.error('Failed to fetch card themes:', e)
+        }
+
         // Check if user is logged in
         const authResponse = await fetch('/api/auth/me')
         const authData = await authResponse.json()
@@ -193,6 +224,9 @@ export default function ProfilePage() {
           if (data.user.cardBoxBgColor) setCustomBoxBgColor(data.user.cardBoxBgColor)
           if (data.user.cardTextColor) setCustomTextColor(data.user.cardTextColor)
           if (data.user.cardBgImage) setCustomBgImage(data.user.cardBgImage)
+          if (data.user.cardProfileBorderColor) setCustomProfileBorderColor(data.user.cardProfileBorderColor)
+          if (data.user.cardFooterBgColor) setCustomFooterBgColor(data.user.cardFooterBgColor)
+          if (data.user.cardFooterTextColor) setCustomFooterTextColor(data.user.cardFooterTextColor)
 
           // Check connection status using new API
           const connectionResponse = await fetch(`/api/connections/status?userId=${data.user.id}`)
@@ -458,6 +492,15 @@ export default function ProfilePage() {
     }
   }
 
+  const applyTheme = (theme: CardTheme) => {
+    setCustomPageBgColor(theme.pageBackground)
+    setCustomBoxBgColor(theme.cardBackground)
+    setCustomTextColor(theme.textColor)
+    setCustomProfileBorderColor(theme.profilePictureBorder)
+    setCustomFooterBgColor(theme.footerBackground)
+    setCustomFooterTextColor(theme.footerTextColor)
+  }
+
   const handleSaveCustomization = async () => {
     setIsSavingCustomization(true)
     try {
@@ -469,6 +512,9 @@ export default function ProfilePage() {
           cardBoxBgColor: customBoxBgColor || null,
           cardTextColor: customTextColor || null,
           cardBgImage: customBgImage || null,
+          cardProfileBorderColor: customProfileBorderColor || null,
+          cardFooterBgColor: customFooterBgColor || null,
+          cardFooterTextColor: customFooterTextColor || null,
         }),
       })
 
@@ -481,6 +527,9 @@ export default function ProfilePage() {
           cardBoxBgColor: customBoxBgColor || null,
           cardTextColor: customTextColor || null,
           cardBgImage: customBgImage || null,
+          cardProfileBorderColor: customProfileBorderColor || null,
+          cardFooterBgColor: customFooterBgColor || null,
+          cardFooterTextColor: customFooterTextColor || null,
         })
         setShowCustomization(false)
       } else {
@@ -510,6 +559,9 @@ export default function ProfilePage() {
     setCustomBoxBgColor('')
     setCustomTextColor('')
     setCustomBgImage('')
+    setCustomProfileBorderColor('')
+    setCustomFooterBgColor('')
+    setCustomFooterTextColor('')
   }
 
   // Career history functions
@@ -734,6 +786,9 @@ export default function ProfilePage() {
   const effectiveCardBgClass = customBoxBgColor ? '' : (formStyle.className || 'bg-white')
 
   const effectiveTextColor = customTextColor || ''
+  const effectiveProfileBorderColor = customProfileBorderColor || ''
+  const effectiveFooterBgColor = customFooterBgColor || ''
+  const effectiveFooterTextColor = customFooterTextColor || ''
 
   return (
     <div
@@ -765,7 +820,10 @@ export default function ProfilePage() {
             {/* Profile Header - Centered */}
             <div className="flex flex-col items-center text-center mb-8">
               {/* Profile Picture */}
-              <div className="bus-card-profile-pic w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold overflow-hidden mb-4">
+              <div
+                className="bus-card-profile-pic w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold overflow-hidden mb-4 border-4"
+                style={effectiveProfileBorderColor ? { borderColor: effectiveProfileBorderColor } : { borderColor: 'transparent' }}
+              >
                 {profile.profilePicture ? (
                   <img
                     src={profile.profilePicture}
@@ -963,6 +1021,38 @@ export default function ProfilePage() {
                   </svg>
                   Customize Your Card
                 </h4>
+
+                {/* Themes Section */}
+                {cardThemes.length > 0 && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Themes
+                    </label>
+                    <div className="flex gap-3 flex-wrap">
+                      {cardThemes.map((theme) => (
+                        <button
+                          key={theme.id}
+                          onClick={() => applyTheme(theme)}
+                          className="flex flex-col items-center gap-1 p-2 rounded-lg border-2 border-gray-200 hover:border-amber-400 transition-all hover:shadow-md"
+                          title={theme.name}
+                        >
+                          {/* Split circle icon - page bg on left, card bg on right */}
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300">
+                            <div
+                              className="absolute left-0 top-0 w-1/2 h-full"
+                              style={{ backgroundColor: theme.pageBackground }}
+                            />
+                            <div
+                              className="absolute right-0 top-0 w-1/2 h-full"
+                              style={{ backgroundColor: theme.cardBackground }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-600 font-medium">{theme.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   {/* Page Background Color */}
@@ -1670,7 +1760,10 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      <Footer />
+      <Footer
+        backgroundColor={effectiveFooterBgColor || undefined}
+        textColor={effectiveFooterTextColor || undefined}
+      />
 
       {/* Connect Modal */}
       {profile && (

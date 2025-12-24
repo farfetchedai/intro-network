@@ -18,6 +18,9 @@ export async function GET() {
         cardBoxBgColor: true,
         cardTextColor: true,
         cardBgImage: true,
+        cardProfileBorderColor: true,
+        cardFooterBgColor: true,
+        cardFooterTextColor: true,
       },
     })
 
@@ -42,7 +45,15 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { cardPageBgColor, cardBoxBgColor, cardTextColor, cardBgImage } = body
+    const {
+      cardPageBgColor,
+      cardBoxBgColor,
+      cardTextColor,
+      cardBgImage,
+      cardProfileBorderColor,
+      cardFooterBgColor,
+      cardFooterTextColor,
+    } = body
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -51,12 +62,18 @@ export async function POST(req: Request) {
         cardBoxBgColor: cardBoxBgColor || null,
         cardTextColor: cardTextColor || null,
         cardBgImage: cardBgImage || null,
+        cardProfileBorderColor: cardProfileBorderColor || null,
+        cardFooterBgColor: cardFooterBgColor || null,
+        cardFooterTextColor: cardFooterTextColor || null,
       },
       select: {
         cardPageBgColor: true,
         cardBoxBgColor: true,
         cardTextColor: true,
         cardBgImage: true,
+        cardProfileBorderColor: true,
+        cardFooterBgColor: true,
+        cardFooterTextColor: true,
       },
     })
 

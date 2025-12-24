@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from 'react'
 
+interface CardTheme {
+  id?: string
+  name: string
+  pageBackground: string
+  cardBackground: string
+  textColor: string
+  profilePictureBorder: string
+  footerBackground: string
+  footerTextColor: string
+}
+
 interface BrandingSettings {
   productName: string
   desktopLogo: string
@@ -147,9 +158,18 @@ export default function BrandingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [customCSS, setCustomCSS] = useState('')
+  const [themes, setThemes] = useState<CardTheme[]>([
+    { name: 'Default', pageBackground: '#f0f9ff', cardBackground: '#ffffff', textColor: '#111827', profilePictureBorder: '#3b82f6', footerBackground: '#1f2937', footerTextColor: '#ffffff' },
+    { name: 'Dark', pageBackground: '#1f2937', cardBackground: '#374151', textColor: '#f9fafb', profilePictureBorder: '#60a5fa', footerBackground: '#111827', footerTextColor: '#d1d5db' },
+    { name: 'Warm', pageBackground: '#fef3c7', cardBackground: '#fffbeb', textColor: '#78350f', profilePictureBorder: '#f59e0b', footerBackground: '#92400e', footerTextColor: '#fef3c7' },
+    { name: 'Cool', pageBackground: '#ecfdf5', cardBackground: '#f0fdf4', textColor: '#064e3b', profilePictureBorder: '#10b981', footerBackground: '#065f46', footerTextColor: '#d1fae5' },
+    { name: 'Rose', pageBackground: '#fce7f3', cardBackground: '#fdf2f8', textColor: '#831843', profilePictureBorder: '#ec4899', footerBackground: '#9d174d', footerTextColor: '#fce7f3' },
+    { name: 'Purple', pageBackground: '#f5f3ff', cardBackground: '#faf5ff', textColor: '#4c1d95', profilePictureBorder: '#8b5cf6', footerBackground: '#5b21b6', footerTextColor: '#ede9fe' },
+  ])
 
   useEffect(() => {
     fetchSettings()
+    fetchThemes()
   }, [])
 
   const fetchSettings = async () => {
@@ -175,6 +195,42 @@ export default function BrandingPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchThemes = async () => {
+    try {
+      const response = await fetch('/api/admin/themes')
+      const data = await response.json()
+      if (data.success && data.themes.length > 0) {
+        setThemes(data.themes)
+      }
+    } catch (error) {
+      console.error('Failed to fetch themes:', error)
+    }
+  }
+
+  const handleSaveThemes = async () => {
+    try {
+      const response = await fetch('/api/admin/themes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ themes }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setThemes(data.themes)
+        alert('Themes saved successfully!')
+      }
+    } catch (error) {
+      console.error('Failed to save themes:', error)
+      alert('Failed to save themes')
+    }
+  }
+
+  const updateTheme = (index: number, field: keyof CardTheme, value: string) => {
+    setThemes(prev => prev.map((theme, i) =>
+      i === index ? { ...theme, [field]: value } : theme
+    ))
   }
 
   const handleSave = async () => {
@@ -1242,6 +1298,186 @@ export default function BrandingPage() {
               placeholder="#111827, #374151, #6b7280, #ffffff, #1e40af, #7c3aed"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Card Themes */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Business Card Themes</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Define up to 6 themes that users can choose from to quickly style their business card.
+          Each theme icon shows the page background (left half) and card background (right half).
+        </p>
+
+        <div className="space-y-6">
+          {themes.map((theme, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-4 mb-4">
+                {/* Theme Preview Icon - Split Circle */}
+                <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-300 flex-shrink-0">
+                  <div
+                    className="absolute left-0 top-0 w-1/2 h-full"
+                    style={{ backgroundColor: theme.pageBackground }}
+                  />
+                  <div
+                    className="absolute right-0 top-0 w-1/2 h-full"
+                    style={{ backgroundColor: theme.cardBackground }}
+                  />
+                </div>
+
+                {/* Theme Name */}
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Theme Name
+                  </label>
+                  <input
+                    type="text"
+                    value={theme.name}
+                    onChange={(e) => updateTheme(index, 'name', e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Theme name"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {/* Page Background */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Page Background
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.pageBackground}
+                      onChange={(e) => updateTheme(index, 'pageBackground', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.pageBackground}
+                      onChange={(e) => updateTheme(index, 'pageBackground', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Card Background */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Card Background
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.cardBackground}
+                      onChange={(e) => updateTheme(index, 'cardBackground', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.cardBackground}
+                      onChange={(e) => updateTheme(index, 'cardBackground', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Text Color */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Text Color
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.textColor}
+                      onChange={(e) => updateTheme(index, 'textColor', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.textColor}
+                      onChange={(e) => updateTheme(index, 'textColor', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Profile Picture Border */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Profile Border
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.profilePictureBorder}
+                      onChange={(e) => updateTheme(index, 'profilePictureBorder', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.profilePictureBorder}
+                      onChange={(e) => updateTheme(index, 'profilePictureBorder', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer Background */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Footer Background
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.footerBackground}
+                      onChange={(e) => updateTheme(index, 'footerBackground', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.footerBackground}
+                      onChange={(e) => updateTheme(index, 'footerBackground', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer Text Color */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Footer Text Color
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.footerTextColor}
+                      onChange={(e) => updateTheme(index, 'footerTextColor', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.footerTextColor}
+                      onChange={(e) => updateTheme(index, 'footerTextColor', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={handleSaveThemes}
+            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
+          >
+            Save Themes
+          </button>
         </div>
       </div>
 

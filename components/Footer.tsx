@@ -3,7 +3,12 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-export default function Footer() {
+interface FooterProps {
+  backgroundColor?: string
+  textColor?: string
+}
+
+export default function Footer({ backgroundColor, textColor }: FooterProps = {}) {
   const [branding, setBranding] = useState<any>(null)
   const [navigation, setNavigation] = useState<any>(null)
 
@@ -83,8 +88,15 @@ export default function Footer() {
     },
   ]
 
+  // Determine effective colors
+  const effectiveBgColor = backgroundColor || undefined
+  const effectiveTextColor = textColor || undefined
+
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer
+      className={backgroundColor ? '' : 'bg-gray-900'}
+      style={{ backgroundColor: effectiveBgColor }}
+    >
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Left: Footer Logo */}
@@ -93,10 +105,13 @@ export default function Footer() {
               <img
                 src={branding.footerLogo}
                 alt="Logo"
-                className="h-8 w-auto brightness-0 invert"
+                className={`h-8 w-auto ${!backgroundColor ? 'brightness-0 invert' : ''}`}
               />
             ) : (
-              <span className="text-white font-bold text-lg">
+              <span
+                className={`font-bold text-lg ${!textColor ? 'text-white' : ''}`}
+                style={{ color: effectiveTextColor }}
+              >
                 {branding?.productName || 'Intro Network'}
               </span>
             )}
@@ -108,7 +123,8 @@ export default function Footer() {
               <Link
                 key={`${link.href}-${index}`}
                 href={link.href}
-                className="text-gray-400 hover:text-white transition-colors text-sm"
+                className={`transition-colors text-sm ${!textColor ? 'text-gray-400 hover:text-white' : 'hover:opacity-80'}`}
+                style={{ color: effectiveTextColor }}
               >
                 {link.label}
               </Link>
@@ -121,7 +137,8 @@ export default function Footer() {
               <a
                 key={social.name}
                 href={social.href}
-                className="text-gray-400 hover:text-white transition-colors"
+                className={`transition-colors ${!textColor ? 'text-gray-400 hover:text-white' : 'hover:opacity-80'}`}
+                style={{ color: effectiveTextColor }}
                 aria-label={social.name}
               >
                 {social.icon}

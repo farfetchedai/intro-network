@@ -38,10 +38,13 @@ model User {
   introRequest     String? // Types of people they'd like intros to (roles, sectors, or specific people)
 
   // Business card customization
-  cardPageBgColor  String?  // Page background color
-  cardBoxBgColor   String?  // Card box background color
-  cardTextColor    String?  // Text color inside the card
-  cardBgImage      String?  // Background image URL (object-fit: cover)
+  cardPageBgColor        String?  // Page background color
+  cardBoxBgColor         String?  // Card box background color
+  cardTextColor          String?  // Text color inside the card
+  cardBgImage            String?  // Background image URL (object-fit: cover)
+  cardProfileBorderColor String?  // Profile picture border color
+  cardFooterBgColor      String?  // Footer background color
+  cardFooterTextColor    String?  // Footer text color
 
   // Magic link authentication
   magicLinkToken     String?   @unique
@@ -494,4 +497,21 @@ model Notification {
   @@index([userId])
   @@index([userId, isRead])
   @@index([createdAt])
+}
+
+model CardTheme {
+  id                     String   @id @default(cuid())
+  name                   String
+  order                  Int      @default(0)  // For ordering themes in the UI
+  pageBackground         String   // Page background color
+  cardBackground         String   // Card box background color
+  textColor              String   // Text color inside the card
+  profilePictureBorder   String   // Profile picture border color
+  footerBackground       String   // Footer background color
+  footerTextColor        String   // Footer text color
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([order])
 }

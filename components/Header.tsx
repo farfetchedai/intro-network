@@ -535,7 +535,7 @@ export default function Header() {
 
           {/* User Info Fixed to Bottom */}
           {user ? (
-            <div className="px-6 py-6 border-t border-blue-800 bg-blue-950">
+            <div className="px-6 py-6">
               <div className="flex items-center space-x-4 mb-4">
                 {/* Avatar */}
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">

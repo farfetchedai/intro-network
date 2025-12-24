@@ -12,18 +12,22 @@ export async function sendEmail({
   subject: string
   html: string
 }) {
+  console.log('[Email] Attempting to send email:', { to, subject: subject.substring(0, 50) })
+
   try {
     const settings = await prisma.apiSettings.findFirst()
 
     if (!settings) {
-      console.warn('Email provider not configured. Email not sent.')
+      console.error('[Email] No API settings found in database')
       return { success: false, error: 'Email provider not configured' }
     }
+
+    console.log('[Email] Provider configured:', settings.emailProvider || 'none')
 
     // Use Gmail SMTP if selected
     if (settings.emailProvider === 'gmail') {
       if (!settings.gmailEmail || !settings.gmailAppPassword) {
-        console.warn('Gmail SMTP credentials not configured. Email not sent.')
+        console.error('[Email] Gmail SMTP credentials not configured')
         return { success: false, error: 'Gmail SMTP not configured' }
       }
 
@@ -56,7 +60,7 @@ export async function sendEmail({
     // Use Amazon SES if selected
     if (settings.emailProvider === 'ses') {
       if (!settings.sesAccessKeyId || !settings.sesSecretAccessKey || !settings.sesFromEmail) {
-        console.warn('Amazon SES credentials not configured. Email not sent.')
+        console.error('[Email] Amazon SES credentials not configured')
         return { success: false, error: 'Amazon SES not configured' }
       }
 
@@ -103,27 +107,35 @@ export async function sendEmail({
     // Use Resend if selected or default
     if (settings.emailProvider === 'resend' || !settings.emailProvider) {
       if (!settings.resendApiKey || !settings.resendFromEmail) {
-        console.warn('Resend credentials not configured. Email not sent.')
+        console.error('[Email] Resend credentials not configured')
         return { success: false, error: 'Resend not configured' }
       }
 
+      console.log('[Email] Sending via Resend:', {
+        from: settings.resendFromEmail,
+        to,
+        subject,
+      })
+
       const resend = new Resend(settings.resendApiKey)
 
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: settings.resendFromEmail,
         to,
         subject,
         html,
       })
 
+      console.log('[Email] Resend send successful:', result)
       return { success: true, provider: 'resend' }
     }
 
-    console.warn('No email provider configured. Email not sent.')
+    console.error('[Email] No email provider configured')
     return { success: false, error: 'No email provider configured' }
   } catch (error) {
-    console.error('Failed to send email:', error)
     const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('[Email] Failed to send email:', errorMessage)
+    console.error('[Email] Full error:', error)
     return { success: false, error: errorMessage }
   }
 }

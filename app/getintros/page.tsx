@@ -600,14 +600,32 @@ export default function GetIntrosPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Check individual email results
+        const successfulEmails = data.results?.filter((r: any) => r.emailSent) || []
+        const failedEmails = data.results?.filter((r: any) => !r.emailSent) || []
+
         if (contactIndex !== undefined) {
-          // Individual contact - mark as sent and stay on page
-          setSentContactIndices(prev => new Set([...prev, contactIndex]))
+          // Individual contact - check if their email actually sent
+          const result = data.results?.[0]
+          if (result?.emailSent) {
+            setSentContactIndices(prev => new Set([...prev, contactIndex]))
+          } else {
+            setFormError('Failed to send email. Please check your email configuration in Settings.')
+          }
           setIsSubmitting(false)
         } else {
-          // "Ask Everyone" - show success modal with count
-          setSentCount(contacts.length)
-          setShowSuccessModal(true)
+          // "Ask Everyone" - show success modal with actual count
+          if (successfulEmails.length > 0) {
+            setSentCount(successfulEmails.length)
+            if (failedEmails.length > 0) {
+              // Some succeeded, some failed
+              setFormError(`${failedEmails.length} email(s) failed to send. Check your email configuration.`)
+            }
+            setShowSuccessModal(true)
+          } else {
+            // All failed
+            setFormError('Failed to send emails. Please check your email configuration in Settings.')
+          }
           setIsSubmitting(false)
         }
       } else {

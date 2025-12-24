@@ -84,6 +84,7 @@ export async function POST(req: Request) {
         let emailResult, smsResult
 
         // Send email if requested and email exists
+        console.log(`[SendRequests] Processing contact ${contact.id}: sendViaEmail=${validatedData.sendViaEmail}, email=${contact.email}`)
         if (validatedData.sendViaEmail && contact.email) {
           // Helper to capitalize first letter
           const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
@@ -127,6 +128,7 @@ export async function POST(req: Request) {
             subject: emailSubject,
             html: emailHtml,
           })
+          console.log(`[SendRequests] Email result for ${contact.email}:`, emailResult)
         }
 
         // Send SMS if requested and phone exists
@@ -210,6 +212,7 @@ export async function POST(req: Request) {
       })
     )
 
+    console.log('[SendRequests] Final results:', JSON.stringify(results))
     return NextResponse.json({ success: true, results })
   } catch (error) {
     if (error instanceof z.ZodError) {

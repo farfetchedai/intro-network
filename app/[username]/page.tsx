@@ -1662,7 +1662,6 @@ export default function ProfilePage() {
                   size={120}
                   level="M"
                   includeMargin={false}
-                  fgColor={effectiveTextColor || '#000000'}
                 />
               </div>
               <p className="text-xs mt-2" style={{ color: effectiveTextColor || '#9ca3af', opacity: 0.7 }}>Downloads contact card (VCF)</p>

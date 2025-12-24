@@ -1653,8 +1653,8 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* QR Code - hidden on mobile, shown on desktop */}
-            <div className="hidden md:flex flex-col items-center pt-6 border-t border-gray-200 mt-6">
+            {/* QR Code */}
+            <div className="flex flex-col items-center pt-6 border-t border-gray-200 mt-6">
               <p className="text-sm text-gray-500 mb-3">Scan to save contact</p>
               <div className="bg-white p-3 rounded-xl shadow-sm">
                 <QRCodeSVG

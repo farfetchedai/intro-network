@@ -691,7 +691,7 @@ export default function GetIntrosPage() {
     >
       <Header />
 
-      <main className="flex-1 flex items-center justify-center px-4 py-8">
+      <main className="flex-1 flex items-center justify-center flow-padding">
         <div className="w-full max-w-4xl">
           <div className="backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12" style={getFormBackgroundStyle()}>
             {/* Step 1: Add Contacts */}

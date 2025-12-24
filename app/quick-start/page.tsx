@@ -141,7 +141,7 @@ export default function QuickStartPage() {
 
       {/* Full-page centered background */}
       <main
-        className={`flex-1 flex items-center justify-center bg-gradient-to-br ${getStepBackgroundClass()} px-4 py-8`}
+        className={`flex-1 flex items-center justify-center bg-gradient-to-br ${getStepBackgroundClass()} flow-padding`}
         style={getStepBackgroundStyle()}
       >
         <div className="w-full max-w-4xl">

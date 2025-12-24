@@ -652,7 +652,7 @@ export default function RefereePage() {
       <BottomProgressBar currentStep={step} totalSteps={4} />
 
       {/* Main Content */}
-      <main className="pt-16 pb-24">
+      <main className="pb-24">
         {/* Desktop: Background color transition */}
         <div
           className={`hidden lg:block h-screen bg-gradient-to-br ${getStepBackgroundClass(step)} transition-all duration-700 ease-in-out`}

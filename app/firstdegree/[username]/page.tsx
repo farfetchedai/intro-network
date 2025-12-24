@@ -811,7 +811,7 @@ function FirstDegreeContent() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div
-          className="min-h-full flex items-center justify-center p-4 lg:p-8"
+          className="flow-padding min-h-full flex items-center justify-center"
         >
           <div key={step} className="w-full max-w-3xl animate-fadeIn">
             <div className="backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-12" style={getFormBackgroundStyle()}>
@@ -840,12 +840,12 @@ function FirstDegreeContent() {
                         >
                           {referee?.firstName} {referee?.lastName}
                         </a>
-                        {' '}would be most grateful for some intros
+                        {' '}would be incredibly grateful for some introductions
                       </h2>
                     </div>
                   </div>
                   <p className="text-lg text-gray-700 mb-8">
-                    NotWhatButWho makes it almost easy to connect people in your network.
+                    Get Intros makes it easy to build your network through introductions.
                   </p>
 
                   <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 rounded-r-lg">
@@ -886,14 +886,7 @@ function FirstDegreeContent() {
                       <li className="flex items-start">
                         <span className="font-bold mr-2">2)</span>
                         <span>
-                          Can you help introduce {referee?.firstName} to people in your network?
-                        </span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="font-bold mr-2">3)</span>
-                        <span>
-                          Can you help? If so, complete their name/contact info on the next step, and we'll generate
-                          a polite simple intro request. We will never share, sell or spam your contacts, and they can
+                          Can you help introduce {referee?.firstName} to people in your network? If so, please add their name and contact details on the next step, and we'll generate an easy, polite request. We will never share, sell or spam your contacts, and they can
                           opt out at any time.
                         </span>
                       </li>

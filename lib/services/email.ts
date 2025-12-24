@@ -123,7 +123,8 @@ export async function sendEmail({
     return { success: false, error: 'No email provider configured' }
   } catch (error) {
     console.error('Failed to send email:', error)
-    return { success: false, error }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return { success: false, error: errorMessage }
   }
 }
 

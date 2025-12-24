@@ -212,11 +212,11 @@ export async function POST(req: Request) {
       )
     }
 
-    console.error('Send requests error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Send requests error:', errorMessage)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Error message:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage || 'Internal server error' },
       { status: 500 }
     )
   }

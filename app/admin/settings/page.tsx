@@ -186,7 +186,7 @@ export default function SettingsPage() {
           </label>
           <input
             type="text"
-            value={settings.emailFromName}
+            value={settings.emailFromName || ''}
             onChange={(e) => setSettings({ ...settings, emailFromName: e.target.value })}
             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             placeholder="IntroNetwork"

@@ -517,13 +517,15 @@ export default function GetIntrosPage() {
       // Remove any remaining unreplaced placeholders
       .replace(/\{[^}]+\}/g, '[placeholder]')
 
-    // Convert line breaks to HTML
-    // First, convert double newlines (paragraph breaks) to paragraph tags
-    // Then convert remaining single newlines to <br> tags
-    previewHtml = previewHtml
-      .split(/\n\n+/)
-      .map(paragraph => `<p style="margin-bottom: 1em;">${paragraph.replace(/\n/g, '<br>')}</p>`)
-      .join('')
+    // Only convert line breaks to HTML if template is plain text (no HTML tags)
+    const isHtml = /<[a-z][\s\S]*>/i.test(previewHtml)
+    if (!isHtml) {
+      // Convert double newlines to paragraph breaks, single newlines to <br>
+      previewHtml = previewHtml
+        .split(/\n\n+/)
+        .map(paragraph => `<p style="margin-bottom: 1em;">${paragraph.replace(/\n/g, '<br>')}</p>`)
+        .join('')
+    }
 
     return previewHtml
   }

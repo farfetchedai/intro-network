@@ -63,6 +63,20 @@ function FirstDegreeContent() {
   const [existingReferrals, setExistingReferrals] = useState<Array<any>>([])
   const [hasExistingReferrals, setHasExistingReferrals] = useState(false)
 
+  // Connections state
+  const [existingConnections, setExistingConnections] = useState<Array<{
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    username: string | null
+    profilePicture: string | null
+    companyName: string | null
+  }>>([])
+  const [hasExistingConnections, setHasExistingConnections] = useState(false)
+  const [hasLoadedConnections, setHasLoadedConnections] = useState(false)
+  const [editingReferralIndices, setEditingReferralIndices] = useState<Set<number>>(new Set())
+
   // Step 3: Message templates and editing
   const [messageTemplate, setMessageTemplate] = useState('')
   const [emailSubject, setEmailSubject] = useState('')
@@ -402,6 +416,17 @@ function FirstDegreeContent() {
                 setContactLoaded(true)
                 setIsLoggedIn(true)
                 console.log('[Pre-populate] Successfully pre-populated user data')
+
+                // Fetch connections for logged-in user
+                fetch('/api/connections')
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.success && data.connections && data.connections.length > 0) {
+                      setExistingConnections(data.connections)
+                      setHasExistingConnections(true)
+                    }
+                  })
+                  .catch(err => console.error('Failed to fetch connections:', err))
               } else {
                 console.log('[Pre-populate] User not authenticated or invalid auth data')
               }
@@ -482,6 +507,84 @@ function FirstDegreeContent() {
         linkedUser: c.linkedUser || null,
       })))
     }
+  }
+
+  const handleLoadConnections = () => {
+    const loadedReferrals: typeof referrals = []
+
+    // Track which user IDs and emails we've already added (to avoid duplicates)
+    const addedUserIds = new Set<string>()
+    const addedEmails = new Set<string>()
+
+    // First, add all connections (platform users)
+    existingConnections.forEach(conn => {
+      addedUserIds.add(conn.id)
+      if (conn.email) {
+        addedEmails.add(conn.email.toLowerCase())
+      }
+      loadedReferrals.push({
+        firstName: conn.firstName,
+        lastName: conn.lastName,
+        email: conn.email || '',
+        phone: '',
+        company: conn.companyName || '',
+        linkedUser: {
+          id: conn.id,
+          username: conn.username,
+          profilePicture: conn.profilePicture,
+          hasCompletedOnboarding: true,
+        },
+      })
+    })
+
+    // Then add existing referrals that aren't already in connections
+    existingReferrals.forEach(c => {
+      // Skip if this referral is linked to a user we've already added
+      if (c.linkedUser?.id && addedUserIds.has(c.linkedUser.id)) {
+        return
+      }
+
+      // Skip if this referral has the same email as someone we've already added
+      if (c.email && addedEmails.has(c.email.toLowerCase())) {
+        return
+      }
+
+      // Track this email to avoid duplicates within referrals
+      if (c.email) {
+        addedEmails.add(c.email.toLowerCase())
+      }
+
+      loadedReferrals.push({
+        id: c.id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email || '',
+        phone: c.phone || '',
+        company: c.company || '',
+        linkedUser: c.linkedUser || null,
+      })
+    })
+
+    if (loadedReferrals.length > 0) {
+      setReferrals(loadedReferrals)
+    }
+    setHasLoadedConnections(true)
+  }
+
+  const toggleEditReferral = (index: number) => {
+    setEditingReferralIndices(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
+  const isLoadedReferral = (referral: typeof referrals[0]) => {
+    return referral.firstName && referral.lastName && (referral.linkedUser || referral.email || referral.phone)
   }
 
   const handleAddReferral = () => {
@@ -929,107 +1032,272 @@ function FirstDegreeContent() {
                     </div>
                   )}
 
-                  <div className="space-y-4 mb-6">
-                    {referrals.map((referral, index) => (
-                      <div
-                        key={index}
-                        className="border border-gray-200 rounded-lg p-4 bg-gray-50"
-                      >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              First Name
-                            </label>
-                            <input
-                              type="text"
-                              value={referral.firstName}
-                              onChange={(e) =>
-                                handleReferralChange(
-                                  index,
-                                  'firstName',
-                                  e.target.value
-                                )
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="First name"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Last Name
-                            </label>
-                            <input
-                              type="text"
-                              value={referral.lastName}
-                              onChange={(e) =>
-                                handleReferralChange(
-                                  index,
-                                  'lastName',
-                                  e.target.value
-                                )
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Last name"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Email
-                            </label>
-                            <input
-                              type="email"
-                              value={referral.email}
-                              onChange={(e) =>
-                                handleReferralChange(index, 'email', e.target.value)
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="email@example.com"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Phone
-                            </label>
-                            <input
-                              type="tel"
-                              value={referral.phone}
-                              onChange={(e) =>
-                                handleReferralChange(index, 'phone', e.target.value)
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="+1 555 123 4567"
-                            />
-                          </div>
-                          <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Company
-                            </label>
-                            <input
-                              type="text"
-                              value={referral.company}
-                              onChange={(e) =>
-                                handleReferralChange(
-                                  index,
-                                  'company',
-                                  e.target.value
-                                )
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Company name"
-                            />
-                          </div>
+                  {/* Load Connections Button */}
+                  {hasExistingConnections && !hasLoadedConnections && referrals.length === 0 && (
+                    <div className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-xl p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-800">
+                            You have {existingConnections.length} connection{existingConnections.length !== 1 ? 's' : ''}
+                          </p>
+                          <p className="text-xs text-emerald-600 mt-1">
+                            Load your connections to quickly add them
+                          </p>
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleRemoveReferral(index)}
-                          className="mt-3 text-red-600 text-sm font-medium hover:text-red-800"
+                          onClick={handleLoadConnections}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap"
                         >
-                          Remove
+                          Load Connections
                         </button>
                       </div>
-                    ))}
+                    </div>
+                  )}
 
-                    {hasExistingReferrals && referrals.length === 0 && (
+                  <div className="space-y-4 mb-6">
+                    {referrals.map((referral, index) => {
+                      const isLoaded = isLoadedReferral(referral)
+                      const isEditing = editingReferralIndices.has(index)
+                      const hasProfile = referral.linkedUser?.username
+
+                      return (
+                        <div
+                          key={index}
+                          className="border-2 border-gray-200 rounded-2xl p-6 bg-white"
+                        >
+                          {isLoaded ? (
+                            // Rendered view for loaded referrals
+                            <>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                  {/* Profile Picture */}
+                                  {hasProfile ? (
+                                    <a href={`/${referral.linkedUser?.username}`} className="flex-shrink-0">
+                                      {referral.linkedUser?.profilePicture ? (
+                                        <img
+                                          src={referral.linkedUser.profilePicture}
+                                          alt={`${referral.firstName} ${referral.lastName}`}
+                                          className="w-14 h-14 rounded-full object-cover ring-2 ring-purple-200 hover:ring-purple-400 transition-all"
+                                        />
+                                      ) : (
+                                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-200 hover:ring-purple-400 transition-all">
+                                          {referral.firstName.charAt(0)}{referral.lastName.charAt(0)}
+                                        </div>
+                                      )}
+                                    </a>
+                                  ) : (
+                                    <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg flex-shrink-0">
+                                      {referral.firstName.charAt(0)}{referral.lastName.charAt(0)}
+                                    </div>
+                                  )}
+
+                                  {/* Name and Contact Info */}
+                                  <div className="flex-1">
+                                    {hasProfile ? (
+                                      <a
+                                        href={`/${referral.linkedUser?.username}`}
+                                        className="text-lg font-semibold text-purple-600 hover:text-purple-800 hover:underline"
+                                      >
+                                        {referral.firstName} {referral.lastName}
+                                      </a>
+                                    ) : (
+                                      <p className="text-lg font-semibold text-gray-900">
+                                        {referral.firstName} {referral.lastName}
+                                      </p>
+                                    )}
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">
+                                      {referral.email && (
+                                        <span className="flex items-center gap-1">
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                          </svg>
+                                          {referral.email}
+                                        </span>
+                                      )}
+                                      {referral.phone && (
+                                        <span className="flex items-center gap-1">
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                          </svg>
+                                          {referral.phone}
+                                        </span>
+                                      )}
+                                      {referral.company && (
+                                        <span className="flex items-center gap-1">
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                          </svg>
+                                          {referral.company}
+                                        </span>
+                                      )}
+                                      {!referral.email && !referral.phone && (
+                                        <span className="text-amber-600 italic">No contact info</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleEditReferral(index)}
+                                    className={`p-2 rounded-lg transition-all duration-200 ${
+                                      isEditing
+                                        ? 'bg-emerald-100 text-emerald-600'
+                                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                    title={isEditing ? 'Done editing' : 'Edit contact info'}
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveReferral(index)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                    title="Remove contact"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Editable fields (shown when editing) */}
+                              {isEditing && (
+                                <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                      Email
+                                    </label>
+                                    <input
+                                      type="email"
+                                      value={referral.email}
+                                      onChange={(e) => handleReferralChange(index, 'email', e.target.value)}
+                                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                      placeholder="email@example.com"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                      Phone
+                                    </label>
+                                    <input
+                                      type="tel"
+                                      value={referral.phone}
+                                      onChange={(e) => handleReferralChange(index, 'phone', e.target.value)}
+                                      className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                      placeholder="+1 (555) 000-0000"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            // Full input form for new empty referrals
+                            <>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    First Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={referral.firstName}
+                                    onChange={(e) =>
+                                      handleReferralChange(
+                                        index,
+                                        'firstName',
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="First name"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Last Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={referral.lastName}
+                                    onChange={(e) =>
+                                      handleReferralChange(
+                                        index,
+                                        'lastName',
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Last name"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Email
+                                  </label>
+                                  <input
+                                    type="email"
+                                    value={referral.email}
+                                    onChange={(e) =>
+                                      handleReferralChange(index, 'email', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="email@example.com"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Phone
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    value={referral.phone}
+                                    onChange={(e) =>
+                                      handleReferralChange(index, 'phone', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="+1 555 123 4567"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Company
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={referral.company}
+                                    onChange={(e) =>
+                                      handleReferralChange(
+                                        index,
+                                        'company',
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Company name"
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveReferral(index)}
+                                className="mt-3 text-red-600 text-sm font-medium hover:text-red-800"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+
+                    {hasExistingReferrals && referrals.length === 0 && !hasExistingConnections && (
                       <button
                         type="button"
                         onClick={handleLoadPreviousReferrals}

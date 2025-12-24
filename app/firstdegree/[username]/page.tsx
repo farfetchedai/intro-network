@@ -452,8 +452,8 @@ function FirstDegreeContent() {
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Create account and send magic link
-    if (firstDegreeInfo.email) {
+    // Only create account and send magic link if user is NOT already logged in
+    if (!isLoggedIn && firstDegreeInfo.email) {
       try {
         // Create account (or get existing user) and send magic link
         const createAccountResponse = await fetch('/api/firstdegree/create-account', {
@@ -488,6 +488,20 @@ function FirstDegreeContent() {
         }
       } catch (error) {
         console.error('Error creating account:', error)
+      }
+    } else if (isLoggedIn && firstDegreeUserId) {
+      // User is logged in, just fetch their existing contacts
+      try {
+        const contactsResponse = await fetch(`/api/contacts?userId=${firstDegreeUserId}`)
+        if (contactsResponse.ok) {
+          const contactsData = await contactsResponse.json()
+          if (contactsData.contacts && contactsData.contacts.length > 0) {
+            setExistingReferrals(contactsData.contacts)
+            setHasExistingReferrals(true)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching contacts:', error)
       }
     }
 

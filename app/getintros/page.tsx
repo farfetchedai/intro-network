@@ -1194,12 +1194,20 @@ export default function GetIntrosPage() {
                     >
                       {isSubmitting ? 'Sending...' : 'Ask Everyone'}
                     </button>
-                    <button
-                      onClick={() => setStep(1)}
-                      className="w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
-                    >
-                      ← Back to Contacts
-                    </button>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => setStep(3)}
+                        className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+                      >
+                        Finish
+                      </button>
+                      <button
+                        onClick={() => setStep(1)}
+                        className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                      >
+                        ← Back to Contacts
+                      </button>
+                    </div>
                   </div>
                 </div>
               </>

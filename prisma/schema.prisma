@@ -78,6 +78,11 @@ model User {
   notifications              Notification[]      @relation("UserNotifications")
   sentNotifications          Notification[]      @relation("NotificationSender")
 
+  // Introduction relations
+  introductionsMade          PendingIntroduction[] @relation("IntroductionsMade")
+  introductionsAsPersonA     PendingIntroduction[] @relation("IntroductionsAsPersonA")
+  introductionsAsPersonB     PendingIntroduction[] @relation("IntroductionsAsPersonB")
+
   @@index([email])
   @@index([phone])
 }
@@ -514,4 +519,50 @@ model CardTheme {
   updatedAt              DateTime @updatedAt
 
   @@index([order])
+}
+
+model PendingIntroduction {
+  id                String    @id @default(cuid())
+
+  // The user making the introduction
+  introducerId      String
+  introducer        User      @relation("IntroductionsMade", fields: [introducerId], references: [id], onDelete: Cascade)
+
+  // Person A - either existing user or external (by email)
+  personAUserId     String?   // If they have an account
+  personAUser       User?     @relation("IntroductionsAsPersonA", fields: [personAUserId], references: [id], onDelete: SetNull)
+  personAEmail      String    // Always required for sending email
+  personAName       String    // Name to display
+  personACompany    String?   // Optional company
+  personAContext    String?   // Why person A is relevant/what they do
+
+  // Person B - either existing user or external (by email)
+  personBUserId     String?   // If they have an account
+  personBUser       User?     @relation("IntroductionsAsPersonB", fields: [personBUserId], references: [id], onDelete: SetNull)
+  personBEmail      String    // Always required for sending email
+  personBName       String    // Name to display
+  personBCompany    String?   // Optional company
+  personBContext    String?   // Why person B is relevant/what they do
+
+  // Introduction message
+  message           String    // The introduction message
+
+  // Status tracking
+  status            String    @default("pending") // pending, personA_accepted, personB_accepted, both_accepted, declined
+  personAAccepted   Boolean   @default(false)
+  personBAccepted   Boolean   @default(false)
+  personAEmailSent  Boolean   @default(false)
+  personBEmailSent  Boolean   @default(false)
+
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  acceptedAt        DateTime?
+
+  @@index([introducerId])
+  @@index([personAUserId])
+  @@index([personBUserId])
+  @@index([personAEmail])
+  @@index([personBEmail])
+  @@index([status])
 }

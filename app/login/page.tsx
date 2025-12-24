@@ -1,14 +1,30 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [devLink, setDevLink] = useState<string | null>(null)
+  const [isNewUser, setIsNewUser] = useState(false)
+
+  useEffect(() => {
+    // Pre-fill email from URL parameter
+    const emailParam = searchParams.get('email')
+    if (emailParam) {
+      setEmail(emailParam)
+    }
+    // Check if this is a new user signup flow
+    const newUserParam = searchParams.get('newUser')
+    if (newUserParam === 'true') {
+      setIsNewUser(true)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,7 +38,13 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          // If this is a new user flow, allow creating an account
+          createIfNotExists: isNewUser,
+          // After login, redirect to introductions if coming from intro email
+          redirectUrl: isNewUser ? '/introductions' : undefined,
+        }),
       })
 
       const data = await response.json()
@@ -60,8 +82,8 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-2xl">I</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900">{isNewUser ? 'Get Started' : 'Welcome Back'}</h1>
+          <p className="text-gray-600 mt-2">{isNewUser ? 'Create your account to accept the introduction' : 'Sign in to your account'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -126,5 +148,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

@@ -383,6 +383,149 @@ export function generateApprovalNotificationToFirstDegree({
   `
 }
 
+export async function sendIntroductionEmail({
+  to,
+  recipientName,
+  introducerName,
+  otherPersonName,
+  otherPersonCompany,
+  otherPersonContext,
+  message,
+  introductionId,
+  isExistingUser,
+}: {
+  to: string
+  recipientName: string
+  introducerName: string
+  otherPersonName: string
+  otherPersonCompany?: string | null
+  otherPersonContext?: string | null
+  message: string
+  introductionId: string
+  isExistingUser: boolean
+}) {
+  // Get the app URL for links
+  const settings = await prisma.apiSettings.findFirst()
+  const appUrl = settings?.appUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+  // Generate the appropriate link
+  let actionLink: string
+  let actionText: string
+
+  if (isExistingUser) {
+    actionLink = `${appUrl}/introductions`
+    actionText = 'View Introduction'
+  } else {
+    // For non-users, link to login with email pre-filled and create new account
+    actionLink = `${appUrl}/login?email=${encodeURIComponent(to)}&newUser=true`
+    actionText = 'Get Started'
+  }
+
+  const html = generateIntroductionEmail({
+    recipientName,
+    introducerName,
+    otherPersonName,
+    otherPersonCompany,
+    otherPersonContext,
+    message,
+    actionLink,
+    actionText,
+    isExistingUser,
+  })
+
+  return sendEmail({
+    to,
+    subject: `${introducerName} wants to introduce you to ${otherPersonName}`,
+    html,
+  })
+}
+
+function generateIntroductionEmail({
+  recipientName,
+  introducerName,
+  otherPersonName,
+  otherPersonCompany,
+  otherPersonContext,
+  message,
+  actionLink,
+  actionText,
+  isExistingUser,
+}: {
+  recipientName: string
+  introducerName: string
+  otherPersonName: string
+  otherPersonCompany?: string | null
+  otherPersonContext?: string | null
+  message: string
+  actionLink: string
+  actionText: string
+  isExistingUser: boolean
+}) {
+  const otherPersonInfo = [
+    otherPersonCompany ? `<strong>Company:</strong> ${otherPersonCompany}` : '',
+    otherPersonContext ? `<strong>About:</strong> ${otherPersonContext}` : '',
+  ].filter(Boolean).join('<br>')
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Introduction from ${introducerName}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">🤝 New Introduction</h1>
+          </div>
+
+          <!-- Content -->
+          <div style="padding: 30px;">
+            <h2 style="margin-top: 0;">Hi ${recipientName},</h2>
+
+            <p><strong>${introducerName}</strong> thinks you should meet <strong>${otherPersonName}</strong>!</p>
+
+            <!-- Introduction Message -->
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+              <p style="margin: 0; font-style: italic;">"${message}"</p>
+              <p style="margin: 10px 0 0 0; text-align: right; color: #666;">— ${introducerName}</p>
+            </div>
+
+            ${otherPersonInfo ? `
+            <!-- About the other person -->
+            <div style="background-color: #faf5ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #7c3aed;">About ${otherPersonName}:</h3>
+              <p style="margin: 0;">${otherPersonInfo}</p>
+            </div>
+            ` : ''}
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${actionLink}" style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">
+                ${actionText}
+              </a>
+            </div>
+
+            ${!isExistingUser ? `
+            <p style="text-align: center; color: #666; font-size: 14px;">
+              Create your free Business Card to connect with ${otherPersonName} and grow your network.
+            </p>
+            ` : ''}
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="margin: 0; color: #666; font-size: 12px;">
+              This introduction was sent through Intro Network.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+}
+
 export function generateApprovalNotificationToReferral({
   referralFirstName,
   refereeFirstName,

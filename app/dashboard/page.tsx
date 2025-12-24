@@ -42,28 +42,6 @@ interface Message {
   }
 }
 
-interface Referral {
-  id: string
-  status: string
-  approvedAt: string | null
-  deniedAt: string | null
-  createdAt: string
-  referee: {
-    firstName: string
-    lastName: string
-  }
-  firstDegree: {
-    firstName: string
-    lastName: string
-  }
-  referral: {
-    firstName: string
-    lastName: string
-    email: string | null
-    phone: string | null
-  }
-}
-
 interface User {
   id: string
   firstName: string
@@ -88,19 +66,39 @@ interface ConnectionRequest {
   toUser?: ConnectionUser
 }
 
+interface Introduction {
+  id: string
+  personAEmail: string
+  personAName: string
+  personACompany: string | null
+  personAContext: string | null
+  personAUserId: string | null
+  personAAccepted: boolean
+  personBEmail: string
+  personBName: string
+  personBCompany: string | null
+  personBContext: string | null
+  personBUserId: string | null
+  personBAccepted: boolean
+  message: string
+  status: string
+  createdAt: string
+  acceptedAt: string | null
+  introducer?: {
+    id: string
+    firstName: string
+    lastName: string
+    username: string | null
+    profilePicture: string | null
+  }
+  personAUser?: ConnectionUser | null
+  personBUser?: ConnectionUser | null
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [messages, setMessages] = useState<Message[]>([])
-  const [referrals, setReferrals] = useState<{
-    initiated: Referral[]
-    received: Referral[]
-    facilitated: Referral[]
-  }>({
-    initiated: [],
-    received: [],
-    facilitated: [],
-  })
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -110,6 +108,11 @@ export default function DashboardPage() {
   const [pendingSent, setPendingSent] = useState<ConnectionRequest[]>([])
   const [respondingTo, setRespondingTo] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
+
+  // Introductions state
+  const [introductionsMade, setIntroductionsMade] = useState<Introduction[]>([])
+  const [introductionsReceived, setIntroductionsReceived] = useState<Introduction[]>([])
+  const [respondingToIntro, setRespondingToIntro] = useState<string | null>(null)
 
   useEffect(() => {
     // Get current user from session cookie
@@ -130,19 +133,19 @@ export default function DashboardPage() {
 
   const fetchData = async (userId: string) => {
     try {
-      const [userRes, contactsRes, messagesRes, referralsRes, connectionsRes] = await Promise.all([
+      const [userRes, contactsRes, messagesRes, connectionsRes, introductionsRes] = await Promise.all([
         fetch(`/api/user?userId=${userId}`),
         fetch(`/api/contacts?userId=${userId}`),
         fetch(`/api/messages?userId=${userId}`),
-        fetch(`/api/referrals?userId=${userId}`),
         fetch('/api/connections'),
+        fetch('/api/introductions'),
       ])
 
       const userData = await userRes.json()
       const contactsData = await contactsRes.json()
       const messagesData = await messagesRes.json()
-      const referralsData = await referralsRes.json()
       const connectionsData = await connectionsRes.json()
+      const introductionsData = await introductionsRes.json()
 
       if (userData.user) {
         setUser(userData.user)
@@ -156,14 +159,15 @@ export default function DashboardPage() {
         setMessages(messagesData.messages)
       }
 
-      if (referralsData.referrals) {
-        setReferrals(referralsData.referrals)
-      }
-
       if (connectionsData.success) {
         setMyConnections(connectionsData.connections || [])
         setPendingReceived(connectionsData.pendingReceived || [])
         setPendingSent(connectionsData.pendingSent || [])
+      }
+
+      if (introductionsData.success) {
+        setIntroductionsMade(introductionsData.introductionsMade || [])
+        setIntroductionsReceived(introductionsData.introductionsReceived || [])
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -218,6 +222,80 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error deleting contact:', error)
       setActionError('An unexpected error occurred while deleting the contact.')
+    }
+  }
+
+  const handleRespondToIntro = async (introductionId: string, action: 'accept' | 'decline') => {
+    setRespondingToIntro(introductionId)
+    try {
+      const response = await fetch('/api/introductions/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ introductionId, action }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setActionError('')
+        setIntroductionsReceived(prev => prev.map(intro => {
+          if (intro.id === introductionId) {
+            const isPersonA = intro.personAUserId === user?.id || intro.personAEmail === user?.email
+            return {
+              ...intro,
+              status: data.status,
+              personAAccepted: isPersonA ? (action === 'accept') : intro.personAAccepted,
+              personBAccepted: !isPersonA ? (action === 'accept') : intro.personBAccepted,
+            }
+          }
+          return intro
+        }))
+      } else {
+        setActionError(data.error || 'Failed to respond to introduction')
+      }
+    } catch (err) {
+      console.error('Failed to respond to introduction:', err)
+      setActionError('An unexpected error occurred')
+    } finally {
+      setRespondingToIntro(null)
+    }
+  }
+
+  const getIntroStatusBadge = (intro: Introduction) => {
+    switch (intro.status) {
+      case 'pending':
+        return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Pending</span>
+      case 'personA_accepted':
+      case 'personB_accepted':
+        return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Partially Accepted</span>
+      case 'both_accepted':
+        return <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Connected</span>
+      case 'declined':
+        return <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">Declined</span>
+      default:
+        return <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">{intro.status}</span>
+    }
+  }
+
+  const getIntroUserStatus = (intro: Introduction) => {
+    const isPersonA = intro.personAUserId === user?.id || intro.personAEmail === user?.email
+    const myAccepted = isPersonA ? intro.personAAccepted : intro.personBAccepted
+
+    if (intro.status === 'declined') {
+      return { canRespond: false }
+    }
+
+    return {
+      canRespond: !myAccepted && intro.status !== 'both_accepted',
+    }
+  }
+
+  const getOtherPerson = (intro: Introduction) => {
+    const isPersonA = intro.personAUserId === user?.id || intro.personAEmail === user?.email
+    return {
+      name: isPersonA ? intro.personBName : intro.personAName,
+      company: isPersonA ? intro.personBCompany : intro.personACompany,
+      user: isPersonA ? intro.personBUser : intro.personAUser,
     }
   }
 
@@ -516,9 +594,248 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Introductions */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Introductions</h2>
+            <div className="flex items-center gap-3">
+              <a
+                href="/introductions"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </a>
+              <a
+                href="/giveintros"
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:shadow-md transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Give Intro
+              </a>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Introductions Received */}
+            <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+              <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                Received
+                {introductionsReceived.filter(i => getIntroUserStatus(i).canRespond).length > 0 && (
+                  <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {introductionsReceived.filter(i => getIntroUserStatus(i).canRespond).length}
+                  </span>
+                )}
+              </h3>
+              <div className="space-y-3">
+                {introductionsReceived.length === 0 ? (
+                  <p className="text-sm text-purple-700 italic">No introductions received</p>
+                ) : (
+                  introductionsReceived.slice(0, 3).map((intro) => {
+                    const otherPerson = getOtherPerson(intro)
+                    const status = getIntroUserStatus(intro)
+
+                    return (
+                      <div key={intro.id} className="bg-white border border-purple-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {intro.introducer && (
+                              <a
+                                href={`/${intro.introducer.username || intro.introducer.id}`}
+                                className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-purple-400 transition-all"
+                              >
+                                {intro.introducer.profilePicture ? (
+                                  <img src={intro.introducer.profilePicture} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  `${intro.introducer.firstName[0]}${intro.introducer.lastName[0]}`
+                                )}
+                              </a>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs text-gray-500">
+                                via {intro.introducer ? `${intro.introducer.firstName} ${intro.introducer.lastName}` : 'Unknown'}
+                              </p>
+                            </div>
+                          </div>
+                          {getIntroStatusBadge(intro)}
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-2">
+                          {otherPerson.user ? (
+                            <a
+                              href={`/${otherPerson.user.username || otherPerson.user.id}`}
+                              className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition-all"
+                            >
+                              {otherPerson.user.profilePicture ? (
+                                <img src={otherPerson.user.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${otherPerson.user.firstName[0]}${otherPerson.user.lastName[0]}`
+                              )}
+                            </a>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              {otherPerson.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            {otherPerson.user ? (
+                              <a
+                                href={`/${otherPerson.user.username || otherPerson.user.id}`}
+                                className="font-semibold text-gray-900 text-sm truncate block hover:text-blue-600 transition-colors"
+                              >
+                                {otherPerson.name}
+                              </a>
+                            ) : (
+                              <p className="font-semibold text-gray-900 text-sm truncate">{otherPerson.name}</p>
+                            )}
+                            {otherPerson.company && (
+                              <p className="text-xs text-gray-500 truncate">{otherPerson.company}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {status.canRespond && (
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => handleRespondToIntro(intro.id, 'decline')}
+                              disabled={respondingToIntro === intro.id}
+                              className="flex-1 px-3 py-1.5 text-xs text-gray-700 bg-gray-100 font-medium rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                            >
+                              Decline
+                            </button>
+                            <button
+                              onClick={() => handleRespondToIntro(intro.id, 'accept')}
+                              disabled={respondingToIntro === intro.id}
+                              className="flex-1 px-3 py-1.5 text-xs text-white bg-emerald-500 font-medium rounded hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                            >
+                              {respondingToIntro === intro.id ? '...' : 'Accept'}
+                            </button>
+                          </div>
+                        )}
+
+                        {intro.status === 'both_accepted' && (
+                          <div className="flex items-center gap-2 mt-2 p-2 bg-emerald-50 rounded text-xs text-emerald-700">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Connected!
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Introductions Made */}
+            <div className="border-2 border-teal-200 rounded-lg p-4 bg-teal-50">
+              <h3 className="text-lg font-bold text-teal-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                Made by You
+                {introductionsMade.length > 0 && (
+                  <span className="bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {introductionsMade.length}
+                  </span>
+                )}
+              </h3>
+              <div className="space-y-3">
+                {introductionsMade.length === 0 ? (
+                  <p className="text-sm text-teal-700 italic">No introductions made yet</p>
+                ) : (
+                  introductionsMade.slice(0, 3).map((intro) => (
+                    <div key={intro.id} className="bg-white border border-teal-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-400">{new Date(intro.createdAt).toLocaleDateString()}</p>
+                        {getIntroStatusBadge(intro)}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          {intro.personAUser ? (
+                            <a
+                              href={`/${intro.personAUser.username || intro.personAUser.id}`}
+                              className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
+                            >
+                              {intro.personAUser.profilePicture ? (
+                                <img src={intro.personAUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${intro.personAUser.firstName[0]}${intro.personAUser.lastName[0]}`
+                              )}
+                            </a>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                              {intro.personAName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${intro.personAAccepted ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        </div>
+
+                        <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                          </svg>
+                        </div>
+
+                        <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${intro.personBAccepted ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                          {intro.personBUser ? (
+                            <a
+                              href={`/${intro.personBUser.username || intro.personBUser.id}`}
+                              className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
+                            >
+                              {intro.personBUser.profilePicture ? (
+                                <img src={intro.personBUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${intro.personBUser.firstName[0]}${intro.personBUser.lastName[0]}`
+                              )}
+                            </a>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                              {intro.personBName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between mt-2 text-xs text-gray-600">
+                        <span className="truncate max-w-[45%]">{intro.personAName.split(' ')[0]}</span>
+                        <span className="truncate max-w-[45%] text-right">{intro.personBName.split(' ')[0]}</span>
+                      </div>
+
+                      {intro.status === 'both_accepted' && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-emerald-50 rounded text-xs text-emerald-700">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Successfully connected!
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Contacts and Connections */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Contacts and Connections</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Contacts and Connections</h2>
+            <a
+              href="/connections"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              View All →
+            </a>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* 1st Degree */}
             <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
@@ -709,129 +1026,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Introduction Requests */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Introduction Requests</h2>
-          {[...referrals.initiated, ...referrals.received, ...referrals.facilitated].length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">No introduction requests yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Initiated Introductions */}
-              {referrals.initiated.map((referral) => (
-                <div
-                  key={referral.id}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <p className="font-semibold text-gray-900">
-                          Your intro request to {referral.referral.firstName} {referral.referral.lastName}
-                        </p>
-                        {referral.status === 'APPROVED' && (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ✓ Successful Intro!
-                          </span>
-                        )}
-                        {referral.status === 'PENDING' && (
-                          <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ⏳ Pending
-                          </span>
-                        )}
-                        {referral.status === 'DENIED' && (
-                          <span className="inline-flex items-center gap-1 bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ✗ Declined
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        via {referral.firstDegree.firstName} {referral.firstDegree.lastName}
-                      </p>
-                      {referral.status === 'APPROVED' && (referral.referral.email || referral.referral.phone) && (
-                        <div className="mt-2 text-sm text-gray-700 bg-green-50 px-3 py-2 rounded">
-                          {referral.referral.email && <p>Email: {referral.referral.email}</p>}
-                          {referral.referral.phone && <p>Phone: {referral.referral.phone}</p>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Received Introductions */}
-              {referrals.received.map((referral) => (
-                <div
-                  key={referral.id}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <p className="font-semibold text-gray-900">
-                          Intro request from {referral.referee.firstName} {referral.referee.lastName}
-                        </p>
-                        {referral.status === 'APPROVED' && (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ✓ Successful Intro!
-                          </span>
-                        )}
-                        {referral.status === 'PENDING' && (
-                          <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ⏳ Pending Your Response
-                          </span>
-                        )}
-                        {referral.status === 'DENIED' && (
-                          <span className="inline-flex items-center gap-1 bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ✗ Declined
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        via {referral.firstDegree.firstName} {referral.firstDegree.lastName}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Facilitated Introductions */}
-              {referrals.facilitated.map((referral) => (
-                <div
-                  key={referral.id}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <p className="font-semibold text-gray-900">
-                          You facilitated: {referral.referee.firstName} {referral.referee.lastName} → {referral.referral.firstName} {referral.referral.lastName}
-                        </p>
-                        {referral.status === 'APPROVED' && (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ✓ Successful Intro!
-                          </span>
-                        )}
-                        {referral.status === 'PENDING' && (
-                          <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ⏳ Pending
-                          </span>
-                        )}
-                        {referral.status === 'DENIED' && (
-                          <span className="inline-flex items-center gap-1 bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded-full">
-                            ✗ Declined
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Recent Messages */}

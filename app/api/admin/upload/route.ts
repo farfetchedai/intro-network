@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const field = formData.get('field') as string
 
     if (!file) {
       return NextResponse.json(
@@ -15,34 +12,25 @@ export async function POST(request: Request) {
       )
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    // Create unique filename with timestamp
-    const timestamp = Date.now()
-    const filename = `${field}-${timestamp}-${file.name.replace(/\s+/g, '-')}`
-
-    // Save to public/uploads directory
-    const uploadDir = join(process.cwd(), 'public', 'uploads')
-    const filepath = join(uploadDir, filename)
-
-    // Ensure the uploads directory exists
-    try {
-      await writeFile(filepath, buffer)
-    } catch (error) {
-      // If directory doesn't exist, create it
-      const { mkdir } = await import('fs/promises')
-      await mkdir(uploadDir, { recursive: true })
-      await writeFile(filepath, buffer)
+    // Check file size (limit to 2MB for base64 storage)
+    const maxSize = 2 * 1024 * 1024 // 2MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { success: false, error: 'File too large. Maximum size is 2MB.' },
+        { status: 400 }
+      )
     }
 
-    // Return the public URL
-    const url = `/uploads/${filename}`
+    // Convert file to base64 data URL
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const base64 = buffer.toString('base64')
+    const mimeType = file.type || 'application/octet-stream'
+    const dataUrl = `data:${mimeType};base64,${base64}`
 
     return NextResponse.json({
       success: true,
-      url,
+      url: dataUrl,
     })
   } catch (error) {
     console.error('Failed to upload file:', error)

@@ -203,7 +203,6 @@ export default function Header() {
     { label: 'Request Introductions', href: '/getintros' },
     { label: 'Introductions', href: '/introductions' },
     { label: 'Connections', href: '/connections' },
-    { label: 'Profile', href: '/profile' },
     { label: 'Dashboard', href: '/dashboard' },
     ...(user.userType === 'ADMIN' ? [{ label: 'Admin', href: '/admin' }] : []),
   ] : []

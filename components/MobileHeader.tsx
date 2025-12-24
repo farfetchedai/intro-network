@@ -11,6 +11,7 @@ export default function MobileHeader({ userName }: MobileHeaderProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [initials, setInitials] = useState('U')
+  const [username, setUsername] = useState<string | null>(null)
   const [brandingSettings, setBrandingSettings] = useState({
     mobileLogo: '',
   })
@@ -24,6 +25,16 @@ export default function MobileHeader({ userName }: MobileHeaderProps) {
           : parts[0][0].toUpperCase()
       )
     }
+
+    // Fetch user data to get username
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user) {
+          setUsername(data.user.username)
+        }
+      })
+      .catch(err => console.error('Failed to fetch user:', err))
 
     // Fetch branding settings
     fetch('/api/admin/branding')
@@ -82,7 +93,7 @@ export default function MobileHeader({ userName }: MobileHeaderProps) {
                 <button
                   onClick={() => {
                     setIsOpen(false)
-                    router.push('/profile')
+                    router.push(username ? `/${username}` : '/dashboard')
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"
                 >
@@ -91,11 +102,11 @@ export default function MobileHeader({ userName }: MobileHeaderProps) {
                 <button
                   onClick={() => {
                     setIsOpen(false)
-                    router.push('/profile')
+                    router.push(username ? `/${username}` : '/dashboard')
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"
                 >
-                  View Profile
+                  View Business Card
                 </button>
                 <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
                   Settings

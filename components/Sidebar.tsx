@@ -211,7 +211,7 @@ export default function Sidebar({ currentStep, totalSteps, userName, stepTitles 
         {user || userName ? (
           <>
             <button
-              onClick={() => router.push('/profile')}
+              onClick={() => router.push(user?.username ? `/${user.username}` : '/dashboard')}
               className="flex items-center space-x-3 w-full hover:bg-gray-50 rounded-lg p-3 transition-colors duration-200"
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
@@ -221,7 +221,7 @@ export default function Sidebar({ currentStep, totalSteps, userName, stepTitles 
                 <div className="text-sm font-medium text-gray-900">
                   {user ? `${user.firstName} ${user.lastName}` : userName}
                 </div>
-                <div className="text-xs text-gray-500">View profile</div>
+                <div className="text-xs text-gray-500">View Business Card</div>
               </div>
             </button>
 

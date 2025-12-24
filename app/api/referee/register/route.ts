@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
+import { getAppUrl } from '@/lib/magicLink'
 
 const registerSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -37,7 +38,8 @@ async function sendMagicLink(userId: string, email: string, firstName: string) {
       },
     })
 
-    const magicLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify?token=${token}`
+    const baseUrl = await getAppUrl()
+    const magicLink = `${baseUrl}/auth/verify?token=${token}`
 
     // Send email using unified email utility
     try {

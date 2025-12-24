@@ -809,7 +809,7 @@ function FirstDegreeContent() {
       <MobileProgressBar currentStep={step} totalSteps={4} />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pt-16">
+      <div className="flex-1 overflow-y-auto">
         <div
           className="min-h-full flex items-center justify-center p-4 lg:p-8"
         >

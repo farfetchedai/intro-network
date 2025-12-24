@@ -16,6 +16,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       settings: {
+        appUrl: settings.appUrl || '',
         emailProvider: settings.emailProvider || 'resend',
         emailFromName: settings.emailFromName || '',
         resendApiKey: settings.resendApiKey || '',
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
       apiSettings = await prisma.apiSettings.update({
         where: { id: apiSettings.id },
         data: {
+          appUrl: body.appUrl || null,
           emailProvider: body.emailProvider || 'resend',
           emailFromName: body.emailFromName || null,
           resendApiKey: body.resendApiKey || null,
@@ -73,6 +75,7 @@ export async function POST(request: Request) {
       // Create new
       apiSettings = await prisma.apiSettings.create({
         data: {
+          appUrl: body.appUrl || null,
           emailProvider: body.emailProvider || 'resend',
           emailFromName: body.emailFromName || null,
           resendApiKey: body.resendApiKey || null,

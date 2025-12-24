@@ -284,7 +284,7 @@ function SecondDegreeContent() {
       <Header />
       <MobileProgressBar currentStep={step} totalSteps={4} />
 
-      <div className="flex-1 overflow-y-auto pt-16">
+      <div className="flex-1 overflow-y-auto">
         <div className="min-h-full flex items-center justify-center p-4 lg:p-8">
           <div className={`w-full max-w-3xl transition-all duration-500 ${
             direction === 'down' ? 'animate-slideDown' : 'animate-slideUp'

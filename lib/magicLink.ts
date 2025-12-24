@@ -1,6 +1,21 @@
 import crypto from 'crypto'
 import { prisma } from './prisma'
 
+/**
+ * Get the app base URL from database settings or environment variables
+ */
+export async function getAppUrl(): Promise<string> {
+  try {
+    const settings = await prisma.apiSettings.findFirst()
+    if (settings?.appUrl) {
+      return settings.appUrl
+    }
+  } catch (error) {
+    console.error('Failed to fetch app URL from settings:', error)
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+}
+
 export interface MagicLinkData {
   userId: string
   redirectUrl: string
@@ -34,7 +49,7 @@ export async function generateMagicLink(
   })
 
   // Return the full magic link URL
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const baseUrl = await getAppUrl()
   return `${baseUrl}/api/auth/magic?token=${token}`
 }
 

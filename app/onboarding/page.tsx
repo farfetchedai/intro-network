@@ -821,7 +821,7 @@ function OnboardingContent() {
       <Header />
       <BottomProgressBar currentStep={step} totalSteps={4} />
 
-      <main className="pt-16 pb-24 min-h-screen flex items-center justify-center px-4">
+      <main className="pb-24 min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-2xl">
           {/* Step 1: Contact Details */}
           {step === 1 && (

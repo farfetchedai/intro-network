@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 interface ApiSettings {
+  appUrl: string
   emailProvider: string
   emailFromName: string
   resendApiKey: string
@@ -21,6 +22,7 @@ interface ApiSettings {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ApiSettings>({
+    appUrl: '',
     emailProvider: 'resend',
     emailFromName: '',
     resendApiKey: '',
@@ -139,6 +141,26 @@ export default function SettingsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">API Settings</h1>
         <p className="text-gray-600 mt-2">Configure email and SMS API credentials</p>
+      </div>
+
+      {/* App URL */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">App URL</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Production App URL
+          </label>
+          <input
+            type="url"
+            value={settings.appUrl || ''}
+            onChange={(e) => setSettings({ ...settings, appUrl: e.target.value })}
+            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="https://app.yourdomain.com"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Used for links in emails. Include https:// but no trailing slash.
+          </p>
+        </div>
       </div>
 
       {/* Email Provider Selection */}

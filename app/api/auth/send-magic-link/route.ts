@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
+import { getAppUrl } from '@/lib/magicLink'
 
 export async function POST(req: Request) {
   try {
@@ -53,7 +54,8 @@ export async function POST(req: Request) {
     })
 
     // Include redirect URL in magic link if provided
-    let magicLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify?token=${token}`
+    const baseUrl = await getAppUrl()
+    let magicLink = `${baseUrl}/auth/verify?token=${token}`
     if (redirectUrl) {
       magicLink += `&redirect=${encodeURIComponent(redirectUrl)}`
     }

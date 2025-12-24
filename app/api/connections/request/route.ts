@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { sendEmail } from '@/lib/email'
 import { notifyConnectionRequest, notifyConnectionAccepted } from '@/lib/notifications'
+import { getAppUrl } from '@/lib/magicLink'
 
 const requestSchema = z.object({
   toUserId: z.string().min(1, 'User ID is required'),
@@ -149,7 +150,8 @@ export async function POST(req: Request) {
 
     // Send email notification to recipient
     if (toUser.email) {
-      const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/connections/review/${connectionRequest.token}`
+      const baseUrl = await getAppUrl()
+      const reviewUrl = `${baseUrl}/connections/review/${connectionRequest.token}`
 
       try {
         await sendEmail({

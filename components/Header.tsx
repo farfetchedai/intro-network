@@ -438,7 +438,7 @@ export default function Header() {
       {/* Full Screen Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-blue-900 flex flex-col"
+          className="header-mobile md:hidden fixed inset-0 bg-blue-900 flex flex-col"
           style={{ zIndex: 999 }}
         >
           {/* Header with Logo and Close */}

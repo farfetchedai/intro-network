@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 interface ApiSettings {
   emailProvider: string
+  emailFromName: string
   resendApiKey: string
   resendFromEmail: string
   gmailEmail: string
@@ -21,6 +22,7 @@ interface ApiSettings {
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ApiSettings>({
     emailProvider: 'resend',
+    emailFromName: '',
     resendApiKey: '',
     resendFromEmail: '',
     gmailEmail: '',
@@ -176,6 +178,22 @@ export default function SettingsPage() {
             />
             <span className="text-gray-700">Amazon SES</span>
           </label>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Sender Name (optional)
+          </label>
+          <input
+            type="text"
+            value={settings.emailFromName}
+            onChange={(e) => setSettings({ ...settings, emailFromName: e.target.value })}
+            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="IntroNetwork"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            The name that appears as the sender (e.g., "IntroNetwork" instead of just the email address)
+          </p>
         </div>
       </div>
 

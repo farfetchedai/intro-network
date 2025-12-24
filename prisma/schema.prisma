@@ -248,6 +248,7 @@ model ApiSettings {
 
   // Email provider selection
   emailProvider       String   @default("resend") // "resend", "gmail", or "ses"
+  emailFromName       String?  // Sender name displayed in emails (e.g., "IntroNetwork")
 
   // Resend settings
   resendApiKey        String?

@@ -24,6 +24,14 @@ export async function sendEmail({
 
     console.log('[Email] Provider configured:', settings.emailProvider || 'none')
 
+    // Helper to format from address with optional name
+    const formatFrom = (email: string) => {
+      if (settings.emailFromName) {
+        return `${settings.emailFromName} <${email}>`
+      }
+      return email
+    }
+
     // Use Gmail SMTP if selected
     if (settings.emailProvider === 'gmail') {
       if (!settings.gmailEmail || !settings.gmailAppPassword) {
@@ -31,8 +39,9 @@ export async function sendEmail({
         return { success: false, error: 'Gmail SMTP not configured' }
       }
 
+      const fromAddress = formatFrom(settings.gmailEmail)
       console.log('Sending email via Gmail SMTP:', {
-        from: settings.gmailEmail,
+        from: fromAddress,
         to,
         subject,
       })
@@ -46,7 +55,7 @@ export async function sendEmail({
       })
 
       const info = await transporter.sendMail({
-        from: settings.gmailEmail,
+        from: fromAddress,
         to,
         subject,
         html,
@@ -64,8 +73,9 @@ export async function sendEmail({
         return { success: false, error: 'Amazon SES not configured' }
       }
 
+      const fromAddress = formatFrom(settings.sesFromEmail)
       console.log('Sending email via Amazon SES:', {
-        from: settings.sesFromEmail,
+        from: fromAddress,
         to,
         subject,
         region: settings.sesRegion,
@@ -80,7 +90,7 @@ export async function sendEmail({
       })
 
       const command = new SendEmailCommand({
-        Source: settings.sesFromEmail,
+        Source: fromAddress,
         Destination: {
           ToAddresses: [to],
         },
@@ -111,8 +121,9 @@ export async function sendEmail({
         return { success: false, error: 'Resend not configured' }
       }
 
+      const fromAddress = formatFrom(settings.resendFromEmail)
       console.log('[Email] Sending via Resend:', {
-        from: settings.resendFromEmail,
+        from: fromAddress,
         to,
         subject,
       })
@@ -120,7 +131,7 @@ export async function sendEmail({
       const resend = new Resend(settings.resendApiKey)
 
       const result = await resend.emails.send({
-        from: settings.resendFromEmail,
+        from: fromAddress,
         to,
         subject,
         html,

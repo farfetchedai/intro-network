@@ -474,11 +474,11 @@ export default function Header() {
             {user ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href={user.username ? `/${user.username}` : '/dashboard'}
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
                 >
-                  Dashboard
+                  Your Business Card
                 </Link>
                 <Link
                   href="/getintros"
@@ -488,18 +488,18 @@ export default function Header() {
                   Get Intros
                 </Link>
                 <Link
-                  href={user.username ? `/${user.username}` : '/dashboard'}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
-                >
-                  Business Card
-                </Link>
-                <Link
                   href="/connections"
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
                 >
                   Connections
+                </Link>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Dashboard
                 </Link>
                 {user.userType === 'ADMIN' && (
                   <Link

@@ -538,29 +538,45 @@ export default function DashboardPage() {
                   contacts.filter(c => c.degreeType === 'FIRST_DEGREE').slice(0, 10).map((contact) => {
                     const hasProfile = contact.linkedUser?.username
                     return (
-                      <a
+                      <div
                         key={contact.id}
-                        href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
-                        className={`block bg-white border border-blue-200 rounded-lg p-3 hover:shadow-md hover:border-blue-400 hover:bg-blue-50 ${hasProfile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200`}
+                        className="bg-white border border-blue-200 rounded-lg p-3 hover:shadow-md hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
-                            {contact.linkedUser?.profilePicture ? (
-                              <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
-                            )}
-                          </div>
+                          <a href={hasProfile ? `/${contact.linkedUser?.username}` : '#'} className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+                              {contact.linkedUser?.profilePicture ? (
+                                <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+                              )}
+                            </div>
+                          </a>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-blue-600 hover:text-blue-800' : 'text-gray-900'}`}>
-                              {contact.firstName} {contact.lastName}
-                            </p>
+                            <a href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}>
+                              <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-blue-600 hover:text-blue-800' : 'text-gray-900'}`}>
+                                {contact.firstName} {contact.lastName}
+                              </p>
+                            </a>
                             {contact.company && (
                               <p className="text-xs text-gray-500 truncate">{contact.company}</p>
                             )}
                           </div>
+                          {contact.linkedUser?.id && (
+                            <a
+                              href={`/api/user/vcard/${contact.linkedUser.username || contact.linkedUser.id}`}
+                              download
+                              className="p-1.5 text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition-colors flex-shrink-0"
+                              title="Download VCF"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            </a>
+                          )}
                         </div>
-                      </a>
+                      </div>
                     )
                   })
                 )}
@@ -585,29 +601,45 @@ export default function DashboardPage() {
                   contacts.filter(c => c.degreeType === 'SECOND_DEGREE').slice(0, 10).map((contact) => {
                     const hasProfile = contact.linkedUser?.username
                     return (
-                      <a
+                      <div
                         key={contact.id}
-                        href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
-                        className={`block bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md hover:border-purple-400 hover:bg-purple-50 ${hasProfile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200`}
+                        className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md hover:border-purple-400 hover:bg-purple-50 transition-all duration-200"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
-                            {contact.linkedUser?.profilePicture ? (
-                              <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
-                            )}
-                          </div>
+                          <a href={hasProfile ? `/${contact.linkedUser?.username}` : '#'} className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+                              {contact.linkedUser?.profilePicture ? (
+                                <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+                              )}
+                            </div>
+                          </a>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-purple-600 hover:text-purple-800' : 'text-gray-900'}`}>
-                              {contact.firstName} {contact.lastName}
-                            </p>
+                            <a href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}>
+                              <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-purple-600 hover:text-purple-800' : 'text-gray-900'}`}>
+                                {contact.firstName} {contact.lastName}
+                              </p>
+                            </a>
                             {contact.company && (
                               <p className="text-xs text-gray-500 truncate">{contact.company}</p>
                             )}
                           </div>
+                          {contact.linkedUser?.id && (
+                            <a
+                              href={`/api/user/vcard/${contact.linkedUser.username || contact.linkedUser.id}`}
+                              download
+                              className="p-1.5 text-purple-600 bg-purple-100 rounded hover:bg-purple-200 transition-colors flex-shrink-0"
+                              title="Download VCF"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            </a>
+                          )}
                         </div>
-                      </a>
+                      </div>
                     )
                   })
                 )}
@@ -632,29 +664,45 @@ export default function DashboardPage() {
                   contacts.filter(c => c.degreeType === 'THIRD_DEGREE').slice(0, 10).map((contact) => {
                     const hasProfile = contact.linkedUser?.username
                     return (
-                      <a
+                      <div
                         key={contact.id}
-                        href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
-                        className={`block bg-white border border-emerald-200 rounded-lg p-3 hover:shadow-md hover:border-emerald-400 hover:bg-emerald-50 ${hasProfile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200`}
+                        className="bg-white border border-emerald-200 rounded-lg p-3 hover:shadow-md hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-200"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
-                            {contact.linkedUser?.profilePicture ? (
-                              <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
-                            )}
-                          </div>
+                          <a href={hasProfile ? `/${contact.linkedUser?.username}` : '#'} className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+                              {contact.linkedUser?.profilePicture ? (
+                                <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+                              )}
+                            </div>
+                          </a>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-emerald-600 hover:text-emerald-800' : 'text-gray-900'}`}>
-                              {contact.firstName} {contact.lastName}
-                            </p>
+                            <a href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}>
+                              <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-emerald-600 hover:text-emerald-800' : 'text-gray-900'}`}>
+                                {contact.firstName} {contact.lastName}
+                              </p>
+                            </a>
                             {contact.company && (
                               <p className="text-xs text-gray-500 truncate">{contact.company}</p>
                             )}
                           </div>
+                          {contact.linkedUser?.id && (
+                            <a
+                              href={`/api/user/vcard/${contact.linkedUser.username || contact.linkedUser.id}`}
+                              download
+                              className="p-1.5 text-emerald-600 bg-emerald-100 rounded hover:bg-emerald-200 transition-colors flex-shrink-0"
+                              title="Download VCF"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            </a>
+                          )}
                         </div>
-                      </a>
+                      </div>
                     )
                   })
                 )}

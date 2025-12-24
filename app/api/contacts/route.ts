@@ -88,19 +88,68 @@ export async function POST(req: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Get all unique emails to check for matching users
+    const contactEmails = allContacts
+      .filter(c => c.email && !c.contactId)
+      .map(c => c.email!.toLowerCase())
+
+    // Find users that match contact emails
+    const matchingUsers = contactEmails.length > 0 ? await prisma.user.findMany({
+      where: { email: { in: contactEmails, mode: 'insensitive' } },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        profilePicture: true,
+        skills: true,
+        companyName: true,
+        achievement: true,
+      },
+    }) : []
+
+    // Create a map of email to user for quick lookup
+    const usersByEmail: Record<string, typeof matchingUsers[0]> = {}
+    for (const user of matchingUsers) {
+      if (user.email) {
+        usersByEmail[user.email.toLowerCase()] = user
+      }
+    }
+
     // Transform contacts to include linked user info
-    const transformedContacts = allContacts.map((c) => ({
-      ...c,
-      linkedUser: c.contact ? {
+    const transformedContacts = allContacts.map((c) => {
+      // First check if there's a direct contactId link
+      let linkedUser = c.contact ? {
         id: c.contact.id,
         username: c.contact.username,
         firstName: c.contact.firstName,
         lastName: c.contact.lastName,
         profilePicture: c.contact.profilePicture,
         hasCompletedOnboarding: !!(c.contact.skills || c.contact.companyName || c.contact.achievement),
-      } : null,
-      contact: undefined,
-    }))
+      } : null
+
+      // If no direct link, try to match by email
+      if (!linkedUser && c.email) {
+        const matchedUser = usersByEmail[c.email.toLowerCase()]
+        if (matchedUser) {
+          linkedUser = {
+            id: matchedUser.id,
+            username: matchedUser.username,
+            firstName: matchedUser.firstName,
+            lastName: matchedUser.lastName,
+            profilePicture: matchedUser.profilePicture,
+            hasCompletedOnboarding: !!(matchedUser.skills || matchedUser.companyName || matchedUser.achievement),
+          }
+        }
+      }
+
+      return {
+        ...c,
+        linkedUser,
+        contact: undefined,
+      }
+    })
 
     return NextResponse.json({ success: true, contacts: transformedContacts })
   } catch (error) {

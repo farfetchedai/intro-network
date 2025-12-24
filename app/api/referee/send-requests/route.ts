@@ -45,18 +45,25 @@ export async function POST(req: Request) {
     // Ensure all contacts have user accounts
     for (const contact of contacts) {
       if (!contact.contactId) {
-        // Create user account for contact
-        const contactUser = await prisma.user.create({
-          data: {
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            email: contact.email,
-            phone: contact.phone,
-            userType: 'FIRST_DEGREE',
-          },
+        // First check if a user with this email already exists
+        let contactUser = await prisma.user.findFirst({
+          where: { email: contact.email },
         })
 
-        // Update contact with the new userId
+        if (!contactUser) {
+          // Create user account for contact only if no user exists with this email
+          contactUser = await prisma.user.create({
+            data: {
+              firstName: contact.firstName,
+              lastName: contact.lastName,
+              email: contact.email,
+              phone: contact.phone,
+              userType: 'FIRST_DEGREE',
+            },
+          })
+        }
+
+        // Update contact with the user id
         await prisma.contact.update({
           where: { id: contact.id },
           data: { contactId: contactUser.id },

@@ -15,6 +15,14 @@ interface Contact {
   degreeType: string
   requestSentAt: string | null
   createdAt: string
+  linkedUser?: {
+    id: string
+    username: string | null
+    firstName: string
+    lastName: string
+    profilePicture: string | null
+    hasCompletedOnboarding: boolean
+  } | null
 }
 
 interface Message {
@@ -502,6 +510,153 @@ export default function DashboardPage() {
                       </div>
                     </a>
                   ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contacts and Connections */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Contacts and Connections</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 1st Degree */}
+            <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+              <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                1st Degree
+                <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {contacts.filter(c => c.degreeType === 'FIRST_DEGREE').length}
+                </span>
+              </h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {contacts.filter(c => c.degreeType === 'FIRST_DEGREE').length === 0 ? (
+                  <p className="text-sm text-blue-700 italic">No 1st degree contacts</p>
+                ) : (
+                  contacts.filter(c => c.degreeType === 'FIRST_DEGREE').slice(0, 10).map((contact) => {
+                    const hasProfile = contact.linkedUser?.username
+                    return (
+                      <a
+                        key={contact.id}
+                        href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
+                        className={`block bg-white border border-blue-200 rounded-lg p-3 ${hasProfile ? 'hover:shadow-md cursor-pointer' : 'cursor-default'} transition-shadow`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
+                            {contact.linkedUser?.profilePicture ? (
+                              <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-blue-600 hover:text-blue-800' : 'text-gray-900'}`}>
+                              {contact.firstName} {contact.lastName}
+                            </p>
+                            {contact.company && (
+                              <p className="text-xs text-gray-500 truncate">{contact.company}</p>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* 2nd Degree */}
+            <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+              <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                2nd Degree
+                <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {contacts.filter(c => c.degreeType === 'SECOND_DEGREE').length}
+                </span>
+              </h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {contacts.filter(c => c.degreeType === 'SECOND_DEGREE').length === 0 ? (
+                  <p className="text-sm text-purple-700 italic">No 2nd degree contacts</p>
+                ) : (
+                  contacts.filter(c => c.degreeType === 'SECOND_DEGREE').slice(0, 10).map((contact) => {
+                    const hasProfile = contact.linkedUser?.username
+                    return (
+                      <a
+                        key={contact.id}
+                        href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
+                        className={`block bg-white border border-purple-200 rounded-lg p-3 ${hasProfile ? 'hover:shadow-md cursor-pointer' : 'cursor-default'} transition-shadow`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
+                            {contact.linkedUser?.profilePicture ? (
+                              <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-purple-600 hover:text-purple-800' : 'text-gray-900'}`}>
+                              {contact.firstName} {contact.lastName}
+                            </p>
+                            {contact.company && (
+                              <p className="text-xs text-gray-500 truncate">{contact.company}</p>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* 3rd Degree */}
+            <div className="border-2 border-emerald-200 rounded-lg p-4 bg-emerald-50">
+              <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+                3rd Degree
+                <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {contacts.filter(c => c.degreeType === 'THIRD_DEGREE').length}
+                </span>
+              </h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {contacts.filter(c => c.degreeType === 'THIRD_DEGREE').length === 0 ? (
+                  <p className="text-sm text-emerald-700 italic">No 3rd degree contacts</p>
+                ) : (
+                  contacts.filter(c => c.degreeType === 'THIRD_DEGREE').slice(0, 10).map((contact) => {
+                    const hasProfile = contact.linkedUser?.username
+                    return (
+                      <a
+                        key={contact.id}
+                        href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
+                        className={`block bg-white border border-emerald-200 rounded-lg p-3 ${hasProfile ? 'hover:shadow-md cursor-pointer' : 'cursor-default'} transition-shadow`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
+                            {contact.linkedUser?.profilePicture ? (
+                              <img src={contact.linkedUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm truncate ${hasProfile ? 'text-emerald-600 hover:text-emerald-800' : 'text-gray-900'}`}>
+                              {contact.firstName} {contact.lastName}
+                            </p>
+                            {contact.company && (
+                              <p className="text-xs text-gray-500 truncate">{contact.company}</p>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    )
+                  })
                 )}
               </div>
             </div>

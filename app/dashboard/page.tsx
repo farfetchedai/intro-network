@@ -541,7 +541,7 @@ export default function DashboardPage() {
                       <a
                         key={contact.id}
                         href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
-                        className={`block bg-white border border-blue-200 rounded-lg p-3 ${hasProfile ? 'hover:shadow-md cursor-pointer' : 'cursor-default'} transition-shadow`}
+                        className={`block bg-white border border-blue-200 rounded-lg p-3 hover:shadow-md hover:border-blue-400 hover:bg-blue-50 ${hasProfile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
@@ -588,7 +588,7 @@ export default function DashboardPage() {
                       <a
                         key={contact.id}
                         href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
-                        className={`block bg-white border border-purple-200 rounded-lg p-3 ${hasProfile ? 'hover:shadow-md cursor-pointer' : 'cursor-default'} transition-shadow`}
+                        className={`block bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md hover:border-purple-400 hover:bg-purple-50 ${hasProfile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
@@ -635,7 +635,7 @@ export default function DashboardPage() {
                       <a
                         key={contact.id}
                         href={hasProfile ? `/${contact.linkedUser?.username}` : '#'}
-                        className={`block bg-white border border-emerald-200 rounded-lg p-3 ${hasProfile ? 'hover:shadow-md cursor-pointer' : 'cursor-default'} transition-shadow`}
+                        className={`block bg-white border border-emerald-200 rounded-lg p-3 hover:shadow-md hover:border-emerald-400 hover:bg-emerald-50 ${hasProfile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">

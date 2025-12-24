@@ -601,9 +601,8 @@ export default function GetIntrosPage() {
           setSentContactIndices(prev => new Set([...prev, contactIndex]))
           setIsSubmitting(false)
         } else {
-          // "Ask Everyone" - navigate to success page
-          setStep(3)
-          setIsSubmitting(false)
+          // "Ask Everyone" - navigate to dashboard
+          router.push('/dashboard')
         }
       } else {
         setFormError(data.error || 'Failed to send requests. Please try again.')
@@ -619,7 +618,6 @@ export default function GetIntrosPage() {
   const getStepBackgroundClass = () => {
     let bg = brandingSettings.flowAStep1Background
     if (step === 2) bg = brandingSettings.flowAStep2Background
-    if (step === 3) bg = brandingSettings.flowAStep3Background
 
     if (bg.startsWith('#') || bg.startsWith('rgb')) {
       return ''
@@ -630,7 +628,6 @@ export default function GetIntrosPage() {
   const getStepBackgroundStyle = () => {
     let bg = brandingSettings.flowAStep1Background
     if (step === 2) bg = brandingSettings.flowAStep2Background
-    if (step === 3) bg = brandingSettings.flowAStep3Background
 
     if (bg.startsWith('#') || bg.startsWith('rgb')) {
       return {
@@ -644,7 +641,6 @@ export default function GetIntrosPage() {
   const getFormBackgroundStyle = () => {
     let bg = brandingSettings.flowAStep1FormBg
     if (step === 2) bg = brandingSettings.flowAStep2FormBg
-    if (step === 3) bg = brandingSettings.flowAStep3FormBg
 
     // If it's a Tailwind gradient class (contains "from-" etc), don't apply inline style
     if (bg.includes('from-') || bg.includes('to-') || bg.includes('via-')) {
@@ -1202,7 +1198,7 @@ export default function GetIntrosPage() {
                         ← Back to Contacts
                       </button>
                       <button
-                        onClick={() => setStep(3)}
+                        onClick={() => router.push('/dashboard')}
                         className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
                       >
                         Finish
@@ -1212,58 +1208,17 @@ export default function GetIntrosPage() {
                 </div>
               </>
             )}
-
-            {/* Step 3: Success */}
-            {step === 3 && (
-              <>
-                <div className="text-center py-12">
-                  <div className="mb-6">
-                    <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                      <svg
-                        className="w-12 h-12 text-emerald-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                    Request Sent Successfully!
-                  </h2>
-                  <p className="text-gray-600 mb-8 text-lg">
-                    Your introduction requests have been sent to {contacts.length} {contacts.length === 1 ? 'contact' : 'contacts'}.
-                  </p>
-
-                  <button
-                    onClick={() => router.push('/dashboard')}
-                    className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-4 px-8 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
-                  >
-                    Go to Dashboard
-                  </button>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </main>
 
       <BottomProgressBar
         currentStep={step}
-        totalSteps={3}
+        totalSteps={2}
         stepName={
           step === 1
             ? 'Add people already in your network'
-            : step === 2
-            ? 'Craft the message to them'
-            : 'Requests for introductions sent!'
+            : 'Craft the message to them'
         }
       />
 

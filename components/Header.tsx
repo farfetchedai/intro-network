@@ -433,84 +433,161 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      </header>
+
+      {/* Full Screen Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200">
-          <div className="px-4 pt-2 pb-4 space-y-2">
-            <div className="pt-4">
-              {user ? (
-                <>
-                  <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold overflow-hidden">
-                      {user.profilePicture ? (
-                        <img
-                          src={user.profilePicture}
-                          alt={`${user.firstName} ${user.lastName}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        `${user.firstName?.[0]}${user.lastName?.[0]}`
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {user.firstName} {user.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                    </div>
-                  </div>
-                  <Link
-                    href="/getintros"
-                    className="block w-full mb-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-center transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {hasCompletedOnboarding ? 'Get Intros' : 'Get Started'}
-                  </Link>
-                  {userMenuItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="block py-2 text-gray-700 hover:text-blue-600"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={() => {
-                      handleSignOut()
-                      setMobileMenuOpen(false)
-                    }}
-                    className="w-full text-left py-2 text-red-600 hover:text-red-700"
-                  >
-                    Sign Out
-                  </button>
-                </>
+        <div
+          className="md:hidden fixed inset-0 bg-blue-900 flex flex-col"
+          style={{ zIndex: 999 }}
+        >
+          {/* Header with Logo and Close */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-blue-800">
+            {/* Footer Logo */}
+            <div className="flex items-center">
+              {branding?.footerLogo ? (
+                <img
+                  src={branding.footerLogo}
+                  alt="Logo"
+                  className="h-10 w-auto object-contain"
+                />
               ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      setLoginModalOpen(true)
-                      setMobileMenuOpen(false)
-                    }}
-                    className="block py-2 text-gray-700 hover:text-blue-600 font-medium w-full text-left"
-                  >
-                    Login
-                  </button>
-                  <Link
-                    href="/onboarding"
-                    className="block w-full mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-center transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Create Account
-                  </Link>
-                </>
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">I</span>
+                </div>
               )}
             </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
+
+          {/* Main Menu Links */}
+          <nav className="flex-1 flex flex-col justify-center px-6 space-y-6">
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/getintros"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Get Intros
+                </Link>
+                <Link
+                  href={user.username ? `/${user.username}` : '/dashboard'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Business Card
+                </Link>
+                <Link
+                  href="/connections"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Connections
+                </Link>
+                {user.userType === 'ADMIN' && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                  >
+                    Admin
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setLoginModalOpen(true)
+                    setMobileMenuOpen(false)
+                  }}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Login
+                </button>
+                <Link
+                  href="/onboarding"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
+          </nav>
+
+          {/* User Info Fixed to Bottom */}
+          {user ? (
+            <div className="px-6 py-6 border-t border-blue-800 bg-blue-950">
+              <div className="flex items-center space-x-4 mb-4">
+                {/* Avatar */}
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">
+                  {user.profilePicture ? (
+                    <img
+                      src={user.profilePicture}
+                      alt={`${user.firstName} ${user.lastName}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    `${user.firstName?.[0]}${user.lastName?.[0]}`
+                  )}
+                </div>
+                {/* Name and Email */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold text-lg truncate">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  {user.email && (
+                    <p className="text-blue-300 text-sm truncate">
+                      {user.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* Sign Out Button */}
+              <button
+                onClick={() => {
+                  handleSignOut()
+                  setMobileMenuOpen(false)
+                }}
+                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          ) : (
+            <div className="px-6 py-6 border-t border-blue-800 bg-blue-950">
+              <Link
+                href="/onboarding"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block w-full py-3 bg-white text-blue-900 font-semibold rounded-lg text-center hover:bg-blue-50 transition-colors"
+              >
+                Get Started
+              </Link>
+            </div>
+          )}
         </div>
       )}
-      </header>
 
       <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </>

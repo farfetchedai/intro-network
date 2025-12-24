@@ -86,6 +86,10 @@ export default function GetIntrosPage() {
   const [tempEmailTemplate, setTempEmailTemplate] = useState('')
   const [tempSmsTemplate, setTempSmsTemplate] = useState('')
 
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [sentCount, setSentCount] = useState(0)
+
   // Branding settings
   const [brandingSettings, setBrandingSettings] = useState({
     flowAStep1Background: 'from-blue-400 via-purple-400 to-pink-400',
@@ -601,8 +605,10 @@ export default function GetIntrosPage() {
           setSentContactIndices(prev => new Set([...prev, contactIndex]))
           setIsSubmitting(false)
         } else {
-          // "Ask Everyone" - navigate to dashboard
-          router.push('/dashboard')
+          // "Ask Everyone" - show success modal with count
+          setSentCount(contacts.length)
+          setShowSuccessModal(true)
+          setIsSubmitting(false)
         }
       } else {
         setFormError(data.error || 'Failed to send requests. Please try again.')
@@ -1364,6 +1370,45 @@ export default function GetIntrosPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                <svg
+                  className="w-10 h-10 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Messages Sent!
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {sentCount} {sentCount === 1 ? 'message was' : 'messages were'} sent successfully.
+            </p>
+
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-3 px-6 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+            >
+              Go to Dashboard
+            </button>
           </div>
         </div>
       )}

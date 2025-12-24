@@ -150,9 +150,21 @@ function generateVCard(user: {
     lines.push(`NOTE:${escapeVCardValue(user.statementSummary)}`)
   }
 
-  // Add profile picture if it's a URL (not base64)
-  if (user.profilePicture && user.profilePicture.startsWith('http')) {
-    lines.push(`PHOTO;VALUE=URI:${user.profilePicture}`)
+  // Add profile picture
+  if (user.profilePicture) {
+    if (user.profilePicture.startsWith('http')) {
+      // URL-based image
+      lines.push(`PHOTO;VALUE=URI:${user.profilePicture}`)
+    } else if (user.profilePicture.startsWith('data:image/')) {
+      // Base64 data URL - extract the base64 data and image type
+      const matches = user.profilePicture.match(/^data:image\/(\w+);base64,(.+)$/)
+      if (matches) {
+        const imageType = matches[1].toUpperCase()
+        const base64Data = matches[2]
+        // VCF 3.0 format for embedded photo
+        lines.push(`PHOTO;ENCODING=b;TYPE=${imageType}:${base64Data}`)
+      }
+    }
   }
 
   // Add unique identifier

@@ -666,7 +666,14 @@ export default function DashboardPage() {
                             )}
                             <div className="min-w-0">
                               <p className="text-xs text-gray-500">
-                                via {intro.introducer ? `${intro.introducer.firstName} ${intro.introducer.lastName}` : 'Unknown'}
+                                via {intro.introducer ? (
+                                  <a
+                                    href={`/${intro.introducer.username || intro.introducer.id}`}
+                                    className="hover:text-purple-600 hover:underline"
+                                  >
+                                    {intro.introducer.firstName} {intro.introducer.lastName}
+                                  </a>
+                                ) : 'Unknown'}
                               </p>
                             </div>
                           </div>
@@ -780,7 +787,7 @@ export default function DashboardPage() {
                           {intro.personAUser ? (
                             <a
                               href={`/${intro.personAUser.username || intro.personAUser.id}`}
-                              className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
+                              className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition-all"
                             >
                               {intro.personAUser.profilePicture ? (
                                 <img src={intro.personAUser.profilePicture} alt="" className="w-full h-full object-cover" />
@@ -807,7 +814,7 @@ export default function DashboardPage() {
                           {intro.personBUser ? (
                             <a
                               href={`/${intro.personBUser.username || intro.personBUser.id}`}
-                              className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
+                              className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-purple-400 transition-all"
                             >
                               {intro.personBUser.profilePicture ? (
                                 <img src={intro.personBUser.profilePicture} alt="" className="w-full h-full object-cover" />
@@ -824,8 +831,26 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex justify-between mt-2 text-xs text-gray-600">
-                        <span className="truncate max-w-[45%]">{intro.personAName.split(' ')[0]}</span>
-                        <span className="truncate max-w-[45%] text-right">{intro.personBName.split(' ')[0]}</span>
+                        {intro.personAUser ? (
+                          <a
+                            href={`/${intro.personAUser.username || intro.personAUser.id}`}
+                            className="truncate max-w-[45%] hover:text-blue-600 hover:underline"
+                          >
+                            {intro.personAName.split(' ')[0]}
+                          </a>
+                        ) : (
+                          <span className="truncate max-w-[45%]">{intro.personAName.split(' ')[0]}</span>
+                        )}
+                        {intro.personBUser ? (
+                          <a
+                            href={`/${intro.personBUser.username || intro.personBUser.id}`}
+                            className="truncate max-w-[45%] text-right hover:text-purple-600 hover:underline"
+                          >
+                            {intro.personBName.split(' ')[0]}
+                          </a>
+                        ) : (
+                          <span className="truncate max-w-[45%] text-right">{intro.personBName.split(' ')[0]}</span>
+                        )}
                       </div>
 
                       {intro.status === 'both_accepted' && (

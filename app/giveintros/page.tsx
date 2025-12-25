@@ -156,6 +156,12 @@ export default function GiveIntrosPage() {
     }
   }
 
+  const handleSwapPeople = () => {
+    const tempA = personA
+    setPersonA(personB)
+    setPersonB(tempA)
+  }
+
   const handleSendIntroduction = async () => {
     if (!personA || !personB || !message.trim()) return
 
@@ -516,6 +522,22 @@ export default function GiveIntrosPage() {
                   </div>
                 )}
               </div>
+
+              {/* Swap Button */}
+              {(personA || personB) && (
+                <div className="flex justify-center -my-2 relative z-10">
+                  <button
+                    onClick={handleSwapPeople}
+                    disabled={!personA && !personB}
+                    className="p-2 bg-white border-2 border-gray-200 rounded-full shadow-md hover:border-blue-400 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                    title="Swap people"
+                  >
+                    <svg className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               {/* Person B */}
               <div className="bg-white rounded-xl shadow-md p-6">

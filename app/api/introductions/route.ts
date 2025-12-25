@@ -260,6 +260,71 @@ export async function POST(req: Request) {
       })
     }
 
+    // Add introduced people to introducer's contacts (if not already contacts)
+    const personANameParts = personAName.split(' ')
+    const personAFirstName = personANameParts[0] || ''
+    const personALastName = personANameParts.slice(1).join(' ') || ''
+
+    const personBNameParts = personBName.split(' ')
+    const personBFirstName = personBNameParts[0] || ''
+    const personBLastName = personBNameParts.slice(1).join(' ') || ''
+
+    // Check and create contact for Person A
+    const existingContactA = await prisma.contact.findFirst({
+      where: {
+        userId: userId,
+        email: personAEmail,
+      }
+    })
+
+    if (!existingContactA) {
+      await prisma.contact.create({
+        data: {
+          userId: userId,
+          contactId: personAUserAfter?.id || null,
+          firstName: personAFirstName,
+          lastName: personALastName,
+          email: personAEmail,
+          company: personACompany || null,
+          degreeType: 'FIRST_DEGREE',
+        }
+      })
+    } else if (!existingContactA.contactId && personAUserAfter?.id) {
+      // Update existing contact with the user ID if it was just created
+      await prisma.contact.update({
+        where: { id: existingContactA.id },
+        data: { contactId: personAUserAfter.id }
+      })
+    }
+
+    // Check and create contact for Person B
+    const existingContactB = await prisma.contact.findFirst({
+      where: {
+        userId: userId,
+        email: personBEmail,
+      }
+    })
+
+    if (!existingContactB) {
+      await prisma.contact.create({
+        data: {
+          userId: userId,
+          contactId: personBUserAfter?.id || null,
+          firstName: personBFirstName,
+          lastName: personBLastName,
+          email: personBEmail,
+          company: personBCompany || null,
+          degreeType: 'FIRST_DEGREE',
+        }
+      })
+    } else if (!existingContactB.contactId && personBUserAfter?.id) {
+      // Update existing contact with the user ID if it was just created
+      await prisma.contact.update({
+        where: { id: existingContactB.id },
+        data: { contactId: personBUserAfter.id }
+      })
+    }
+
     // Create notifications for users (including newly created ones)
     if (personAUserAfter) {
       await prisma.notification.create({

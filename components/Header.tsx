@@ -200,7 +200,8 @@ export default function Header() {
   const userMenuItems = user ? [
     { label: 'My Business Card', href: `/${user.username || user.id}` },
     { label: 'Edit Business Card', href: '/onboarding' },
-    { label: 'Request Introductions', href: '/getintros' },
+    { label: 'Get Introduced', href: '/getintros' },
+    { label: 'Introduce People', href: '/giveintros' },
     { label: 'Introductions', href: '/introductions' },
     { label: 'Connections', href: '/connections' },
     { label: 'Dashboard', href: '/dashboard' },
@@ -245,15 +246,17 @@ export default function Header() {
                   </svg>
                   {hasCompletedOnboarding ? 'Get Intros' : 'Get Started'}
                 </Link>
-                <Link
-                  href="/giveintros"
-                  className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all flex items-center gap-1.5 border-2 border-transparent"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Give Intros
-                </Link>
+                {hasCompletedOnboarding && (
+                  <Link
+                    href="/giveintros"
+                    className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all flex items-center gap-1.5 border-2 border-transparent"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Give Intros
+                  </Link>
+                )}
 
                 {/* Notifications Bell */}
                 <div className="relative">
@@ -499,13 +502,15 @@ export default function Header() {
                 >
                   Get Intros
                 </Link>
-                <Link
-                  href="/giveintros"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
-                >
-                  Give Intros
-                </Link>
+                {hasCompletedOnboarding && (
+                  <Link
+                    href="/giveintros"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-white text-3xl font-semibold text-left hover:text-blue-200 transition-colors"
+                  >
+                    Give Intros
+                  </Link>
+                )}
                 <Link
                   href="/connections"
                   onClick={() => setMobileMenuOpen(false)}

@@ -409,50 +409,41 @@ export async function sendIntroductionEmail({
   const settings = await prisma.apiSettings.findFirst()
   const appUrl = settings?.appUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-  // Generate the appropriate link
-  let actionLink: string
-  let actionText: string
+  // Get or create user account
+  let user = await prisma.user.findUnique({ where: { email: to } })
 
-  if (isExistingUser) {
-    actionLink = `${appUrl}/introductions`
-    actionText = 'View Introduction'
-  } else {
-    // For non-users, create an account and generate a magic link directly
-    // so they can sign in with one click
+  if (!user) {
+    // Create account for new users
     const nameParts = recipientName.split(' ')
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
 
-    // Create user account
-    let user = await prisma.user.findUnique({ where: { email: to } })
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: to,
-          firstName,
-          lastName,
-          userType: 'REFEREE',
-        },
-      })
-    }
-
-    // Generate magic link token
-    const token = crypto.randomBytes(32).toString('hex')
-    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days for intro emails
-
-    // Save token with redirect to introductions page
-    await prisma.user.update({
-      where: { id: user.id },
+    user = await prisma.user.create({
       data: {
-        magicLinkToken: token,
-        magicLinkExpiry: expiry,
-        magicLinkRedirect: '/introductions',
+        email: to,
+        firstName,
+        lastName,
+        userType: 'REFEREE',
       },
     })
-
-    actionLink = `${appUrl}/auth/verify?token=${token}`
-    actionText = 'View Introduction & Sign In'
   }
+
+  // Generate magic link token for ALL users (new and existing)
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days for intro emails
+
+  // Save token with redirect to introductions page
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      magicLinkToken: token,
+      magicLinkExpiry: expiry,
+      magicLinkRedirect: '/introductions',
+    },
+  })
+
+  const actionLink = `${appUrl}/auth/verify?token=${token}`
+  const actionText = isExistingUser ? 'View Introduction' : 'View Introduction & Get Started'
 
   const html = generateIntroductionEmail({
     recipientName,

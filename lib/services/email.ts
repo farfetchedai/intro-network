@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import nodemailer from 'nodemailer'
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
+import crypto from 'crypto'
 import { prisma } from '../prisma'
 
 export async function sendEmail({
@@ -416,9 +417,41 @@ export async function sendIntroductionEmail({
     actionLink = `${appUrl}/introductions`
     actionText = 'View Introduction'
   } else {
-    // For non-users, link to login with email pre-filled and create new account
-    actionLink = `${appUrl}/login?email=${encodeURIComponent(to)}&newUser=true`
-    actionText = 'Get Started'
+    // For non-users, create an account and generate a magic link directly
+    // so they can sign in with one click
+    const nameParts = recipientName.split(' ')
+    const firstName = nameParts[0] || ''
+    const lastName = nameParts.slice(1).join(' ') || ''
+
+    // Create user account
+    let user = await prisma.user.findUnique({ where: { email: to } })
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: to,
+          firstName,
+          lastName,
+          userType: 'REFEREE',
+        },
+      })
+    }
+
+    // Generate magic link token
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days for intro emails
+
+    // Save token with redirect to introductions page
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        magicLinkToken: token,
+        magicLinkExpiry: expiry,
+        magicLinkRedirect: '/introductions',
+      },
+    })
+
+    actionLink = `${appUrl}/auth/verify?token=${token}`
+    actionText = 'View Introduction & Sign In'
   }
 
   const html = generateIntroductionEmail({

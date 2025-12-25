@@ -239,11 +239,32 @@ export async function POST(req: Request) {
       console.error('Failed to send email to Person B:', emailError)
     }
 
-    // Create notifications for existing users
-    if (personAUser) {
+    // Re-fetch user IDs since sendIntroductionEmail may have created new accounts
+    const personAUserAfter = await prisma.user.findFirst({
+      where: { email: personAEmail },
+      select: { id: true }
+    })
+    const personBUserAfter = await prisma.user.findFirst({
+      where: { email: personBEmail },
+      select: { id: true }
+    })
+
+    // Update introduction with user IDs if they were just created
+    if (personAUserAfter?.id || personBUserAfter?.id) {
+      await prisma.pendingIntroduction.update({
+        where: { id: introduction.id },
+        data: {
+          personAUserId: personAUserAfter?.id || introduction.personAUserId,
+          personBUserId: personBUserAfter?.id || introduction.personBUserId,
+        }
+      })
+    }
+
+    // Create notifications for users (including newly created ones)
+    if (personAUserAfter) {
       await prisma.notification.create({
         data: {
-          userId: personAUser.id,
+          userId: personAUserAfter.id,
           type: 'INTRODUCTION',
           title: 'New Introduction',
           message: `${introducerName} wants to introduce you to ${personBName}`,
@@ -253,10 +274,10 @@ export async function POST(req: Request) {
       })
     }
 
-    if (personBUser) {
+    if (personBUserAfter) {
       await prisma.notification.create({
         data: {
-          userId: personBUser.id,
+          userId: personBUserAfter.id,
           type: 'INTRODUCTION',
           title: 'New Introduction',
           message: `${introducerName} wants to introduce you to ${personAName}`,

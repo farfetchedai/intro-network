@@ -212,9 +212,15 @@ export default function ProfilePage() {
         const loggedIn = authData.success && authData.user
         setIsLoggedIn(loggedIn)
 
-        // Fetch the profile
-        const response = await fetch(`/api/user?username=${encodeURIComponent(usernameParam)}`)
-        const data = await response.json()
+        // Fetch the profile - try by username first, then by userId
+        let response = await fetch(`/api/user?username=${encodeURIComponent(usernameParam)}`)
+        let data = await response.json()
+
+        // If not found by username, try by userId (for users without usernames)
+        if (!data.user) {
+          response = await fetch(`/api/user?userId=${encodeURIComponent(usernameParam)}`)
+          data = await response.json()
+        }
 
         if (data.user) {
           setProfile(data.user)

@@ -325,6 +325,62 @@ export async function POST(req: Request) {
       })
     }
 
+    // Add introducer as a contact for Person A (if they have an account)
+    if (personAUserAfter?.id) {
+      const existingIntroducerContactForA = await prisma.contact.findFirst({
+        where: {
+          userId: personAUserAfter.id,
+          email: introducer.email,
+        }
+      })
+
+      if (!existingIntroducerContactForA) {
+        await prisma.contact.create({
+          data: {
+            userId: personAUserAfter.id,
+            contactId: userId,
+            firstName: introducer.firstName || '',
+            lastName: introducer.lastName || '',
+            email: introducer.email,
+            degreeType: 'FIRST_DEGREE',
+          }
+        })
+      } else if (!existingIntroducerContactForA.contactId) {
+        await prisma.contact.update({
+          where: { id: existingIntroducerContactForA.id },
+          data: { contactId: userId }
+        })
+      }
+    }
+
+    // Add introducer as a contact for Person B (if they have an account)
+    if (personBUserAfter?.id) {
+      const existingIntroducerContactForB = await prisma.contact.findFirst({
+        where: {
+          userId: personBUserAfter.id,
+          email: introducer.email,
+        }
+      })
+
+      if (!existingIntroducerContactForB) {
+        await prisma.contact.create({
+          data: {
+            userId: personBUserAfter.id,
+            contactId: userId,
+            firstName: introducer.firstName || '',
+            lastName: introducer.lastName || '',
+            email: introducer.email,
+            degreeType: 'FIRST_DEGREE',
+          }
+        })
+      } else if (!existingIntroducerContactForB.contactId) {
+        await prisma.contact.update({
+          where: { id: existingIntroducerContactForB.id },
+          data: { contactId: userId }
+        })
+      }
+    }
+
     // Create notifications for users (including newly created ones)
     if (personAUserAfter) {
       await prisma.notification.create({

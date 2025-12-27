@@ -391,6 +391,7 @@ export async function sendIntroductionEmail({
   otherPersonName,
   otherPersonCompany,
   otherPersonContext,
+  otherPersonStatementSummary,
   message,
   introductionId,
   isExistingUser,
@@ -401,6 +402,7 @@ export async function sendIntroductionEmail({
   otherPersonName: string
   otherPersonCompany?: string | null
   otherPersonContext?: string | null
+  otherPersonStatementSummary?: string | null
   message: string
   introductionId: string
   isExistingUser: boolean
@@ -451,6 +453,7 @@ export async function sendIntroductionEmail({
     otherPersonName,
     otherPersonCompany,
     otherPersonContext,
+    otherPersonStatementSummary,
     message,
     actionLink,
     actionText,
@@ -470,6 +473,7 @@ function generateIntroductionEmail({
   otherPersonName,
   otherPersonCompany,
   otherPersonContext,
+  otherPersonStatementSummary,
   message,
   actionLink,
   actionText,
@@ -480,15 +484,17 @@ function generateIntroductionEmail({
   otherPersonName: string
   otherPersonCompany?: string | null
   otherPersonContext?: string | null
+  otherPersonStatementSummary?: string | null
   message: string
   actionLink: string
   actionText: string
   isExistingUser: boolean
 }) {
   const otherPersonInfo = [
+    otherPersonStatementSummary ? `${otherPersonStatementSummary}` : '',
     otherPersonCompany ? `<strong>Company:</strong> ${otherPersonCompany}` : '',
-    otherPersonContext ? `<strong>About:</strong> ${otherPersonContext}` : '',
-  ].filter(Boolean).join('<br>')
+    otherPersonContext ? `<strong>Context:</strong> ${otherPersonContext}` : '',
+  ].filter(Boolean).join('<br><br>')
 
   return `
     <!DOCTYPE html>

@@ -774,8 +774,26 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${bgStyle.className || ''}`} style={bgStyle.style}>
-        <div className="text-xl text-gray-600">Profile not found</div>
+      <div className={`min-h-screen ${bgStyle.className || ''}`} style={bgStyle.style}>
+        <Header />
+        <div className="flex flex-col items-center justify-center py-32 px-4">
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Not Found</h1>
+            <p className="text-gray-600 mb-6">The profile you're looking for doesn't exist or may have been removed.</p>
+            <a
+              href="/"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+            >
+              Go Home
+            </a>
+          </div>
+        </div>
+        <Footer />
       </div>
     )
   }
@@ -828,7 +846,7 @@ export default function ProfilePage() {
               {/* Profile Picture */}
               <div
                 className="bus-card-profile-pic w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold overflow-hidden mb-4 border-4"
-                style={effectiveProfileBorderColor ? { borderColor: effectiveProfileBorderColor } : { borderColor: 'transparent' }}
+                style={effectiveProfileBorderColor ? { borderColor: effectiveProfileBorderColor } : { borderColor: '' }}
               >
                 {profile.profilePicture ? (
                   <img

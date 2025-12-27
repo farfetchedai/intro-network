@@ -165,13 +165,13 @@ export async function POST(req: Request) {
     // Check if Person A has an account
     const personAUser = await prisma.user.findFirst({
       where: { email: personAEmail },
-      select: { id: true, firstName: true, lastName: true, username: true }
+      select: { id: true, firstName: true, lastName: true, username: true, statementSummary: true }
     })
 
     // Check if Person B has an account
     const personBUser = await prisma.user.findFirst({
       where: { email: personBEmail },
-      select: { id: true, firstName: true, lastName: true, username: true }
+      select: { id: true, firstName: true, lastName: true, username: true, statementSummary: true }
     })
 
     // Create the introduction
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
     const introducerName = `${introducer.firstName} ${introducer.lastName}`
 
     try {
-      // Email to Person A
+      // Email to Person A (includes Person B's statementSummary)
       await sendIntroductionEmail({
         to: personAEmail,
         recipientName: personAName,
@@ -204,6 +204,7 @@ export async function POST(req: Request) {
         otherPersonName: personBName,
         otherPersonCompany: personBCompany,
         otherPersonContext: personBContext,
+        otherPersonStatementSummary: personBUser?.statementSummary,
         message,
         introductionId: introduction.id,
         isExistingUser: !!personAUser,
@@ -218,7 +219,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Email to Person B
+      // Email to Person B (includes Person A's statementSummary)
       await sendIntroductionEmail({
         to: personBEmail,
         recipientName: personBName,
@@ -226,6 +227,7 @@ export async function POST(req: Request) {
         otherPersonName: personAName,
         otherPersonCompany: personACompany,
         otherPersonContext: personAContext,
+        otherPersonStatementSummary: personAUser?.statementSummary,
         message,
         introductionId: introduction.id,
         isExistingUser: !!personBUser,

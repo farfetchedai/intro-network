@@ -8,154 +8,119 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String?  @unique
-  phone     String?  @unique
-  firstName String
-  lastName  String
-  username  String?  @unique
-  userType  String   @default("REFEREE") // ADMIN, REFEREE, FIRST_DEGREE, REFERRAL
-  password  String?
-
-  // Profile fields
-  profilePicture    String?
-  backgroundImage   String?
-  bio               String?
-  linkedinUrl       String?
-  twitterUrl        String?
-  facebookUrl       String?
-  instagramUrl      String?
-  tiktokUrl         String?
-  websiteUrl        String?
-
-  // Referee-specific fields
-  skills           String? // JSON array of skills
-  companyName      String?
-  achievement      String?
-  achievementMethod String?
-  statementSummary String?
-  statementSummary3rdPerson String? // 3rd person version for referral requests
-  introRequest     String? // Types of people they'd like intros to (roles, sectors, or specific people)
-
-  // Business card customization
-  cardPageBgColor        String?  // Page background color
-  cardBoxBgColor         String?  // Card box background color
-  cardTextColor          String?  // Text color inside the card
-  cardBgImage            String?  // Background image URL (object-fit: cover)
-  cardProfileBorderColor String?  // Profile picture border color
-  cardFooterBgColor      String?  // Footer background color
-  cardFooterTextColor    String?  // Footer text color
-
-  // Magic link authentication
-  magicLinkToken     String?   @unique
-  magicLinkExpiry    DateTime?
-  magicLinkRedirect  String?   // URL to redirect to after login
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  contacts          Contact[]         @relation("UserContacts")
-  contactOf         Contact[]         @relation("ContactOfUser")
-  sentMessages      Message[]         @relation("MessageSender")
-  receivedMessages  Message[]         @relation("MessageReceiver")
-  initiatedReferrals Referral[]       @relation("ReferralInitiator")
-  receivedReferrals  Referral[]       @relation("ReferralRecipient")
-  firstDegreeReferrals Referral[]     @relation("FirstDegreeContact")
-
-  // LinkedIn OAuth relations
-  linkedInAccount     LinkedInAccount?
-  linkedInConnections LinkedInConnection[]
-  careerHistory       CareerHistory[]
-
-  // Connection relations
-  connectionRequestsSent     ConnectionRequest[] @relation("ConnectionRequestsSent")
-  connectionRequestsReceived ConnectionRequest[] @relation("ConnectionRequestsReceived")
-  connections                Connection[]        @relation("UserConnections")
-  connectedTo                Connection[]        @relation("ConnectedToUser")
-
-  // Notification relations
-  notifications              Notification[]      @relation("UserNotifications")
-  sentNotifications          Notification[]      @relation("NotificationSender")
-
-  // Introduction relations
+  id                         String                @id @default(cuid())
+  email                      String?               @unique
+  phone                      String?               @unique
+  firstName                  String
+  lastName                   String
+  username                   String?               @unique
+  userType                   String                @default("REFEREE")
+  password                   String?
+  profilePicture             String?
+  backgroundImage            String?
+  bio                        String?
+  linkedinUrl                String?
+  twitterUrl                 String?
+  facebookUrl                String?
+  instagramUrl               String?
+  websiteUrl                 String?
+  skills                     String?
+  companyName                String?
+  achievement                String?
+  achievementMethod          String?
+  statementSummary           String?
+  statementSummary3rdPerson  String?
+  introRequest               String?
+  cardPageBgColor            String?
+  cardBoxBgColor             String?
+  cardTextColor              String?
+  cardBgImage                String?
+  magicLinkToken             String?               @unique
+  magicLinkExpiry            DateTime?
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
+  magicLinkRedirect          String?
+  tiktokUrl                  String?
+  cardFooterBgColor          String?
+  cardFooterTextColor        String?
+  cardProfileBorderColor     String?
+  careerHistory              CareerHistory[]
+  connectedTo                Connection[]          @relation("ConnectedToUser")
+  connections                Connection[]          @relation("UserConnections")
+  connectionRequestsSent     ConnectionRequest[]   @relation("ConnectionRequestsSent")
+  connectionRequestsReceived ConnectionRequest[]   @relation("ConnectionRequestsReceived")
+  contactOf                  Contact[]             @relation("ContactOfUser")
+  contacts                   Contact[]             @relation("UserContacts")
+  linkedInAccount            LinkedInAccount?
+  linkedInConnections        LinkedInConnection[]
+  receivedMessages           Message[]             @relation("MessageReceiver")
+  sentMessages               Message[]             @relation("MessageSender")
+  sentNotifications          Notification[]        @relation("NotificationSender")
+  notifications              Notification[]        @relation("UserNotifications")
   introductionsMade          PendingIntroduction[] @relation("IntroductionsMade")
   introductionsAsPersonA     PendingIntroduction[] @relation("IntroductionsAsPersonA")
   introductionsAsPersonB     PendingIntroduction[] @relation("IntroductionsAsPersonB")
+  firstDegreeReferrals       Referral[]            @relation("FirstDegreeContact")
+  initiatedReferrals         Referral[]            @relation("ReferralInitiator")
+  receivedReferrals          Referral[]            @relation("ReferralRecipient")
 
   @@index([email])
   @@index([phone])
 }
 
 model Contact {
-  id        String   @id @default(cuid())
-  userId    String
-  contactId String?
-
-  firstName String
-  lastName  String
-  email     String?
-  phone     String?
-  company   String?
-
-  // Relationship tracking
-  degreeType String  @default("FIRST_DEGREE") // FIRST_DEGREE or SECOND_DEGREE
-  requestSentAt DateTime? // When the request was sent to this contact
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user      User     @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
-  contact   User?    @relation("ContactOfUser", fields: [contactId], references: [id])
+  id            String    @id @default(cuid())
+  userId        String
+  contactId     String?
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  company       String?
+  degreeType    String    @default("FIRST_DEGREE")
+  requestSentAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  contact       User?     @relation("ContactOfUser", fields: [contactId], references: [id])
+  user          User      @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([contactId])
 }
 
 model Message {
-  id          String   @id @default(cuid())
-  senderId    String
-  receiverId  String
-  messageType String   // FIRST_DEGREE_REQUEST, REFERRAL_REQUEST
-  subject     String
-  body        String
-
-  // Delivery tracking
-  sentViaEmail Boolean @default(false)
-  sentViaSms   Boolean @default(false)
+  id           String    @id @default(cuid())
+  senderId     String
+  receiverId   String
+  messageType  String
+  subject      String
+  body         String
+  sentViaEmail Boolean   @default(false)
+  sentViaSms   Boolean   @default(false)
   emailSentAt  DateTime?
   smsSentAt    DateTime?
-
-  createdAt   DateTime @default(now())
-
-  // Relations
-  sender      User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver    User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  receiver     User      @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender       User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([receiverId])
 }
 
 model Referral {
-  id              String    @id @default(cuid())
-  refereeId       String    // The original user who started the chain
-  firstDegreeId   String    // The 1st degree contact
-  referralId      String    // The final referral target
-
-  status          String    @default("PENDING") // PENDING, APPROVED, DENIED
-  customMessage   String?   // Customized message for this referral
-
-  approvedAt      DateTime?
-  deniedAt        DateTime?
-
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
-  referee         User      @relation("ReferralInitiator", fields: [refereeId], references: [id], onDelete: Cascade)
-  firstDegree     User      @relation("FirstDegreeContact", fields: [firstDegreeId], references: [id], onDelete: Cascade)
-  referral        User      @relation("ReferralRecipient", fields: [referralId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  refereeId     String
+  firstDegreeId String
+  referralId    String
+  status        String    @default("PENDING")
+  customMessage String?
+  approvedAt    DateTime?
+  deniedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  firstDegree   User      @relation("FirstDegreeContact", fields: [firstDegreeId], references: [id], onDelete: Cascade)
+  referee       User      @relation("ReferralInitiator", fields: [refereeId], references: [id], onDelete: Cascade)
+  referral      User      @relation("ReferralRecipient", fields: [referralId], references: [id], onDelete: Cascade)
 
   @@index([refereeId])
   @@index([firstDegreeId])
@@ -164,146 +129,104 @@ model Referral {
 }
 
 model BrandingSettings {
-  id                  String   @id @default(cuid())
-  productName         String   @default("Intro Network")
-  desktopSidebarLogo  String?
-  desktopHeaderLogo   String?
-  footerLogo          String?
-  desktopLogo         String?  // Legacy field
-  mobileLogo          String?
-  favicon             String?
-  primaryColor        String   @default("#3B82F6")
-  secondaryColor      String   @default("#8B5CF6")
-  accentColor         String   @default("#EC4899")
-
-  // Legacy step backgrounds (for backward compatibility)
-  step1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
-  step2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
-  step3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
-  step4Background     String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
-
-  // Flow A (/getintros - Referee flow) - Step Backgrounds
-  flowAStep1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
-  flowAStep2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
-  flowAStep3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
-  flowAStep1FormBg         String   @default("white")
-  flowAStep2FormBg         String   @default("white")
-  flowAStep3FormBg         String   @default("white")
-
-  // Flow B (/firstdegree - First Degree/Referrals flow) - Step Backgrounds
-  flowBStep1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
-  flowBStep2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
-  flowBStep3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
-  flowBStep4Background     String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
-  flowBStep1FormBg         String   @default("white")
-  flowBStep2FormBg         String   @default("white")
-  flowBStep3FormBg         String   @default("white")
-  flowBStep4FormBg         String   @default("white")
-
-  // Flow C (/onboarding - Onboarding flow) - Step Backgrounds
-  flowCStep1Background     String   @default("from-blue-400 via-purple-400 to-pink-400")
-  flowCStep2Background     String   @default("from-emerald-400 via-teal-400 to-cyan-400")
-  flowCStep3Background     String   @default("from-orange-400 via-rose-400 to-pink-400")
-  flowCStep4Background     String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
-  flowCStep1FormBg         String   @default("white")
-  flowCStep2FormBg         String   @default("white")
-  flowCStep3FormBg         String   @default("white")
-  flowCStep4FormBg         String   @default("white")
-
-  // Profile Pages (/username and /profile/username) - Backgrounds
-  profilePageBackground    String   @default("from-blue-400 via-purple-400 to-pink-400")
-  profilePageFormBg        String   @default("white")
-
-  // User Flow A (Referee) Step Names
-  flowAStep1Name      String   @default("Your Profile")
-  flowAStep2Name      String   @default("Your Network")
-  flowAStep3Name      String   @default("Referrals")
-  flowAStep4Name      String   @default("Complete")
-
-  // User Flow B (First Degree) Step Names
-  flowBStep1Name      String   @default("Review request")
-  flowBStep2Name      String   @default("Suggest your contacts")
-  flowBStep3Name      String   @default("Review & send")
-  flowBStep4Name      String   @default("Track responses")
-
-  // User Flow C (Second Degree) Step Names
-  flowCStep1Name      String   @default("Review intro")
-  flowCStep2Name      String   @default("Accept or decline")
-  flowCStep3Name      String   @default("Connect")
-  flowCStep4Name      String   @default("Complete")
-
-  // Legacy fields (kept for backward compatibility)
-  step1Name           String   @default("Your Profile")
-  step2Name           String   @default("Your Network")
-  step3Name           String   @default("Referrals")
-  step4Name           String   @default("Complete")
-
-  fontFamily          String   @default("Inter, system-ui, sans-serif")
-  headingFont         String   @default("Inter, system-ui, sans-serif")
-  customCSS           String?
-
-  // Business Card Color Swatches (JSON arrays of hex colors)
-  cardPageBgSwatches  String   @default("[\"#f0f9ff\", \"#fef3c7\", \"#fce7f3\", \"#ecfdf5\", \"#f5f3ff\", \"#fef2f2\"]")
-  cardBoxBgSwatches   String   @default("[\"#ffffff\", \"#f9fafb\", \"#fef3c7\", \"#fce7f3\", \"#ecfdf5\", \"#1f2937\"]")
-  cardTextSwatches    String   @default("[\"#111827\", \"#374151\", \"#6b7280\", \"#ffffff\", \"#1e40af\", \"#7c3aed\"]")
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  productName           String   @default("Intro Network")
+  desktopSidebarLogo    String?
+  desktopHeaderLogo     String?
+  footerLogo            String?
+  desktopLogo           String?
+  mobileLogo            String?
+  favicon               String?
+  primaryColor          String   @default("#3B82F6")
+  secondaryColor        String   @default("#8B5CF6")
+  accentColor           String   @default("#EC4899")
+  step1Background       String   @default("from-blue-400 via-purple-400 to-pink-400")
+  step2Background       String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  step3Background       String   @default("from-orange-400 via-rose-400 to-pink-400")
+  step4Background       String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
+  flowAStep1Background  String   @default("from-blue-400 via-purple-400 to-pink-400")
+  flowAStep2Background  String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  flowAStep3Background  String   @default("from-orange-400 via-rose-400 to-pink-400")
+  flowAStep1FormBg      String   @default("white")
+  flowAStep2FormBg      String   @default("white")
+  flowAStep3FormBg      String   @default("white")
+  flowBStep1Background  String   @default("from-blue-400 via-purple-400 to-pink-400")
+  flowBStep2Background  String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  flowBStep3Background  String   @default("from-orange-400 via-rose-400 to-pink-400")
+  flowBStep4Background  String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
+  flowBStep1FormBg      String   @default("white")
+  flowBStep2FormBg      String   @default("white")
+  flowBStep3FormBg      String   @default("white")
+  flowBStep4FormBg      String   @default("white")
+  flowCStep1Background  String   @default("from-blue-400 via-purple-400 to-pink-400")
+  flowCStep2Background  String   @default("from-emerald-400 via-teal-400 to-cyan-400")
+  flowCStep3Background  String   @default("from-orange-400 via-rose-400 to-pink-400")
+  flowCStep4Background  String   @default("from-violet-400 via-purple-400 to-fuchsia-400")
+  flowCStep1FormBg      String   @default("white")
+  flowCStep2FormBg      String   @default("white")
+  flowCStep3FormBg      String   @default("white")
+  flowCStep4FormBg      String   @default("white")
+  profilePageBackground String   @default("from-blue-400 via-purple-400 to-pink-400")
+  profilePageFormBg     String   @default("white")
+  flowAStep1Name        String   @default("Your Profile")
+  flowAStep2Name        String   @default("Your Network")
+  flowAStep3Name        String   @default("Referrals")
+  flowAStep4Name        String   @default("Complete")
+  flowBStep1Name        String   @default("Review request")
+  flowBStep2Name        String   @default("Suggest your contacts")
+  flowBStep3Name        String   @default("Review & send")
+  flowBStep4Name        String   @default("Track responses")
+  flowCStep1Name        String   @default("Review intro")
+  flowCStep2Name        String   @default("Accept or decline")
+  flowCStep3Name        String   @default("Connect")
+  flowCStep4Name        String   @default("Complete")
+  step1Name             String   @default("Your Profile")
+  step2Name             String   @default("Your Network")
+  step3Name             String   @default("Referrals")
+  step4Name             String   @default("Complete")
+  fontFamily            String   @default("Inter, system-ui, sans-serif")
+  headingFont           String   @default("Inter, system-ui, sans-serif")
+  customCSS             String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  cardBoxBgSwatches     String   @default("[\"#ffffff\", \"#f9fafb\", \"#fef3c7\", \"#fce7f3\", \"#ecfdf5\", \"#1f2937\"]")
+  cardPageBgSwatches    String   @default("[\"#f0f9ff\", \"#fef3c7\", \"#fce7f3\", \"#ecfdf5\", \"#f5f3ff\", \"#fef2f2\"]")
+  cardTextSwatches      String   @default("[\"#111827\", \"#374151\", \"#6b7280\", \"#ffffff\", \"#1e40af\", \"#7c3aed\"]")
+  appBackground         String   @default("from-blue-50 via-purple-50 to-pink-50")
 }
 
 model ApiSettings {
-  id                  String   @id @default(cuid())
-
-  // App URL for email links
-  appUrl              String?  // Production app URL (e.g., "https://app.example.com")
-
-  // Email provider selection
-  emailProvider       String   @default("resend") // "resend", "gmail", or "ses"
-  emailFromName       String?  // Sender name displayed in emails (e.g., "IntroNetwork")
-
-  // Resend settings
-  resendApiKey        String?
-  resendFromEmail     String?
-
-  // Gmail SMTP settings
-  gmailEmail          String?
-  gmailAppPassword    String?
-
-  // Amazon SES settings
-  sesAccessKeyId      String?
-  sesSecretAccessKey  String?
-  sesRegion           String?  @default("us-east-1")
-  sesFromEmail        String?
-
-  // Twilio settings
-  twilioAccountSid    String?
-  twilioAuthToken     String?
-  twilioPhoneNumber   String?
-
-  // Statement Summary Template
-  statementSummaryTemplate String? // Template for building referee statements with placeholders
-
-  // AI Settings
-  anthropicApiKey     String?  // Anthropic API key for AI-powered features
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  emailProvider            String   @default("resend")
+  resendApiKey             String?
+  resendFromEmail          String?
+  gmailEmail               String?
+  gmailAppPassword         String?
+  sesAccessKeyId           String?
+  sesSecretAccessKey       String?
+  sesRegion                String?  @default("us-east-1")
+  sesFromEmail             String?
+  twilioAccountSid         String?
+  twilioAuthToken          String?
+  twilioPhoneNumber        String?
+  statementSummaryTemplate String?
+  anthropicApiKey          String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  emailFromName            String?
+  appUrl                   String?
 }
 
 model MessageTemplate {
-  id              String   @id @default(cuid())
-  templateType    String   // REFEREE_WELCOME, FIRST_DEGREE_REQUEST, REFERRAL_REQUEST
-  messageChannel  String   // EMAIL or SMS
-
-  // Template content
-  subject         String?  // Only for email
-  bodyHtml        String?  // Only for email - HTML with inline CSS
-  bodySms         String?  // Only for SMS - plain text
-
-  // Metadata
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  templateType   String
+  messageChannel String
+  subject        String?
+  bodyHtml       String?
+  bodySms        String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([templateType, messageChannel])
   @@index([templateType])
@@ -313,13 +236,11 @@ model MessageTemplate {
 model Page {
   id          String    @id @default(cuid())
   title       String
-  slug        String    @unique // URL-friendly identifier (e.g., "home", "about-us")
+  slug        String    @unique
   isPublished Boolean   @default(false)
   isHomepage  Boolean   @default(false)
-
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   sections    Section[]
 
   @@index([slug])
@@ -329,20 +250,13 @@ model Page {
 model Section {
   id          String   @id @default(cuid())
   pageId      String
-  order       Int      // Position in the page
-  sectionId   String?  // Optional ID that can be used for smooth scrolling anchor links
-
-  // Layout options
-  isFullWidth Boolean  @default(false) // true = full-width, false = container
-  columns     Int      @default(1)     // 1, 2, or 3 columns
-
-  // Section content stored as JSON
-  // Structure: { columns: [{ align: 'left'|'center'|'right', classes: '', elements: [{ type: 'h1'|'h2'|'h3'|'h4'|'p'|'image'|'button', content: '', order: 0 }] }] }
-  content     String   // JSON string
-
+  order       Int
+  sectionId   String?
+  isFullWidth Boolean  @default(false)
+  columns     Int      @default(1)
+  content     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@index([pageId])
@@ -350,22 +264,13 @@ model Section {
 }
 
 model NavigationSettings {
-  id            String   @id @default(cuid())
-
-  // Header links stored as JSON array
-  // Structure: [{ label: 'About', href: '/about', scrollToId: '#section-about' }]
-  headerLinks   String   @default("[]")
-
-  // Footer links stored as JSON array
-  // Structure: [{ title: 'Product', links: [{ label: 'Features', href: '/features' }] }]
-  footerLinks   String   @default("[]")
-
-  // Footer branding
-  tagline       String?
-  companyName   String?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(cuid())
+  headerLinks String   @default("[]")
+  footerLinks String   @default("[]")
+  tagline     String?
+  companyName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model MagicLink {
@@ -376,7 +281,6 @@ model MagicLink {
   expiresAt   DateTime
   used        Boolean   @default(false)
   usedAt      DateTime?
-
   createdAt   DateTime  @default(now())
 
   @@index([token])
@@ -385,18 +289,16 @@ model MagicLink {
 }
 
 model LinkedInAccount {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  linkedinId      String    @unique
-  accessToken     String
-  refreshToken    String?
-  tokenExpiry     DateTime?
-  scope           String?
-
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  linkedinId   String    @unique
+  accessToken  String
+  refreshToken String?
+  tokenExpiry  DateTime?
+  scope        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([linkedinId])
@@ -412,10 +314,8 @@ model LinkedInConnection {
   profilePictureUrl String?
   profileUrl        String?
   lastSyncedAt      DateTime @default(now())
-
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, linkedinId])
@@ -435,10 +335,8 @@ model CareerHistory {
   isCurrent            Boolean   @default(false)
   importedFromLinkedIn Boolean   @default(false)
   linkedInPositionId   String?   @unique
-
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
-
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -448,14 +346,12 @@ model ConnectionRequest {
   id          String    @id @default(cuid())
   fromUserId  String
   toUserId    String
-  note        String?   // Optional message with the connection request
-  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED
-  token       String    @unique @default(cuid()) // For secure email links
-
+  note        String?
+  status      String    @default("PENDING")
+  token       String    @unique @default(cuid())
   respondedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   fromUser    User      @relation("ConnectionRequestsSent", fields: [fromUserId], references: [id], onDelete: Cascade)
   toUser      User      @relation("ConnectionRequestsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
 
@@ -467,14 +363,12 @@ model ConnectionRequest {
 }
 
 model Connection {
-  id        String   @id @default(cuid())
-  userId    String
+  id              String   @id @default(cuid())
+  userId          String
   connectedUserId String
-
-  createdAt DateTime @default(now())
-
-  user          User @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
-  connectedUser User @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  connectedUser   User     @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
+  user            User     @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, connectedUserId])
   @@index([userId])
@@ -482,22 +376,18 @@ model Connection {
 }
 
 model Notification {
-  id          String    @id @default(cuid())
-  userId      String    // The user who receives this notification
-  type        String    // CONNECTION_REQUEST, CONNECTION_ACCEPTED, CONNECTION_DECLINED, INTRO_REQUEST, INTRO_ACCEPTED, INTRO_DECLINED
-  title       String    // Short title like "New connection request"
-  message     String    // Full message like "John Doe would like to connect with you"
-  link        String?   // Optional link to navigate to (e.g., /connections, /dashboard)
-  isRead      Boolean   @default(false)
-
-  // Optional references to related entities
-  fromUserId  String?   // The user who triggered this notification
-
-  createdAt   DateTime  @default(now())
-  readAt      DateTime?
-
-  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  fromUser    User?     @relation("NotificationSender", fields: [fromUserId], references: [id], onDelete: SetNull)
+  id         String    @id @default(cuid())
+  userId     String
+  type       String
+  title      String
+  message    String
+  link       String?
+  isRead     Boolean   @default(false)
+  fromUserId String?
+  createdAt  DateTime  @default(now())
+  readAt     DateTime?
+  fromUser   User?     @relation("NotificationSender", fields: [fromUserId], references: [id])
+  user       User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isRead])
@@ -505,59 +395,46 @@ model Notification {
 }
 
 model CardTheme {
-  id                     String   @id @default(cuid())
-  name                   String
-  order                  Int      @default(0)  // For ordering themes in the UI
-  pageBackground         String   // Page background color
-  cardBackground         String   // Card box background color
-  textColor              String   // Text color inside the card
-  profilePictureBorder   String   // Profile picture border color
-  footerBackground       String   // Footer background color
-  footerTextColor        String   // Footer text color
-
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  name                 String
+  order                Int      @default(0)
+  pageBackground       String
+  cardBackground       String
+  textColor            String
+  profilePictureBorder String
+  footerBackground     String
+  footerTextColor      String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([order])
 }
 
 model PendingIntroduction {
-  id                String    @id @default(cuid())
-
-  // The user making the introduction
-  introducerId      String
-  introducer        User      @relation("IntroductionsMade", fields: [introducerId], references: [id], onDelete: Cascade)
-
-  // Person A - either existing user or external (by email)
-  personAUserId     String?   // If they have an account
-  personAUser       User?     @relation("IntroductionsAsPersonA", fields: [personAUserId], references: [id], onDelete: SetNull)
-  personAEmail      String    // Always required for sending email
-  personAName       String    // Name to display
-  personACompany    String?   // Optional company
-  personAContext    String?   // Why person A is relevant/what they do
-
-  // Person B - either existing user or external (by email)
-  personBUserId     String?   // If they have an account
-  personBUser       User?     @relation("IntroductionsAsPersonB", fields: [personBUserId], references: [id], onDelete: SetNull)
-  personBEmail      String    // Always required for sending email
-  personBName       String    // Name to display
-  personBCompany    String?   // Optional company
-  personBContext    String?   // Why person B is relevant/what they do
-
-  // Introduction message
-  message           String    // The introduction message
-
-  // Status tracking
-  status            String    @default("pending") // pending, personA_accepted, personB_accepted, both_accepted, declined
-  personAAccepted   Boolean   @default(false)
-  personBAccepted   Boolean   @default(false)
-  personAEmailSent  Boolean   @default(false)
-  personBEmailSent  Boolean   @default(false)
-
-  // Timestamps
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  acceptedAt        DateTime?
+  id               String    @id @default(cuid())
+  introducerId     String
+  personAUserId    String?
+  personAEmail     String
+  personAName      String
+  personACompany   String?
+  personAContext   String?
+  personBUserId    String?
+  personBEmail     String
+  personBName      String
+  personBCompany   String?
+  personBContext   String?
+  message          String
+  status           String    @default("pending")
+  personAAccepted  Boolean   @default(false)
+  personBAccepted  Boolean   @default(false)
+  personAEmailSent Boolean   @default(false)
+  personBEmailSent Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  acceptedAt       DateTime?
+  introducer       User      @relation("IntroductionsMade", fields: [introducerId], references: [id], onDelete: Cascade)
+  personAUser      User?     @relation("IntroductionsAsPersonA", fields: [personAUserId], references: [id])
+  personBUser      User?     @relation("IntroductionsAsPersonB", fields: [personBUserId], references: [id])
 
   @@index([introducerId])
   @@index([personAUserId])

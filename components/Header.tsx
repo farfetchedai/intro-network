@@ -32,6 +32,16 @@ export default function Header() {
   const [navigation, setNavigation] = useState<any>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  // Track scroll position for header background
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     // Check if user is logged in from session cookie
@@ -210,7 +220,14 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50">
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300`}
+        style={isScrolled ? {
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(5px)',
+          WebkitBackdropFilter: 'blur(5px)',
+        } : undefined}
+      >
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

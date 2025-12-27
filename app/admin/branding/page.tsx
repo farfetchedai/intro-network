@@ -71,6 +71,8 @@ interface BrandingSettings {
   // Profile Pages
   profilePageBackground: string
   profilePageFormBg: string
+  // App/Dashboard Background
+  appBackground: string
   // Business Card Color Swatches
   cardPageBgSwatches: string
   cardBoxBgSwatches: string
@@ -143,6 +145,8 @@ export default function BrandingPage() {
     // Profile Pages
     profilePageBackground: 'from-blue-400 via-purple-400 to-pink-400',
     profilePageFormBg: 'white',
+    // App/Dashboard Background
+    appBackground: 'from-blue-50 via-purple-50 to-pink-50',
     // Business Card Color Swatches
     cardPageBgSwatches: '["#f0f9ff", "#fef3c7", "#fce7f3", "#ecfdf5", "#f5f3ff", "#fef2f2"]',
     cardBoxBgSwatches: '["#ffffff", "#f9fafb", "#fef3c7", "#fce7f3", "#ecfdf5", "#1f2937"]',
@@ -184,6 +188,7 @@ export default function BrandingPage() {
           // Ensure new fields have defaults if not in database yet
           profilePageBackground: data.settings.profilePageBackground || 'from-blue-400 via-purple-400 to-pink-400',
           profilePageFormBg: data.settings.profilePageFormBg || 'white',
+          appBackground: data.settings.appBackground || 'from-blue-50 via-purple-50 to-pink-50',
           cardPageBgSwatches: data.settings.cardPageBgSwatches || '["#f0f9ff", "#fef3c7", "#fce7f3", "#ecfdf5", "#f5f3ff", "#fef2f2"]',
           cardBoxBgSwatches: data.settings.cardBoxBgSwatches || '["#ffffff", "#f9fafb", "#fef3c7", "#fce7f3", "#ecfdf5", "#1f2937"]',
           cardTextSwatches: data.settings.cardTextSwatches || '["#111827", "#374151", "#6b7280", "#ffffff", "#1e40af", "#7c3aed"]',
@@ -1166,6 +1171,27 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+        </div>
+      </div>
+
+      {/* App/Dashboard Background */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">App Background (Dashboard & Home)</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Background gradient or color for the main app pages like Dashboard and Home
+        </p>
+        <div className="max-w-md">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            App Background
+          </label>
+          <input
+            type="text"
+            value={settings.appBackground}
+            onChange={(e) => setSettings({ ...settings, appBackground: e.target.value })}
+            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="from-blue-50 via-purple-50 to-pink-50"
+          />
+          <p className="text-xs text-gray-500 mt-2">Use Tailwind gradient classes like "from-blue-50 via-purple-50 to-pink-50" or hex colors</p>
         </div>
       </div>
 

@@ -83,6 +83,8 @@ export async function GET() {
         // Profile Pages
         profilePageBackground: settings.profilePageBackground,
         profilePageFormBg: settings.profilePageFormBg,
+        // App/Dashboard Background
+        appBackground: settings.appBackground || 'from-blue-50 via-purple-50 to-pink-50',
         // Legacy fields
         step1Name: settings.step1Name,
         step2Name: settings.step2Name,
@@ -106,6 +108,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { settings, customCSS } = body
+
+    console.log('Saving branding - appBackground:', settings?.appBackground)
 
     // Get existing settings or create new
     let brandingSettings = await prisma.brandingSettings.findFirst()
@@ -172,6 +176,8 @@ export async function POST(request: Request) {
           // Profile Pages
           profilePageBackground: settings.profilePageBackground,
           profilePageFormBg: settings.profilePageFormBg,
+          // App/Dashboard Background
+          appBackground: settings.appBackground,
           // Legacy fields
           step1Name: settings.step1Name,
           step2Name: settings.step2Name,
@@ -243,6 +249,8 @@ export async function POST(request: Request) {
           // Profile Pages
           profilePageBackground: settings.profilePageBackground,
           profilePageFormBg: settings.profilePageFormBg,
+          // App/Dashboard Background
+          appBackground: settings.appBackground,
           // Legacy fields
           step1Name: settings.step1Name,
           step2Name: settings.step2Name,

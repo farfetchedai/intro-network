@@ -133,6 +133,9 @@ export default function DashboardPage() {
   // Notifications state
   const [notifications, setNotifications] = useState<Notification[]>([])
 
+  // Branding state
+  const [appBackground, setAppBackground] = useState('from-blue-50 via-purple-50 to-pink-50')
+
   useEffect(() => {
     // Get current user from session cookie
     fetch('/api/auth/me')
@@ -152,13 +155,14 @@ export default function DashboardPage() {
 
   const fetchData = async (userId: string) => {
     try {
-      const [userRes, contactsRes, messagesRes, connectionsRes, introductionsRes, notificationsRes] = await Promise.all([
+      const [userRes, contactsRes, messagesRes, connectionsRes, introductionsRes, notificationsRes, brandingRes] = await Promise.all([
         fetch(`/api/user?userId=${userId}`),
         fetch(`/api/contacts?userId=${userId}`),
         fetch(`/api/messages?userId=${userId}`),
         fetch('/api/connections'),
         fetch('/api/introductions'),
         fetch('/api/notifications?limit=5'),
+        fetch('/api/admin/branding'),
       ])
 
       const userData = await userRes.json()
@@ -167,6 +171,7 @@ export default function DashboardPage() {
       const connectionsData = await connectionsRes.json()
       const introductionsData = await introductionsRes.json()
       const notificationsData = await notificationsRes.json()
+      const brandingData = await brandingRes.json()
 
       if (userData.user) {
         setUser(userData.user)
@@ -193,6 +198,10 @@ export default function DashboardPage() {
 
       if (notificationsData.success) {
         setNotifications(notificationsData.notifications || [])
+      }
+
+      if (brandingData.success && brandingData.settings?.appBackground) {
+        setAppBackground(brandingData.settings.appBackground)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -352,9 +361,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
+    <div
+      className={`min-h-screen ${appBackground.startsWith('#') ? '' : `bg-gradient-to-br ${appBackground}`}`}
+      style={appBackground.startsWith('#') ? { backgroundColor: appBackground } : undefined}
+    >
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
+      <div className="py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
@@ -1169,8 +1181,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
-    <Footer />
-    </>
   )
 }

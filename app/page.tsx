@@ -63,6 +63,16 @@ async function getHomepage(): Promise<Page | null> {
   }
 }
 
+async function getBranding() {
+  try {
+    const branding = await prisma.brandingSettings.findFirst()
+    return branding
+  } catch (error) {
+    console.error('Failed to fetch branding:', error)
+    return null
+  }
+}
+
 const renderElement = (element: Element) => {
   const commonClasses = 'w-full'
 
@@ -146,6 +156,8 @@ const getColumnGridClass = (columnCount: number) => {
 export default async function Home() {
   // Check if there's a CMS homepage
   const cmsHomepage = await getHomepage()
+  const branding = await getBranding()
+  const appBackground = branding?.appBackground || 'from-blue-50 via-purple-50 to-pink-50'
 
   // If CMS homepage exists, render it
   if (cmsHomepage) {
@@ -185,10 +197,12 @@ export default async function Home() {
 
   // Default landing page if no CMS homepage
   return (
-    <>
+    <div
+      className={`min-h-screen ${appBackground.startsWith('#') ? '' : `bg-gradient-to-br ${appBackground}`}`}
+      style={appBackground.startsWith('#') ? { backgroundColor: appBackground } : undefined}
+    >
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="pt-20 pb-16">
             <div className="text-center">
               <h1 className="text-5xl font-bold text-gray-900 mb-4">
@@ -308,8 +322,7 @@ export default async function Home() {
             </div>
           </div>
         </div>
-      </div>
       <Footer />
-    </>
+    </div>
   )
 }

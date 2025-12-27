@@ -87,6 +87,9 @@ export default function ProfilePage() {
   const [isOwner, setIsOwner] = useState(false)
   const [showMessage, setShowMessage] = useState(false)
 
+  // Check if user has completed onboarding (has profile picture, skills, company, or achievement)
+  const hasCompletedOnboarding = profile && !!(profile.profilePicture || profile.skills || profile.companyName || profile.achievement)
+
   // Copy URL state
   const [copySuccess, setCopySuccess] = useState(false)
 
@@ -943,7 +946,7 @@ export default function ProfilePage() {
                         <>
                           {/* Regenerate Button - First */}
                           <button
-                            onClick={generateAISummary}
+                            onClick={() => hasCompletedOnboarding ? generateAISummary() : router.push('/onboarding')}
                             disabled={isGeneratingAI || isSavingStatement}
                             className="flex items-center gap-2 px-4 py-2 text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                           >
@@ -960,7 +963,7 @@ export default function ProfilePage() {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                Regenerate
+                                {hasCompletedOnboarding ? 'Regenerate' : 'Complete Profile'}
                               </>
                             )}
                           </button>
@@ -1009,14 +1012,14 @@ export default function ProfilePage() {
                       ) : !isGeneratingAI && (
                         <>
                           <button
-                            onClick={generateAISummary}
+                            onClick={() => hasCompletedOnboarding ? generateAISummary() : router.push('/onboarding')}
                             disabled={isGeneratingAI || isSavingStatement}
                             className="flex items-center gap-2 px-4 py-2 text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
-                            AI Generate Summary
+                            {hasCompletedOnboarding ? 'AI Generate Summary' : 'Complete Profile to Generate'}
                           </button>
                           <button
                             onClick={handleEditStatement}

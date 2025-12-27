@@ -95,6 +95,22 @@ interface Introduction {
   personBUser?: ConnectionUser | null
 }
 
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  link: string | null
+  isRead: boolean
+  createdAt: string
+  fromUser?: {
+    id: string
+    firstName: string
+    lastName: string
+    profilePicture: string | null
+  }
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -113,6 +129,9 @@ export default function DashboardPage() {
   const [introductionsMade, setIntroductionsMade] = useState<Introduction[]>([])
   const [introductionsReceived, setIntroductionsReceived] = useState<Introduction[]>([])
   const [respondingToIntro, setRespondingToIntro] = useState<string | null>(null)
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([])
 
   useEffect(() => {
     // Get current user from session cookie
@@ -133,12 +152,13 @@ export default function DashboardPage() {
 
   const fetchData = async (userId: string) => {
     try {
-      const [userRes, contactsRes, messagesRes, connectionsRes, introductionsRes] = await Promise.all([
+      const [userRes, contactsRes, messagesRes, connectionsRes, introductionsRes, notificationsRes] = await Promise.all([
         fetch(`/api/user?userId=${userId}`),
         fetch(`/api/contacts?userId=${userId}`),
         fetch(`/api/messages?userId=${userId}`),
         fetch('/api/connections'),
         fetch('/api/introductions'),
+        fetch('/api/notifications?limit=5'),
       ])
 
       const userData = await userRes.json()
@@ -146,6 +166,7 @@ export default function DashboardPage() {
       const messagesData = await messagesRes.json()
       const connectionsData = await connectionsRes.json()
       const introductionsData = await introductionsRes.json()
+      const notificationsData = await notificationsRes.json()
 
       if (userData.user) {
         setUser(userData.user)
@@ -168,6 +189,10 @@ export default function DashboardPage() {
       if (introductionsData.success) {
         setIntroductionsMade(introductionsData.introductionsMade || [])
         setIntroductionsReceived(introductionsData.introductionsReceived || [])
+      }
+
+      if (notificationsData.success) {
+        setNotifications(notificationsData.notifications || [])
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -297,6 +322,18 @@ export default function DashboardPage() {
       company: isPersonA ? intro.personBCompany : intro.personACompany,
       user: isPersonA ? intro.personBUser : intro.personAUser,
     }
+  }
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (seconds < 60) return 'Just now'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
+    return date.toLocaleDateString()
   }
 
   if (loading) {
@@ -1072,50 +1109,61 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Messages */}
+        {/* Notifications */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Activity</h2>
-          {messages.length === 0 ? (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
+            <a
+              href="/connections"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              View All →
+            </a>
+          </div>
+          {notifications.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">No messages sent yet</p>
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <p className="text-gray-600">No notifications yet</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className="border-2 border-gray-200 rounded-lg p-4"
+            <div className="space-y-3">
+              {notifications.map((notification) => (
+                <a
+                  key={notification.id}
+                  href={notification.link || '#'}
+                  className={`block border-2 rounded-lg p-4 transition-all hover:shadow-md ${
+                    notification.isRead ? 'border-gray-200 bg-white' : 'border-blue-200 bg-blue-50'
+                  }`}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {message.receiver.firstName} {message.receiver.lastName}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0">
+                      {notification.fromUser?.profilePicture ? (
+                        <img src={notification.fromUser.profilePicture} alt="" className="w-full h-full object-cover" />
+                      ) : notification.fromUser ? (
+                        `${notification.fromUser.firstName[0]}${notification.fromUser.lastName[0]}`
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm ${!notification.isRead ? 'font-semibold' : ''} text-gray-900`}>
+                        {notification.message}
                       </p>
-                      <p className="text-sm text-gray-600">{message.subject}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getTimeAgo(notification.createdAt)}
+                      </p>
                     </div>
-                    <div className="flex gap-2">
-                      {message.sentViaEmail && (
-                        <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
-                          Email
-                        </span>
-                      )}
-                      {message.sentViaSms && (
-                        <span className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
-                          SMS
-                        </span>
-                      )}
-                    </div>
+                    {!notification.isRead && (
+                      <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(message.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
+                </a>
               ))}
             </div>
           )}

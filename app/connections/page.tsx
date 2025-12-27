@@ -638,6 +638,176 @@ export default function ConnectionsPage() {
                 )}
               </div>
 
+              {/* Introductions Received (in Requests tab) */}
+              {introductionsReceived.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    Introductions Received
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                      {introductionsReceived.length}
+                    </span>
+                  </h3>
+                  <div className="space-y-4">
+                    {introductionsReceived.map((intro) => {
+                      const otherPerson = getOtherPerson(intro)
+                      const isDeclined = intro.status === 'declined'
+                      const isBothAccepted = intro.status === 'both_accepted'
+                      const canRespond = !otherPerson.yourAccepted && !isDeclined
+
+                      return (
+                        <div key={intro.id} className="bg-white rounded-xl shadow-md overflow-hidden">
+                          {/* Header */}
+                          <div className="p-4 border-b border-gray-100">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-2">
+                                {intro.introducer && (
+                                  <a
+                                    href={`/${intro.introducer.username || intro.introducer.id}`}
+                                    className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden hover:ring-2 hover:ring-purple-400 transition-all"
+                                  >
+                                    {intro.introducer.profilePicture ? (
+                                      <img src={intro.introducer.profilePicture} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      `${intro.introducer.firstName[0]}${intro.introducer.lastName[0]}`
+                                    )}
+                                  </a>
+                                )}
+                                <div>
+                                  <p className="text-sm text-gray-500">
+                                    Introduced by {intro.introducer ? (
+                                      <a href={`/${intro.introducer.username || intro.introducer.id}`} className="font-medium hover:text-purple-600">
+                                        {intro.introducer.firstName} {intro.introducer.lastName}
+                                      </a>
+                                    ) : 'Unknown'}
+                                  </p>
+                                  <p className="text-xs text-gray-400">{new Date(intro.createdAt).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+                              {getIntroStatusBadge(intro)}
+                            </div>
+                          </div>
+
+                          {/* Person Info */}
+                          <div className="p-4">
+                            <div className="flex items-center gap-4 mb-4">
+                              {otherPerson.user ? (
+                                <a href={`/${otherPerson.user.username || otherPerson.user.id}`} className="flex-shrink-0">
+                                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold overflow-hidden hover:ring-2 hover:ring-blue-400 transition-all">
+                                    {otherPerson.user.profilePicture ? (
+                                      <img src={otherPerson.user.profilePicture} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      `${otherPerson.user.firstName[0]}${otherPerson.user.lastName[0]}`
+                                    )}
+                                  </div>
+                                </a>
+                              ) : (
+                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                                  {otherPerson.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                {otherPerson.user ? (
+                                  <a href={`/${otherPerson.user.username || otherPerson.user.id}`} className="font-semibold text-lg text-gray-900 hover:text-blue-600">
+                                    {otherPerson.name}
+                                  </a>
+                                ) : (
+                                  <p className="font-semibold text-lg text-gray-900">{otherPerson.name}</p>
+                                )}
+                                {otherPerson.company && (
+                                  <p className="text-sm text-gray-500">{otherPerson.company}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Introduction Message */}
+                            {intro.message && (
+                              <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <p className="text-xs text-gray-500 mb-1 font-medium">Introduction Message:</p>
+                                <p className="text-sm text-gray-700">{intro.message}</p>
+                              </div>
+                            )}
+
+                            {/* Response Status */}
+                            <div className="flex items-center gap-4 mb-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500">Your response:</span>
+                                {isDeclined ? (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">Declined</span>
+                                ) : otherPerson.yourAccepted ? (
+                                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                    Accepted
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Pending</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500">Their response:</span>
+                                {isDeclined ? (
+                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">—</span>
+                                ) : otherPerson.theirAccepted ? (
+                                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                    Accepted
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Pending</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            {canRespond && (
+                              <div className="flex gap-3 pt-3 border-t border-gray-100">
+                                <button
+                                  onClick={() => handleRespondToIntroduction(intro.id, 'decline')}
+                                  disabled={respondingToIntro === intro.id}
+                                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                >
+                                  Decline
+                                </button>
+                                <button
+                                  onClick={() => handleRespondToIntroduction(intro.id, 'accept')}
+                                  disabled={respondingToIntro === intro.id}
+                                  className="flex-1 px-4 py-2.5 text-white bg-gradient-to-r from-emerald-500 to-teal-500 font-medium rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-colors disabled:opacity-50"
+                                >
+                                  {respondingToIntro === intro.id ? 'Processing...' : 'Accept Introduction'}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Connected State */}
+                            {isBothAccepted && (
+                              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                                <div className="flex items-center gap-2 text-emerald-700">
+                                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                  <span className="text-sm font-medium">You're now connected!</span>
+                                </div>
+                                {otherPerson.user && (
+                                  <a
+                                    href={`/${otherPerson.user.username || otherPerson.user.id}`}
+                                    className="px-4 py-2 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-200 transition-colors"
+                                  >
+                                    View Profile
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* My Connections */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">

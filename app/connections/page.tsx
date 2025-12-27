@@ -302,7 +302,7 @@ export default function ConnectionsPage() {
         {/* Main Content */}
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+          <div className="flex justify-center border-b border-gray-200 mb-6 overflow-x-auto">
             <button
               onClick={() => setActiveTab('requests')}
               className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px whitespace-nowrap ${

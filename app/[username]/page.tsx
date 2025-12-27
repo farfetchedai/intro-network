@@ -1858,8 +1858,8 @@ export default function ProfilePage() {
 
             {/* QR Code */}
             <div className="flex flex-col items-center pt-6 border-t mt-6" style={{ borderColor: effectiveTextColor ? `${effectiveTextColor}30` : '#e5e7eb' }}>
-              <p className="text-sm mb-3" style={{ color: effectiveTextColor || '#6b7280' }}>Scan to save contact</p>
-              <div className="bg-white p-3 rounded-xl shadow-sm">
+              <p className="text-sm mb-3" style={{ color: effectiveTextColor || '#6b7280' }}>Scan to save contact card (VCF)</p>
+              <div className="qr-code bg-white p-3 rounded-xl shadow-sm">
                 <QRCodeSVG
                   value={typeof window !== 'undefined' ? `${window.location.origin}/api/user/vcard/${profile.username || profile.id}` : ''}
                   size={120}
@@ -1867,7 +1867,6 @@ export default function ProfilePage() {
                   includeMargin={false}
                 />
               </div>
-              <p className="text-xs mt-2" style={{ color: effectiveTextColor || '#9ca3af', opacity: 0.7 }}>Downloads contact card (VCF)</p>
             </div>
           </div>
         </div>

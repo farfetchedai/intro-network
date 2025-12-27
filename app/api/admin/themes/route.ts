@@ -44,6 +44,10 @@ export async function POST(request: Request) {
             profilePictureBorder: theme.profilePictureBorder,
             footerBackground: theme.footerBackground,
             footerTextColor: theme.footerTextColor,
+            buttonABackground: theme.buttonABackground || '#3b82f6',
+            buttonATextColor: theme.buttonATextColor || '#ffffff',
+            buttonBBackground: theme.buttonBBackground || '#10b981',
+            buttonBTextColor: theme.buttonBTextColor || '#ffffff',
           },
         })
       )

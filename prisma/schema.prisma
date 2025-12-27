@@ -44,6 +44,10 @@ model User {
   cardFooterBgColor          String?
   cardFooterTextColor        String?
   cardProfileBorderColor     String?
+  cardButtonABgColor         String?
+  cardButtonATextColor       String?
+  cardButtonBBgColor         String?
+  cardButtonBTextColor       String?
   careerHistory              CareerHistory[]
   connectedTo                Connection[]          @relation("ConnectedToUser")
   connections                Connection[]          @relation("UserConnections")
@@ -404,6 +408,10 @@ model CardTheme {
   profilePictureBorder String
   footerBackground     String
   footerTextColor      String
+  buttonABackground    String   @default("#3b82f6")
+  buttonATextColor     String   @default("#ffffff")
+  buttonBBackground    String   @default("#10b981")
+  buttonBTextColor     String   @default("#ffffff")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

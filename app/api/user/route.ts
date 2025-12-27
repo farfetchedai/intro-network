@@ -45,6 +45,10 @@ export async function GET(req: Request) {
         cardProfileBorderColor: true,
         cardFooterBgColor: true,
         cardFooterTextColor: true,
+        cardButtonABgColor: true,
+        cardButtonATextColor: true,
+        cardButtonBBgColor: true,
+        cardButtonBTextColor: true,
       },
     })
 

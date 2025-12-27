@@ -11,6 +11,10 @@ interface CardTheme {
   profilePictureBorder: string
   footerBackground: string
   footerTextColor: string
+  buttonABackground: string
+  buttonATextColor: string
+  buttonBBackground: string
+  buttonBTextColor: string
 }
 
 interface BrandingSettings {
@@ -163,12 +167,12 @@ export default function BrandingPage() {
   const [saving, setSaving] = useState(false)
   const [customCSS, setCustomCSS] = useState('')
   const [themes, setThemes] = useState<CardTheme[]>([
-    { name: 'Default', pageBackground: '#f0f9ff', cardBackground: '#ffffff', textColor: '#111827', profilePictureBorder: '#3b82f6', footerBackground: '#1f2937', footerTextColor: '#ffffff' },
-    { name: 'Dark', pageBackground: '#1f2937', cardBackground: '#374151', textColor: '#f9fafb', profilePictureBorder: '#60a5fa', footerBackground: '#111827', footerTextColor: '#d1d5db' },
-    { name: 'Warm', pageBackground: '#fef3c7', cardBackground: '#fffbeb', textColor: '#78350f', profilePictureBorder: '#f59e0b', footerBackground: '#92400e', footerTextColor: '#fef3c7' },
-    { name: 'Cool', pageBackground: '#ecfdf5', cardBackground: '#f0fdf4', textColor: '#064e3b', profilePictureBorder: '#10b981', footerBackground: '#065f46', footerTextColor: '#d1fae5' },
-    { name: 'Rose', pageBackground: '#fce7f3', cardBackground: '#fdf2f8', textColor: '#831843', profilePictureBorder: '#ec4899', footerBackground: '#9d174d', footerTextColor: '#fce7f3' },
-    { name: 'Purple', pageBackground: '#f5f3ff', cardBackground: '#faf5ff', textColor: '#4c1d95', profilePictureBorder: '#8b5cf6', footerBackground: '#5b21b6', footerTextColor: '#ede9fe' },
+    { name: 'Default', pageBackground: '#f0f9ff', cardBackground: '#ffffff', textColor: '#111827', profilePictureBorder: '#3b82f6', footerBackground: '#1f2937', footerTextColor: '#ffffff', buttonABackground: '#3b82f6', buttonATextColor: '#ffffff', buttonBBackground: '#10b981', buttonBTextColor: '#ffffff' },
+    { name: 'Dark', pageBackground: '#1f2937', cardBackground: '#374151', textColor: '#f9fafb', profilePictureBorder: '#60a5fa', footerBackground: '#111827', footerTextColor: '#d1d5db', buttonABackground: '#60a5fa', buttonATextColor: '#1f2937', buttonBBackground: '#34d399', buttonBTextColor: '#1f2937' },
+    { name: 'Warm', pageBackground: '#fef3c7', cardBackground: '#fffbeb', textColor: '#78350f', profilePictureBorder: '#f59e0b', footerBackground: '#92400e', footerTextColor: '#fef3c7', buttonABackground: '#f59e0b', buttonATextColor: '#ffffff', buttonBBackground: '#84cc16', buttonBTextColor: '#ffffff' },
+    { name: 'Cool', pageBackground: '#ecfdf5', cardBackground: '#f0fdf4', textColor: '#064e3b', profilePictureBorder: '#10b981', footerBackground: '#065f46', footerTextColor: '#d1fae5', buttonABackground: '#10b981', buttonATextColor: '#ffffff', buttonBBackground: '#06b6d4', buttonBTextColor: '#ffffff' },
+    { name: 'Rose', pageBackground: '#fce7f3', cardBackground: '#fdf2f8', textColor: '#831843', profilePictureBorder: '#ec4899', footerBackground: '#9d174d', footerTextColor: '#fce7f3', buttonABackground: '#ec4899', buttonATextColor: '#ffffff', buttonBBackground: '#f472b6', buttonBTextColor: '#ffffff' },
+    { name: 'Purple', pageBackground: '#f5f3ff', cardBackground: '#faf5ff', textColor: '#4c1d95', profilePictureBorder: '#8b5cf6', footerBackground: '#5b21b6', footerTextColor: '#ede9fe', buttonABackground: '#8b5cf6', buttonATextColor: '#ffffff', buttonBBackground: '#a78bfa', buttonBTextColor: '#ffffff' },
   ])
 
   useEffect(() => {
@@ -1488,6 +1492,90 @@ export default function BrandingPage() {
                       type="text"
                       value={theme.footerTextColor}
                       onChange={(e) => updateTheme(index, 'footerTextColor', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Button A Background */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Button A Background
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.buttonABackground}
+                      onChange={(e) => updateTheme(index, 'buttonABackground', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.buttonABackground}
+                      onChange={(e) => updateTheme(index, 'buttonABackground', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Button A Text Color */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Button A Text
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.buttonATextColor}
+                      onChange={(e) => updateTheme(index, 'buttonATextColor', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.buttonATextColor}
+                      onChange={(e) => updateTheme(index, 'buttonATextColor', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Button B Background */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Button B Background
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.buttonBBackground}
+                      onChange={(e) => updateTheme(index, 'buttonBBackground', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.buttonBBackground}
+                      onChange={(e) => updateTheme(index, 'buttonBBackground', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Button B Text Color */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Button B Text
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={theme.buttonBTextColor}
+                      onChange={(e) => updateTheme(index, 'buttonBTextColor', e.target.value)}
+                      className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={theme.buttonBTextColor}
+                      onChange={(e) => updateTheme(index, 'buttonBTextColor', e.target.value)}
                       className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>

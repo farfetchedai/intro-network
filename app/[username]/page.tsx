@@ -32,6 +32,10 @@ interface CardTheme {
   profilePictureBorder: string
   footerBackground: string
   footerTextColor: string
+  buttonABackground: string
+  buttonATextColor: string
+  buttonBBackground: string
+  buttonBTextColor: string
 }
 
 // Helper function to determine background style
@@ -74,6 +78,10 @@ interface UserProfile {
   cardProfileBorderColor: string | null
   cardFooterBgColor: string | null
   cardFooterTextColor: string | null
+  cardButtonABgColor: string | null
+  cardButtonATextColor: string | null
+  cardButtonBBgColor: string | null
+  cardButtonBTextColor: string | null
 }
 
 export default function ProfilePage() {
@@ -87,8 +95,19 @@ export default function ProfilePage() {
   const [isOwner, setIsOwner] = useState(false)
   const [showMessage, setShowMessage] = useState(false)
 
-  // Check if user has completed onboarding (has profile picture, skills, company, or achievement)
-  const hasCompletedOnboarding = profile && !!(profile.profilePicture || profile.skills || profile.companyName || profile.achievement)
+  // Check if user has completed onboarding (has skills with items, company, or achievement)
+  // Note: profilePicture alone doesn't count as we need skills/company/achievement for AI generation
+  const hasCompletedOnboarding = profile && (() => {
+    // Check skills - parse JSON and verify it has items
+    if (profile.skills) {
+      try {
+        const skillsArray = JSON.parse(profile.skills)
+        if (Array.isArray(skillsArray) && skillsArray.length > 0) return true
+      } catch { /* invalid JSON, treat as no skills */ }
+    }
+    // Check company or achievement
+    return !!(profile.companyName || profile.achievement)
+  })()
 
   // Copy URL state
   const [copySuccess, setCopySuccess] = useState(false)
@@ -121,6 +140,10 @@ export default function ProfilePage() {
   const [customProfileBorderColor, setCustomProfileBorderColor] = useState('')
   const [customFooterBgColor, setCustomFooterBgColor] = useState('')
   const [customFooterTextColor, setCustomFooterTextColor] = useState('')
+  const [customButtonABgColor, setCustomButtonABgColor] = useState('')
+  const [customButtonATextColor, setCustomButtonATextColor] = useState('')
+  const [customButtonBBgColor, setCustomButtonBBgColor] = useState('')
+  const [customButtonBTextColor, setCustomButtonBTextColor] = useState('')
   const [isSavingCustomization, setIsSavingCustomization] = useState(false)
 
   // Branding settings
@@ -236,6 +259,10 @@ export default function ProfilePage() {
           if (data.user.cardProfileBorderColor) setCustomProfileBorderColor(data.user.cardProfileBorderColor)
           if (data.user.cardFooterBgColor) setCustomFooterBgColor(data.user.cardFooterBgColor)
           if (data.user.cardFooterTextColor) setCustomFooterTextColor(data.user.cardFooterTextColor)
+          if (data.user.cardButtonABgColor) setCustomButtonABgColor(data.user.cardButtonABgColor)
+          if (data.user.cardButtonATextColor) setCustomButtonATextColor(data.user.cardButtonATextColor)
+          if (data.user.cardButtonBBgColor) setCustomButtonBBgColor(data.user.cardButtonBBgColor)
+          if (data.user.cardButtonBTextColor) setCustomButtonBTextColor(data.user.cardButtonBTextColor)
 
           // Check connection status using new API
           const connectionResponse = await fetch(`/api/connections/status?userId=${data.user.id}`)
@@ -508,6 +535,10 @@ export default function ProfilePage() {
     setCustomProfileBorderColor(theme.profilePictureBorder)
     setCustomFooterBgColor(theme.footerBackground)
     setCustomFooterTextColor(theme.footerTextColor)
+    setCustomButtonABgColor(theme.buttonABackground || '#3b82f6')
+    setCustomButtonATextColor(theme.buttonATextColor || '#ffffff')
+    setCustomButtonBBgColor(theme.buttonBBackground || '#10b981')
+    setCustomButtonBTextColor(theme.buttonBTextColor || '#ffffff')
   }
 
   const handleSaveCustomization = async () => {
@@ -524,6 +555,10 @@ export default function ProfilePage() {
           cardProfileBorderColor: customProfileBorderColor || null,
           cardFooterBgColor: customFooterBgColor || null,
           cardFooterTextColor: customFooterTextColor || null,
+          cardButtonABgColor: customButtonABgColor || null,
+          cardButtonATextColor: customButtonATextColor || null,
+          cardButtonBBgColor: customButtonBBgColor || null,
+          cardButtonBTextColor: customButtonBTextColor || null,
         }),
       })
 
@@ -539,6 +574,10 @@ export default function ProfilePage() {
           cardProfileBorderColor: customProfileBorderColor || null,
           cardFooterBgColor: customFooterBgColor || null,
           cardFooterTextColor: customFooterTextColor || null,
+          cardButtonABgColor: customButtonABgColor || null,
+          cardButtonATextColor: customButtonATextColor || null,
+          cardButtonBBgColor: customButtonBBgColor || null,
+          cardButtonBTextColor: customButtonBTextColor || null,
         })
         setShowCustomization(false)
       } else {
@@ -571,6 +610,10 @@ export default function ProfilePage() {
     setCustomProfileBorderColor('')
     setCustomFooterBgColor('')
     setCustomFooterTextColor('')
+    setCustomButtonABgColor('')
+    setCustomButtonATextColor('')
+    setCustomButtonBBgColor('')
+    setCustomButtonBTextColor('')
   }
 
   // Career history functions
@@ -816,6 +859,10 @@ export default function ProfilePage() {
   const effectiveProfileBorderColor = customProfileBorderColor || ''
   const effectiveFooterBgColor = customFooterBgColor || ''
   const effectiveFooterTextColor = customFooterTextColor || ''
+  const effectiveButtonABgColor = customButtonABgColor || ''
+  const effectiveButtonATextColor = customButtonATextColor || ''
+  const effectiveButtonBBgColor = customButtonBBgColor || ''
+  const effectiveButtonBTextColor = customButtonBTextColor || ''
 
   return (
     <div
@@ -944,7 +991,7 @@ export default function ProfilePage() {
                     <div className="flex gap-3 flex-wrap justify-center mt-4">
                       {profile.statementSummary ? (
                         <>
-                          {/* Regenerate Button - First */}
+                          {/* Regenerate / Complete Profile Button - First */}
                           <button
                             onClick={() => hasCompletedOnboarding ? generateAISummary() : router.push('/onboarding')}
                             disabled={isGeneratingAI || isSavingStatement}
@@ -958,12 +1005,19 @@ export default function ProfilePage() {
                                 </svg>
                                 Regenerating...
                               </>
-                            ) : (
+                            ) : hasCompletedOnboarding ? (
                               <>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                {hasCompletedOnboarding ? 'Regenerate' : 'Complete Profile'}
+                                Regenerate
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Complete Profile
                               </>
                             )}
                           </button>
@@ -1016,10 +1070,21 @@ export default function ProfilePage() {
                             disabled={isGeneratingAI || isSavingStatement}
                             className="flex items-center gap-2 px-4 py-2 text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            {hasCompletedOnboarding ? 'AI Generate Summary' : 'Complete Profile to Generate'}
+                            {hasCompletedOnboarding ? (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                AI Generate Summary
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Complete Profile
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={handleEditStatement}
@@ -1030,6 +1095,21 @@ export default function ProfilePage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                             Write Manually
+                          </button>
+                          {/* Personalize Button */}
+                          <button
+                            onClick={() => setShowCustomization(!showCustomization)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                              showCustomization
+                                ? 'text-white bg-gradient-to-r from-amber-500 to-orange-500'
+                                : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                            }`}
+                            title="Personalize card appearance"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                            Personalize
                           </button>
                         </>
                       )}
@@ -1679,14 +1759,16 @@ export default function ProfilePage() {
                 <>
                   <a
                     href={`/firstdegree/${profile.username || usernameParam}`}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 text-center"
+                    className={`flex-1 font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 text-center ${!effectiveButtonABgColor ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : ''}`}
+                    style={effectiveButtonABgColor ? { backgroundColor: effectiveButtonABgColor, color: effectiveButtonATextColor || '#ffffff' } : undefined}
                   >
                     Introduce {profile.firstName} to someone
                   </a>
                   {connectionChecked && connectionStatus === 'not_connected' && (
                     <button
                       onClick={handleConnect}
-                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                      className={`flex-1 font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2 ${!effectiveButtonBBgColor ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : ''}`}
+                      style={effectiveButtonBBgColor ? { backgroundColor: effectiveButtonBBgColor, color: effectiveButtonBTextColor || '#ffffff' } : undefined}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -1697,7 +1779,8 @@ export default function ProfilePage() {
                   {connectionChecked && connectionStatus === 'not_authenticated' && (
                     <button
                       onClick={handleConnect}
-                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-4 rounded-xl hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                      className={`flex-1 font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2 ${!effectiveButtonBBgColor ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : ''}`}
+                      style={effectiveButtonBBgColor ? { backgroundColor: effectiveButtonBBgColor, color: effectiveButtonBTextColor || '#ffffff' } : undefined}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -1738,13 +1821,15 @@ export default function ProfilePage() {
                 <>
                   <button
                     onClick={() => router.push('/onboarding')}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+                    className={`flex-1 font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 ${!effectiveButtonABgColor ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : ''}`}
+                    style={effectiveButtonABgColor ? { backgroundColor: effectiveButtonABgColor, color: effectiveButtonATextColor || '#ffffff' } : undefined}
                   >
                     Edit Profile
                   </button>
                   <button
                     onClick={() => router.push('/getintros')}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+                    className={`flex-1 font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 ${!effectiveButtonABgColor ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white' : ''}`}
+                    style={effectiveButtonABgColor ? { backgroundColor: effectiveButtonABgColor, color: effectiveButtonATextColor || '#ffffff' } : undefined}
                   >
                     Ask for Intros
                   </button>
@@ -1757,7 +1842,8 @@ export default function ProfilePage() {
               <div className="pt-4">
                 <button
                   onClick={handleCopyShareUrl}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  className={`w-full font-semibold py-3 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2 ${!effectiveButtonBBgColor ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' : ''}`}
+                  style={effectiveButtonBBgColor ? { backgroundColor: effectiveButtonBBgColor, color: effectiveButtonBTextColor || '#ffffff' } : undefined}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

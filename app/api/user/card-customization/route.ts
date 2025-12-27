@@ -21,6 +21,10 @@ export async function GET() {
         cardProfileBorderColor: true,
         cardFooterBgColor: true,
         cardFooterTextColor: true,
+        cardButtonABgColor: true,
+        cardButtonATextColor: true,
+        cardButtonBBgColor: true,
+        cardButtonBTextColor: true,
       },
     })
 
@@ -53,6 +57,10 @@ export async function POST(req: Request) {
       cardProfileBorderColor,
       cardFooterBgColor,
       cardFooterTextColor,
+      cardButtonABgColor,
+      cardButtonATextColor,
+      cardButtonBBgColor,
+      cardButtonBTextColor,
     } = body
 
     const user = await prisma.user.update({
@@ -65,6 +73,10 @@ export async function POST(req: Request) {
         cardProfileBorderColor: cardProfileBorderColor || null,
         cardFooterBgColor: cardFooterBgColor || null,
         cardFooterTextColor: cardFooterTextColor || null,
+        cardButtonABgColor: cardButtonABgColor || null,
+        cardButtonATextColor: cardButtonATextColor || null,
+        cardButtonBBgColor: cardButtonBBgColor || null,
+        cardButtonBTextColor: cardButtonBTextColor || null,
       },
       select: {
         cardPageBgColor: true,
@@ -74,6 +86,10 @@ export async function POST(req: Request) {
         cardProfileBorderColor: true,
         cardFooterBgColor: true,
         cardFooterTextColor: true,
+        cardButtonABgColor: true,
+        cardButtonATextColor: true,
+        cardButtonBBgColor: true,
+        cardButtonBTextColor: true,
       },
     })
 

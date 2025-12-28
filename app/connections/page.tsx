@@ -382,7 +382,7 @@ export default function ConnectionsPage() {
       <div className="min-h-screen bg-gray-50">
         {/* Header Banner */}
         <div className="bg-gradient-to-br from-blue-500 to-purple-600 py-12">
-          <div className="max-w-4xl mx-auto px-4">
+          <div className="max-w-4xl mx-auto px-4 text-center">
             <h1 className="text-3xl font-bold text-white mb-2">My Connections</h1>
             <p className="text-blue-100">
               View and manage your contacts and connections

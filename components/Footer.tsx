@@ -98,9 +98,60 @@ export default function Footer({ backgroundColor, textColor }: FooterProps = {})
       style={{ backgroundColor: effectiveBgColor }}
     >
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Mobile: Stack vertically */}
+        <div className="flex flex-col items-center gap-6 md:hidden">
+          {/* Logo */}
+          <div>
+            {branding?.footerLogo ? (
+              <img
+                src={branding.footerLogo}
+                alt="Logo"
+                className={`h-8 w-auto ${!backgroundColor ? 'brightness-0 invert' : ''}`}
+              />
+            ) : (
+              <span
+                className={`font-bold text-lg ${!textColor ? 'text-white' : ''}`}
+                style={{ color: effectiveTextColor }}
+              >
+                {branding?.productName || 'Intro Network'}
+              </span>
+            )}
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {footerLinks.filter((link: any) => link && link.href).map((link: any, index: number) => (
+              <Link
+                key={`${link.href}-${index}`}
+                href={link.href}
+                className={`transition-colors text-sm ${!textColor ? 'text-gray-400 hover:text-white' : 'hover:opacity-80'}`}
+                style={{ color: effectiveTextColor }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-4">
+            {socialLinks.map((social) => (
+              <a
+                key={social.name}
+                href={social.href}
+                className={`transition-colors ${!textColor ? 'text-gray-400 hover:text-white' : 'hover:opacity-80'}`}
+                style={{ color: effectiveTextColor }}
+                aria-label={social.name}
+              >
+                {social.icon}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop: 3-column grid for true centering */}
+        <div className="hidden md:grid md:grid-cols-3 items-center">
           {/* Left: Footer Logo */}
-          <div className="flex-shrink-0">
+          <div className="justify-self-start">
             {branding?.footerLogo ? (
               <img
                 src={branding.footerLogo}
@@ -118,7 +169,7 @@ export default function Footer({ backgroundColor, textColor }: FooterProps = {})
           </div>
 
           {/* Center: Navigation Links */}
-          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <nav className="justify-self-center flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {footerLinks.filter((link: any) => link && link.href).map((link: any, index: number) => (
               <Link
                 key={`${link.href}-${index}`}
@@ -132,7 +183,7 @@ export default function Footer({ backgroundColor, textColor }: FooterProps = {})
           </nav>
 
           {/* Right: Social Icons */}
-          <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="justify-self-end flex items-center gap-4">
             {socialLinks.map((social) => (
               <a
                 key={social.name}

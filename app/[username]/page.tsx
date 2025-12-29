@@ -1032,7 +1032,7 @@ export default function ProfilePage() {
                             </svg>
                             Edit
                           </button>
-                          {/* Personalize Button - Third */}
+                          {/* Colors Button - Third */}
                           <button
                             onClick={() => setShowCustomization(!showCustomization)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
@@ -1040,12 +1040,12 @@ export default function ProfilePage() {
                                 ? 'text-white bg-gradient-to-r from-amber-500 to-orange-500'
                                 : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
                             }`}
-                            title="Personalize card appearance"
+                            title="Customize card colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                             </svg>
-                            Personalize
+                            Colors
                           </button>
                           {/* Resume Button - Fourth */}
                           <button
@@ -1096,7 +1096,7 @@ export default function ProfilePage() {
                             </svg>
                             Write Manually
                           </button>
-                          {/* Personalize Button */}
+                          {/* Colors Button */}
                           <button
                             onClick={() => setShowCustomization(!showCustomization)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
@@ -1104,12 +1104,12 @@ export default function ProfilePage() {
                                 ? 'text-white bg-gradient-to-r from-amber-500 to-orange-500'
                                 : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
                             }`}
-                            title="Personalize card appearance"
+                            title="Customize card colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                             </svg>
-                            Personalize
+                            Colors
                           </button>
                         </>
                       )}
@@ -1859,6 +1859,20 @@ export default function ProfilePage() {
             {/* QR Code */}
             <div className="flex flex-col items-center pt-6 border-t mt-6" style={{ borderColor: effectiveTextColor ? `${effectiveTextColor}30` : '#e5e7eb' }}>
               <p className="text-sm mb-3" style={{ color: effectiveTextColor || '#6b7280' }}>Scan to save contact card (VCF)</p>
+              <a
+                href={`/api/user/vcard/${profile.username || profile.id}`}
+                download
+                className="mb-3 px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors hover:opacity-90"
+                style={{
+                  backgroundColor: effectiveButtonBBgColor || '#10b981',
+                  color: effectiveButtonBTextColor || '#ffffff',
+                }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download VCF
+              </a>
               <div className="qr-code bg-white p-3 rounded-xl shadow-sm">
                 <QRCodeSVG
                   value={typeof window !== 'undefined' ? `${window.location.origin}/api/user/vcard/${profile.username || profile.id}` : ''}

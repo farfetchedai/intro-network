@@ -111,18 +111,23 @@ const renderElement = (element: Element) => {
       )
     case 'image':
       if (!element.content) return null
-      // Use picture element for responsive images when mobile version exists
+      // Show different images on mobile vs desktop
       if (element.mobileContent) {
         return (
-          <picture key={element.id} className={`${commonClasses} mb-4`}>
-            <source media="(max-width: 767px)" srcSet={element.mobileContent} />
-            <source media="(min-width: 768px)" srcSet={element.content} />
+          <div key={element.id} className={`${commonClasses} mb-4`}>
+            {/* Mobile image - shown on screens < 768px */}
+            <img
+              src={element.mobileContent}
+              alt=""
+              className="w-full h-auto rounded-lg block md:hidden"
+            />
+            {/* Desktop image - shown on screens >= 768px */}
             <img
               src={element.content}
               alt=""
-              className={`${commonClasses} h-auto rounded-lg`}
+              className="w-full h-auto rounded-lg hidden md:block"
             />
-          </picture>
+          </div>
         )
       }
       return (

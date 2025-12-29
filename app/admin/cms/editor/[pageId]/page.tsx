@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 
 interface Element {
   id: string
-  type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button' | 'html'
+  type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button' | 'html' | 'li'
   content: string
   order: number
   url?: string // For buttons/links
@@ -263,7 +263,7 @@ export default function CMSEditorPage() {
     const newElement: Element = {
       id: crypto.randomUUID(),
       type,
-      content: type === 'image' ? '' : type === 'html' ? '<div>\n  <!-- Your HTML here -->\n</div>' : `New ${type}`,
+      content: type === 'image' ? '' : type === 'html' ? '<div>\n  <!-- Your HTML here -->\n</div>' : type === 'li' ? 'List item text' : `New ${type}`,
       order: column.elements.length,
       url: type === 'button' ? '#' : undefined,
     }
@@ -705,6 +705,14 @@ export default function CMSEditorPage() {
                                   className="px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 rounded text-purple-900"
                                 >
                                   HTML
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    addElement(section.id, columnIndex, 'li')
+                                  }
+                                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded text-gray-900"
+                                >
+                                  List Item
                                 </button>
                               </div>
                             </div>

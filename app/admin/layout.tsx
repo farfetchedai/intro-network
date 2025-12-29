@@ -1,7 +1,16 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+
+interface User {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  profilePicture?: string
+}
 
 export default function AdminLayout({
   children,
@@ -11,13 +20,44 @@ export default function AdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.user) {
+          setUser(data.user)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch user:', error)
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: '📊' },
-    { name: 'Users', href: '/admin/users', icon: '👥' },
-    { name: 'Branding', href: '/admin/branding', icon: '🎨' },
-    { name: 'Message Templates', href: '/admin/message-templates', icon: '✉️' },
-    { name: 'API Settings', href: '/admin/settings', icon: '⚙️' },
+    { name: 'Dashboard', href: '/admin' },
+    { name: 'Users', href: '/admin/users' },
+    { name: 'CMS Pages', href: '/admin/cms' },
+    { name: 'Navigation', href: '/admin/navigation' },
+    { name: 'Branding', href: '/admin/branding' },
+    { name: 'Statement Template', href: '/admin/statement-template' },
+    { name: 'Message Templates', href: '/admin/message-templates' },
+    { name: 'API Settings', href: '/admin/settings' },
   ]
 
   return (
@@ -40,31 +80,60 @@ export default function AdminLayout({
 
         <nav className="mt-6 px-3">
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href ||
+              (item.href !== '/admin' && pathname.startsWith(item.href))
             return (
-              <button
+              <Link
                 key={item.name}
-                onClick={() => router.push(item.href)}
-                className={`w-full flex items-center px-3 py-3 mb-2 text-sm font-medium rounded-lg transition-colors ${
+                href={item.href}
+                className={`w-full flex items-center px-3 py-2.5 mb-1 text-sm font-medium rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-gray-800 text-white'
+                    ? 'bg-blue-600 text-white'
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }`}
               >
-                <span className="mr-3 text-xl">{item.icon}</span>
                 {item.name}
-              </button>
+              </Link>
             )
           })}
         </nav>
 
-        <div className="absolute bottom-0 w-full p-4 border-t border-gray-800">
-          <button
-            onClick={() => router.push('/referee')}
-            className="w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            ← Back to Site
-          </button>
+        <div className="absolute bottom-0 w-full border-t border-gray-800">
+          {user && (
+            <div className="p-4 flex items-center gap-3">
+              {user.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt={`${user.firstName} ${user.lastName}`}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white font-medium">
+                  {user.firstName?.[0]}{user.lastName?.[0]}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {user.firstName} {user.lastName}
+                </p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
+          )}
+          <div className="px-4 pb-4 space-y-1">
+            <button
+              onClick={handleSignOut}
+              className="block w-full px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-left"
+            >
+              Sign Out
+            </button>
+            <Link
+              href="/"
+              className="block w-full px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              ← Back to Site
+            </Link>
+          </div>
         </div>
       </div>
 

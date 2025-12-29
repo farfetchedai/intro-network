@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 
 interface Element {
   id: string
-  type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button'
+  type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button' | 'html'
   content: string
   order: number
   url?: string // For buttons/links
@@ -263,7 +263,7 @@ export default function CMSEditorPage() {
     const newElement: Element = {
       id: crypto.randomUUID(),
       type,
-      content: type === 'image' ? '' : `New ${type}`,
+      content: type === 'image' ? '' : type === 'html' ? '<div>\n  <!-- Your HTML here -->\n</div>' : `New ${type}`,
       order: column.elements.length,
       url: type === 'button' ? '#' : undefined,
     }
@@ -698,6 +698,14 @@ export default function CMSEditorPage() {
                                 >
                                   Button
                                 </button>
+                                <button
+                                  onClick={() =>
+                                    addElement(section.id, columnIndex, 'html')
+                                  }
+                                  className="px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 rounded text-purple-900"
+                                >
+                                  HTML
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -762,7 +770,25 @@ export default function CMSEditorPage() {
                                     </div>
                                   </div>
 
-                                  {element.type === 'image' ? (
+                                  {element.type === 'html' ? (
+                                    <div>
+                                      <textarea
+                                        value={element.content}
+                                        onChange={(e) =>
+                                          updateElement(
+                                            section.id,
+                                            columnIndex,
+                                            element.id,
+                                            { content: e.target.value }
+                                          )
+                                        }
+                                        rows={6}
+                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded resize-y font-mono text-gray-900 bg-gray-50"
+                                        placeholder="<div>Your HTML here</div>"
+                                      />
+                                      <p className="text-xs text-purple-600 mt-1">Raw HTML - will be rendered as-is</p>
+                                    </div>
+                                  ) : element.type === 'image' ? (
                                     <div>
                                       <input
                                         type="file"

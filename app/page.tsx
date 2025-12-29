@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 interface Element {
   id: string
-  type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button'
+  type: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'image' | 'button' | 'html'
   content: string
   order: number
   url?: string
@@ -125,6 +125,14 @@ const renderElement = (element: Element) => {
         >
           {element.content}
         </a>
+      )
+    case 'html':
+      return (
+        <div
+          key={element.id}
+          className="mb-4"
+          dangerouslySetInnerHTML={{ __html: element.content }}
+        />
       )
     default:
       return null

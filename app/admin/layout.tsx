@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import BodyClass from '@/components/BodyClass'
 
 interface User {
   id: string
@@ -61,8 +62,10 @@ export default function AdminLayout({
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
+    <>
+      <BodyClass className="page-admin" />
+      <div className="min-h-screen bg-gray-50">
+        {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 transform transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -147,12 +150,13 @@ export default function AdminLayout({
         </button>
       )}
 
-      {/* Main content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:pl-64' : ''}`}>
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
-          {children}
+        {/* Main content */}
+        <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:pl-64' : ''}`}>
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

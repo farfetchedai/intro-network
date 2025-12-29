@@ -9,6 +9,7 @@ interface Element {
   content: string
   order: number
   url?: string // For buttons/links
+  mobileContent?: string // For mobile-specific images
 }
 
 interface Column {
@@ -372,12 +373,13 @@ export default function CMSEditorPage() {
     sectionId: string,
     columnIndex: number,
     elementId: string,
-    file: File
+    file: File,
+    field: 'content' | 'mobileContent' = 'content'
   ) => {
     const reader = new FileReader()
     reader.onloadend = () => {
       const base64 = reader.result as string
-      updateElement(sectionId, columnIndex, elementId, { content: base64 })
+      updateElement(sectionId, columnIndex, elementId, { [field]: base64 })
     }
     reader.readAsDataURL(file)
   }
@@ -797,30 +799,87 @@ export default function CMSEditorPage() {
                                       <p className="text-xs text-purple-600 mt-1">Raw HTML - will be rendered as-is</p>
                                     </div>
                                   ) : element.type === 'image' ? (
-                                    <div>
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                          const file = e.target.files?.[0]
-                                          if (file) {
-                                            handleImageUpload(
-                                              section.id,
-                                              columnIndex,
-                                              element.id,
-                                              file
-                                            )
-                                          }
-                                        }}
-                                        className="w-full text-xs mb-2"
-                                      />
-                                      {element.content && (
-                                        <img
-                                          src={element.content}
-                                          alt="Preview"
-                                          className="w-full h-auto rounded"
+                                    <div className="space-y-3">
+                                      {/* Desktop Image */}
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                          Desktop Image
+                                        </label>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) {
+                                              handleImageUpload(
+                                                section.id,
+                                                columnIndex,
+                                                element.id,
+                                                file,
+                                                'content'
+                                              )
+                                            }
+                                          }}
+                                          className="w-full text-xs mb-1"
                                         />
-                                      )}
+                                        {element.content && (
+                                          <img
+                                            src={element.content}
+                                            alt="Desktop preview"
+                                            className="w-full h-auto rounded border border-gray-200"
+                                          />
+                                        )}
+                                      </div>
+
+                                      {/* Mobile Image (Optional) */}
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                          Mobile Image <span className="text-gray-400">(optional)</span>
+                                        </label>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) {
+                                              handleImageUpload(
+                                                section.id,
+                                                columnIndex,
+                                                element.id,
+                                                file,
+                                                'mobileContent'
+                                              )
+                                            }
+                                          }}
+                                          className="w-full text-xs mb-1"
+                                        />
+                                        {element.mobileContent ? (
+                                          <div className="relative">
+                                            <img
+                                              src={element.mobileContent}
+                                              alt="Mobile preview"
+                                              className="w-full h-auto rounded border border-gray-200"
+                                            />
+                                            <button
+                                              onClick={() =>
+                                                updateElement(
+                                                  section.id,
+                                                  columnIndex,
+                                                  element.id,
+                                                  { mobileContent: undefined }
+                                                )
+                                              }
+                                              className="absolute top-1 right-1 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                            >
+                                              Remove
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <p className="text-xs text-gray-400">
+                                            If not set, desktop image will be used on mobile
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
                                   ) : element.type === 'button' ? (
                                     <div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import BottomProgressBar from '@/components/BottomProgressBar'
 import Step1Form from '@/components/Step1Form'
+import BodyClass from '@/components/BodyClass'
 
 export default function RefereePage() {
   const router = useRouter()
@@ -644,9 +645,11 @@ export default function RefereePage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Top Header */}
-      <Header />
+    <>
+      <BodyClass className="page-referee" />
+      <div className="min-h-screen">
+        {/* Top Header */}
+        <Header />
 
       {/* Bottom Progress Bar */}
       <BottomProgressBar currentStep={step} totalSteps={4} />
@@ -1411,6 +1414,7 @@ export default function RefereePage() {
           animation: fadeIn 0.5s ease-in-out;
         }
       `}</style>
-    </div>
+      </div>
+    </>
   )
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import BottomProgressBar from '@/components/BottomProgressBar'
 import CountryCodeSelect from '@/components/CountryCodeSelect'
+import BodyClass from '@/components/BodyClass'
 
 function OnboardingContent() {
   const router = useRouter()
@@ -814,11 +815,13 @@ function OnboardingContent() {
   }
 
   return (
-    <div
-      className={`min-h-screen bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`}
-      style={getStepBackgroundStyle()}
-    >
-      <Header />
+    <>
+      <BodyClass className="page-onboarding" />
+      <div
+        className={`min-h-screen bg-gradient-to-br ${getStepBackgroundClass()} transition-all duration-700 ease-in-out`}
+        style={getStepBackgroundStyle()}
+      >
+        <Header />
       <BottomProgressBar currentStep={step} totalSteps={4} />
 
       <main className="pb-24 min-h-screen flex items-center justify-center px-4">
@@ -1413,7 +1416,8 @@ function OnboardingContent() {
           animation: fadeIn 0.3s ease-in-out;
         }
       `}</style>
-    </div>
+      </div>
+    </>
   )
 }
 

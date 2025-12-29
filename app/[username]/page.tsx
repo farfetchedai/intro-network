@@ -9,6 +9,7 @@ import ConnectModal from '@/components/ConnectModal'
 import CareerHistoryList from '@/components/CareerHistoryList'
 import CareerEntryForm from '@/components/CareerEntryForm'
 import ResumeImportPreview, { ParsedCareerEntry } from '@/components/ResumeImportPreview'
+import BodyClass from '@/components/BodyClass'
 
 interface CareerEntry {
   id: string
@@ -865,12 +866,14 @@ export default function ProfilePage() {
   const effectiveButtonBTextColor = customButtonBTextColor || ''
 
   return (
-    <div
-      className={`min-h-screen flex flex-col ${effectivePageBgClass} relative`}
-      style={effectivePageBgStyle}
-    >
-      {/* Background Image */}
-      {customBgImage && (
+    <>
+      <BodyClass className="page-card" />
+      <div
+        className={`min-h-screen flex flex-col ${effectivePageBgClass} relative`}
+        style={effectivePageBgStyle}
+      >
+        {/* Background Image */}
+        {customBgImage && (
         <div
           className="absolute inset-0 z-0"
           style={{
@@ -2002,15 +2005,16 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Resume Import Preview Modal */}
-      {parsedResumeEntries && (
-        <ResumeImportPreview
-          entries={parsedResumeEntries}
-          onImport={handleImportResumeEntries}
-          onCancel={() => setParsedResumeEntries(null)}
-          loading={resumeSaving}
-        />
-      )}
-    </div>
+        {/* Resume Import Preview Modal */}
+        {parsedResumeEntries && (
+          <ResumeImportPreview
+            entries={parsedResumeEntries}
+            onImport={handleImportResumeEntries}
+            onCancel={() => setParsedResumeEntries(null)}
+            loading={resumeSaving}
+          />
+        )}
+      </div>
+    </>
   )
 }

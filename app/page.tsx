@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BodyClass from '@/components/BodyClass'
 
 // Force dynamic rendering to avoid build-time database queries
 export const dynamic = 'force-dynamic'
@@ -13,6 +14,7 @@ interface Element {
   content: string
   order: number
   url?: string
+  mobileContent?: string
 }
 
 interface Column {
@@ -108,14 +110,29 @@ const renderElement = (element: Element) => {
         </p>
       )
     case 'image':
-      return element.content ? (
+      if (!element.content) return null
+      // Use picture element for responsive images when mobile version exists
+      if (element.mobileContent) {
+        return (
+          <picture key={element.id} className={`${commonClasses} mb-4`}>
+            <source media="(max-width: 767px)" srcSet={element.mobileContent} />
+            <source media="(min-width: 768px)" srcSet={element.content} />
+            <img
+              src={element.content}
+              alt=""
+              className={`${commonClasses} h-auto rounded-lg`}
+            />
+          </picture>
+        )
+      }
+      return (
         <img
           key={element.id}
           src={element.content}
           alt=""
           className={`${commonClasses} h-auto rounded-lg mb-4`}
         />
-      ) : null
+      )
     case 'button':
       return (
         <a
@@ -175,8 +192,10 @@ export default async function Home() {
 
   // If CMS homepage exists, render it
   if (cmsHomepage) {
+    const pageClass = `page-cms-${cmsHomepage.slug || 'home'}`
     return (
       <>
+        <BodyClass className={pageClass} />
         <Header />
         <div className="min-h-screen bg-white">
           {cmsHomepage.sections.map((section) => {
@@ -211,11 +230,13 @@ export default async function Home() {
 
   // Default landing page if no CMS homepage
   return (
-    <div
-      className={`min-h-screen ${appBackground.startsWith('#') ? '' : `bg-gradient-to-br ${appBackground}`}`}
-      style={appBackground.startsWith('#') ? { backgroundColor: appBackground } : undefined}
-    >
-      <Header />
+    <>
+      <BodyClass className="page-home" />
+      <div
+        className={`min-h-screen ${appBackground.startsWith('#') ? '' : `bg-gradient-to-br ${appBackground}`}`}
+        style={appBackground.startsWith('#') ? { backgroundColor: appBackground } : undefined}
+      >
+        <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="pt-20 pb-16">
             <div className="text-center">
@@ -336,7 +357,8 @@ export default async function Home() {
             </div>
           </div>
         </div>
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   )
 }

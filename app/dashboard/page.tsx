@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BodyClass from '@/components/BodyClass'
 
 interface Contact {
   id: string
@@ -361,11 +362,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div
-      className={`min-h-screen ${appBackground.startsWith('#') ? '' : `bg-gradient-to-br ${appBackground}`}`}
-      style={appBackground.startsWith('#') ? { backgroundColor: appBackground } : undefined}
-    >
-      <Header />
+    <>
+      <BodyClass className="page-dashboard" />
+      <div
+        className={`min-h-screen ${appBackground.startsWith('#') ? '' : `bg-gradient-to-br ${appBackground}`}`}
+        style={appBackground.startsWith('#') ? { backgroundColor: appBackground } : undefined}
+      >
+        <Header />
       <div className="py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
@@ -1182,7 +1185,8 @@ export default function DashboardPage() {
         </div>
       </div>
       </div>
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   )
 }

@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ConnectionsList from '@/components/ConnectionsList'
 import LinkedInIcon from '@/components/LinkedInIcon'
+import BodyClass from '@/components/BodyClass'
 
 interface Connection {
   id: string
@@ -378,6 +379,7 @@ export default function ConnectionsPage() {
 
   return (
     <>
+      <BodyClass className="page-connections" />
       <Header />
       <div className="min-h-screen bg-gray-50">
         {/* Header Banner */}

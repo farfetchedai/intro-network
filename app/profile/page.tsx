@@ -10,6 +10,7 @@ import CareerHistoryList from '@/components/CareerHistoryList'
 import CareerEntryForm from '@/components/CareerEntryForm'
 import LinkedInIcon from '@/components/LinkedInIcon'
 import ResumeImportPreview, { ParsedCareerEntry } from '@/components/ResumeImportPreview'
+import BodyClass from '@/components/BodyClass'
 
 interface UserProfile {
   id: string
@@ -427,6 +428,7 @@ function ProfileContent() {
 
   return (
     <>
+      <BodyClass className="page-profile" />
       <Header />
       <div className="min-h-screen bg-gray-50">
         {/* Background Image Section */}

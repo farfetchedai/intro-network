@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BodyClass from '@/components/BodyClass'
 
 interface User {
   id: string
@@ -195,6 +196,7 @@ export default function IntroductionsPage() {
 
   return (
     <>
+      <BodyClass className="page-introductions" />
       <Header />
       <div className="min-h-screen bg-gray-50">
         <div className="bg-gradient-to-br from-blue-500 to-purple-600 py-12">

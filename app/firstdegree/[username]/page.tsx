@@ -327,7 +327,7 @@ function FirstDegreeContent() {
         console.log('[FirstDegree Referee] Fetching referee with ID:', refereeId)
         const fetchPromises: Promise<Response>[] = [
           fetch(`/api/referee/${refereeId}`),
-          fetch('/api/admin/branding')
+          fetch('/api/branding')
         ]
 
         // Add contact fetch if contactId is provided

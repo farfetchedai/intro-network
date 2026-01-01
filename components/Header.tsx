@@ -84,7 +84,7 @@ export default function Header() {
 
   const fetchBranding = async () => {
     try {
-      const response = await fetch('/api/admin/branding')
+      const response = await fetch('/api/branding')
       const data = await response.json()
       if (data.settings) {
         setBranding(data.settings)

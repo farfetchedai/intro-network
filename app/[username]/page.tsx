@@ -191,7 +191,7 @@ export default function ProfilePage() {
     const fetchData = async () => {
       try {
         // Fetch branding settings
-        const brandingResponse = await fetch('/api/admin/branding')
+        const brandingResponse = await fetch('/api/branding')
         const brandingData = await brandingResponse.json()
         if (brandingData.success && brandingData.settings) {
           // Parse color swatches from JSON strings

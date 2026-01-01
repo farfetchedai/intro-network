@@ -293,7 +293,7 @@ function OnboardingContent() {
 
   // Fetch branding settings
   useEffect(() => {
-    fetch('/api/admin/branding')
+    fetch('/api/branding')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.settings) {

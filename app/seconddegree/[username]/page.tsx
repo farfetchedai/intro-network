@@ -95,7 +95,7 @@ function SecondDegreeContent() {
         }
 
         // Fetch branding settings
-        const brandingResponse = await fetch('/api/admin/branding')
+        const brandingResponse = await fetch('/api/branding')
         if (brandingResponse.ok) {
           const brandingData = await brandingResponse.json()
           if (brandingData.success && brandingData.settings) {

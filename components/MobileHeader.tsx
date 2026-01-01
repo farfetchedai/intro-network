@@ -40,7 +40,7 @@ export default function MobileHeader({ userName }: MobileHeaderProps) {
       .catch(err => console.error('Failed to fetch user:', err))
 
     // Fetch branding settings
-    fetch('/api/admin/branding')
+    fetch('/api/branding')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.settings) {

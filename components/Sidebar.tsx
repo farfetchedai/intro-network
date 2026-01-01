@@ -46,7 +46,7 @@ export default function Sidebar({ currentStep, totalSteps, userName, stepTitles 
     }
 
     // Fetch branding settings
-    fetch('/api/admin/branding')
+    fetch('/api/branding')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.settings) {

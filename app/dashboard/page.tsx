@@ -163,7 +163,7 @@ export default function DashboardPage() {
         fetch('/api/connections'),
         fetch('/api/introductions'),
         fetch('/api/notifications?limit=5'),
-        fetch('/api/admin/branding'),
+        fetch('/api/branding'),
       ])
 
       const userData = await userRes.json()

@@ -95,14 +95,13 @@ export async function POST(req: Request) {
           if (validatedData.customEmailBody) {
             emailHtml = validatedData.customEmailBody
 
-            // If referee has no statement summary, remove any div containing {statementSummary}
-            // This handles divs with class="statement-summary-email" or any div containing the placeholder
+            // If referee has no statement summary, remove the statement summary div
             if (!referee.statementSummary) {
-              // Remove divs with class "statement-summary-email"
-              emailHtml = emailHtml.replace(/<div[^>]*class="[^"]*statement-summary-email[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-              // Remove any div that contains {statementSummary} placeholder (with or without surrounding quotes)
-              emailHtml = emailHtml.replace(/<div[^>]*>[\s\S]*?["']?\{statementSummary\}["']?[\s\S]*?<\/div>/gi, '')
-              // Also remove any standalone "{statementSummary}" or "" left over
+              // Remove div with class containing "statement-summary-email" (handles class before or after style)
+              emailHtml = emailHtml.replace(/<div[^>]*class\s*=\s*["'][^"']*statement-summary-email[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
+              // Remove div with the blue border styling that typically wraps statement summary
+              emailHtml = emailHtml.replace(/<div[^>]*style\s*=\s*["'][^"']*border-left:\s*4px[^"']*#3B82F6[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
+              // Clean up any remaining "{statementSummary}" or just {statementSummary}
               emailHtml = emailHtml.replace(/["']\{statementSummary\}["']/g, '')
               emailHtml = emailHtml.replace(/\{statementSummary\}/g, '')
             }

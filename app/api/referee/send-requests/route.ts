@@ -91,6 +91,17 @@ export async function POST(req: Request) {
 
           // Use custom message directly as HTML, with variable substitution
           let emailHtml = validatedData.customMessage
+
+          // If user has no statement summary, remove any div containing {statementSummary}
+          // This handles divs with class="statement-summary-email" or any div containing the placeholder
+          if (!referee.statementSummary) {
+            // Remove divs with class "statement-summary-email"
+            emailHtml = emailHtml.replace(/<div[^>]*class="[^"]*statement-summary-email[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+            // Remove any div that contains {statementSummary} placeholder
+            emailHtml = emailHtml.replace(/<div[^>]*>[\s\S]*?\{statementSummary\}[\s\S]*?<\/div>/gi, '')
+          }
+
+          emailHtml = emailHtml
             .replace(/\{contactName\}/g, `${capitalize(contact.firstName)} ${contact.lastName}`)
             .replace(/\{contactFirstName\}/g, capitalize(contact.firstName))
             .replace(/\{contactLastName\}/g, contact.lastName)

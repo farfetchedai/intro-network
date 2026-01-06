@@ -93,8 +93,19 @@ export async function POST(req: Request) {
           // Use custom body if provided, otherwise use default template
           let emailHtml: string
           if (validatedData.customEmailBody) {
-            // Apply variable substitution to custom body
             emailHtml = validatedData.customEmailBody
+
+            // If referee has no statement summary, remove any div containing {statementSummary}
+            // This handles divs with class="statement-summary-email" or any div containing the placeholder
+            if (!referee.statementSummary) {
+              // Remove divs with class "statement-summary-email"
+              emailHtml = emailHtml.replace(/<div[^>]*class="[^"]*statement-summary-email[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+              // Remove any div that contains {statementSummary} placeholder
+              emailHtml = emailHtml.replace(/<div[^>]*>[\s\S]*?\{statementSummary\}[\s\S]*?<\/div>/gi, '')
+            }
+
+            // Apply variable substitution to custom body
+            emailHtml = emailHtml
               .replace(/\{referralFirstName\}/g, capitalize(referral.firstName))
               .replace(/\{referralLastName\}/g, referral.lastName)
               .replace(/\{refereeFirstName\}/g, referee.firstName)

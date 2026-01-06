@@ -154,6 +154,9 @@ model BrandingSettings {
   flowAStep1FormBg      String   @default("white")
   flowAStep2FormBg      String   @default("white")
   flowAStep3FormBg      String   @default("white")
+  flowAStep1ButtonBg    String?
+  flowAStep2ButtonBg    String?
+  flowAStep3ButtonBg    String?
   flowBStep1Background  String   @default("from-blue-400 via-purple-400 to-pink-400")
   flowBStep2Background  String   @default("from-emerald-400 via-teal-400 to-cyan-400")
   flowBStep3Background  String   @default("from-orange-400 via-rose-400 to-pink-400")
@@ -162,6 +165,10 @@ model BrandingSettings {
   flowBStep2FormBg      String   @default("white")
   flowBStep3FormBg      String   @default("white")
   flowBStep4FormBg      String   @default("white")
+  flowBStep1ButtonBg    String?
+  flowBStep2ButtonBg    String?
+  flowBStep3ButtonBg    String?
+  flowBStep4ButtonBg    String?
   flowCStep1Background  String   @default("from-blue-400 via-purple-400 to-pink-400")
   flowCStep2Background  String   @default("from-emerald-400 via-teal-400 to-cyan-400")
   flowCStep3Background  String   @default("from-orange-400 via-rose-400 to-pink-400")
@@ -170,6 +177,10 @@ model BrandingSettings {
   flowCStep2FormBg      String   @default("white")
   flowCStep3FormBg      String   @default("white")
   flowCStep4FormBg      String   @default("white")
+  flowCStep1ButtonBg    String?
+  flowCStep2ButtonBg    String?
+  flowCStep3ButtonBg    String?
+  flowCStep4ButtonBg    String?
   profilePageBackground String   @default("from-blue-400 via-purple-400 to-pink-400")
   profilePageFormBg     String   @default("white")
   flowAStep1Name        String   @default("Your Profile")

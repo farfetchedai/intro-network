@@ -39,6 +39,9 @@ interface BrandingSettings {
   flowAStep1FormBg: string
   flowAStep2FormBg: string
   flowAStep3FormBg: string
+  flowAStep1ButtonBg: string
+  flowAStep2ButtonBg: string
+  flowAStep3ButtonBg: string
   // Flow B (/firstdegree) Step Backgrounds
   flowBStep1Background: string
   flowBStep2Background: string
@@ -48,6 +51,10 @@ interface BrandingSettings {
   flowBStep2FormBg: string
   flowBStep3FormBg: string
   flowBStep4FormBg: string
+  flowBStep1ButtonBg: string
+  flowBStep2ButtonBg: string
+  flowBStep3ButtonBg: string
+  flowBStep4ButtonBg: string
   // Flow C (/onboarding) Step Backgrounds
   flowCStep1Background: string
   flowCStep2Background: string
@@ -57,6 +64,10 @@ interface BrandingSettings {
   flowCStep2FormBg: string
   flowCStep3FormBg: string
   flowCStep4FormBg: string
+  flowCStep1ButtonBg: string
+  flowCStep2ButtonBg: string
+  flowCStep3ButtonBg: string
+  flowCStep4ButtonBg: string
   // User Flow A (Referee) Step Names
   flowAStep1Name: string
   flowAStep2Name: string
@@ -113,6 +124,9 @@ export default function BrandingPage() {
     flowAStep1FormBg: 'white',
     flowAStep2FormBg: 'white',
     flowAStep3FormBg: 'white',
+    flowAStep1ButtonBg: '',
+    flowAStep2ButtonBg: '',
+    flowAStep3ButtonBg: '',
     // Flow B (/firstdegree)
     flowBStep1Background: 'from-blue-400 via-purple-400 to-pink-400',
     flowBStep2Background: 'from-emerald-400 via-teal-400 to-cyan-400',
@@ -122,6 +136,10 @@ export default function BrandingPage() {
     flowBStep2FormBg: 'white',
     flowBStep3FormBg: 'white',
     flowBStep4FormBg: 'white',
+    flowBStep1ButtonBg: '',
+    flowBStep2ButtonBg: '',
+    flowBStep3ButtonBg: '',
+    flowBStep4ButtonBg: '',
     // Flow C (/onboarding)
     flowCStep1Background: 'from-blue-400 via-purple-400 to-pink-400',
     flowCStep2Background: 'from-emerald-400 via-teal-400 to-cyan-400',
@@ -131,6 +149,10 @@ export default function BrandingPage() {
     flowCStep2FormBg: 'white',
     flowCStep3FormBg: 'white',
     flowCStep4FormBg: 'white',
+    flowCStep1ButtonBg: '',
+    flowCStep2ButtonBg: '',
+    flowCStep3ButtonBg: '',
+    flowCStep4ButtonBg: '',
     // User Flow A
     flowAStep1Name: 'Your Profile',
     flowAStep2Name: 'Your Network',
@@ -658,9 +680,9 @@ export default function BrandingPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Flow A (/getintros) - Referee Step Backgrounds</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Background and form colors for each step of the /getintros (referee) flow
+          Background, form, and button colors for each step of the /getintros (referee) flow
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Step 1 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -684,6 +706,18 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, flowAStep1FormBg: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="white or #FFFFFF"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 1 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowAStep1ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowAStep1ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#3B82F6 or leave empty for default"
             />
           </div>
 
@@ -712,6 +746,18 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 2 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowAStep2ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowAStep2ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#10B981 or leave empty for default"
+            />
+          </div>
 
           {/* Step 3 */}
           <div>
@@ -738,6 +784,18 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 3 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowAStep3ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowAStep3ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#F97316 or leave empty for default"
+            />
+          </div>
         </div>
       </div>
 
@@ -745,9 +803,9 @@ export default function BrandingPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Flow B (/firstdegree) - First Degree Step Backgrounds</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Background and form colors for each step of the /firstdegree (referrals) flow
+          Background, form, and button colors for each step of the /firstdegree (referrals) flow
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Step 1 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -771,6 +829,18 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, flowBStep1FormBg: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="white or #FFFFFF"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 1 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowBStep1ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowBStep1ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#3B82F6 or leave empty for default"
             />
           </div>
 
@@ -799,6 +869,18 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 2 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowBStep2ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowBStep2ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#10B981 or leave empty for default"
+            />
+          </div>
 
           {/* Step 3 */}
           <div>
@@ -823,6 +905,18 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, flowBStep3FormBg: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="white or #FFFFFF"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 3 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowBStep3ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowBStep3ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#F97316 or leave empty for default"
             />
           </div>
 
@@ -851,6 +945,18 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 4 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowBStep4ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowBStep4ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#8B5CF6 or leave empty for default"
+            />
+          </div>
         </div>
       </div>
 
@@ -858,9 +964,9 @@ export default function BrandingPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Flow C (/onboarding) - Onboarding Step Backgrounds</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Background and form colors for each step of the /onboarding flow
+          Background, form, and button colors for each step of the /onboarding flow
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Step 1 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -884,6 +990,18 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, flowCStep1FormBg: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="white or #FFFFFF"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 1 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowCStep1ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowCStep1ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#3B82F6 or leave empty for default"
             />
           </div>
 
@@ -912,6 +1030,18 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 2 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowCStep2ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowCStep2ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#10B981 or leave empty for default"
+            />
+          </div>
 
           {/* Step 3 */}
           <div>
@@ -938,6 +1068,18 @@ export default function BrandingPage() {
               placeholder="white or #FFFFFF"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 3 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowCStep3ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowCStep3ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#F97316 or leave empty for default"
+            />
+          </div>
 
           {/* Step 4 */}
           <div>
@@ -962,6 +1104,18 @@ export default function BrandingPage() {
               onChange={(e) => setSettings({ ...settings, flowCStep4FormBg: e.target.value })}
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="white or #FFFFFF"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Step 4 Button Background
+            </label>
+            <input
+              type="text"
+              value={settings.flowCStep4ButtonBg}
+              onChange={(e) => setSettings({ ...settings, flowCStep4ButtonBg: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="#8B5CF6 or leave empty for default"
             />
           </div>
         </div>

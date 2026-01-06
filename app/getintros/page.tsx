@@ -494,9 +494,19 @@ export default function GetIntrosPage() {
       .replace(/\{firstName\}/g, userFirstName)
       .replace(/\{refereeFirstName\}/g, userFirstName)
       .replace(/\{refereeLastName\}/g, userName.lastName || '')
-      .replace(/\{statementSummary\}/g, userName.statementSummary || 'Your statement summary')
-      // Remove any remaining unreplaced placeholders
-      .replace(/\{[^}]+\}/g, '[placeholder]')
+
+    // Remove statementSummary placeholder entirely if user doesn't have one
+    if (userName.statementSummary) {
+      previewSubject = previewSubject.replace(/\{statementSummary\}/g, userName.statementSummary)
+    } else {
+      // Remove the placeholder and any surrounding whitespace/newlines
+      previewSubject = previewSubject
+        .replace(/\n*\{statementSummary\}\n*/g, '\n')
+        .replace(/\{statementSummary\}/g, '')
+    }
+
+    // Remove any remaining unreplaced placeholders
+    previewSubject = previewSubject.replace(/\{[^}]+\}/g, '[placeholder]')
 
     return previewSubject
   }
@@ -522,9 +532,19 @@ export default function GetIntrosPage() {
       .replace(/\{firstName\}/g, userFirstName)
       .replace(/\{refereeFirstName\}/g, userFirstName)
       .replace(/\{refereeLastName\}/g, userName.lastName || '')
-      .replace(/\{statementSummary\}/g, userName.statementSummary || 'Your statement summary')
-      // Remove any remaining unreplaced placeholders
-      .replace(/\{[^}]+\}/g, '[placeholder]')
+
+    // Remove statementSummary placeholder entirely if user doesn't have one
+    if (userName.statementSummary) {
+      previewHtml = previewHtml.replace(/\{statementSummary\}/g, userName.statementSummary)
+    } else {
+      // Remove the placeholder and any surrounding whitespace/newlines
+      previewHtml = previewHtml
+        .replace(/\n*\{statementSummary\}\n*/g, '\n')
+        .replace(/\{statementSummary\}/g, '')
+    }
+
+    // Remove any remaining unreplaced placeholders
+    previewHtml = previewHtml.replace(/\{[^}]+\}/g, '[placeholder]')
 
     // Only convert line breaks to HTML if template is plain text (no HTML tags)
     const isHtml = /<[a-z][\s\S]*>/i.test(previewHtml)
@@ -560,9 +580,19 @@ export default function GetIntrosPage() {
       .replace(/\{firstName\}/g, userFirstName)
       .replace(/\{refereeFirstName\}/g, userFirstName)
       .replace(/\{refereeLastName\}/g, userName.lastName || '')
-      .replace(/\{statementSummary\}/g, userName.statementSummary || 'Your statement summary')
-      // Remove any remaining unreplaced placeholders
-      .replace(/\{[^}]+\}/g, '[placeholder]')
+
+    // Remove statementSummary placeholder entirely if user doesn't have one
+    if (userName.statementSummary) {
+      previewSms = previewSms.replace(/\{statementSummary\}/g, userName.statementSummary)
+    } else {
+      // Remove the placeholder and any surrounding whitespace/newlines
+      previewSms = previewSms
+        .replace(/\n*\{statementSummary\}\n*/g, '\n')
+        .replace(/\{statementSummary\}/g, '')
+    }
+
+    // Remove any remaining unreplaced placeholders
+    previewSms = previewSms.replace(/\{[^}]+\}/g, '[placeholder]')
 
     return previewSms
   }
@@ -593,6 +623,23 @@ export default function GetIntrosPage() {
         }
       }
 
+      // Preprocess templates to remove {statementSummary} if user doesn't have one
+      let processedEmailTemplate = emailTemplate
+      let processedSmsTemplate = smsTemplate
+      let processedEmailSubject = emailSubject
+
+      if (!userName.statementSummary) {
+        // Remove the placeholder and any surrounding whitespace/newlines
+        processedEmailTemplate = processedEmailTemplate
+          .replace(/\n*\{statementSummary\}\n*/g, '\n')
+          .replace(/\{statementSummary\}/g, '')
+        processedSmsTemplate = processedSmsTemplate
+          .replace(/\n*\{statementSummary\}\n*/g, '\n')
+          .replace(/\{statementSummary\}/g, '')
+        processedEmailSubject = processedEmailSubject
+          .replace(/\{statementSummary\}/g, '')
+      }
+
       // Send the requests via API
       const response = await fetch('/api/referee/send-requests', {
         method: 'POST',
@@ -600,9 +647,9 @@ export default function GetIntrosPage() {
         body: JSON.stringify({
           userId,
           contactIds,
-          customMessage: emailTemplate,
-          customSmsMessage: smsTemplate,
-          emailSubject,
+          customMessage: processedEmailTemplate,
+          customSmsMessage: processedSmsTemplate,
+          emailSubject: processedEmailSubject,
           sendViaEmail: true,
           sendViaSms: false,
         }),

@@ -1016,9 +1016,9 @@ function OnboardingContent() {
 
               <form onSubmit={handleStep2Submit} className="space-y-6">
                 <div className="flex flex-col items-center justify-center">
-                  <div className="relative w-48 h-48 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mb-6 overflow-hidden">
+                  <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mb-6 overflow-hidden">
                     {profilePicturePreview ? (
-                      <img src={profilePicturePreview} alt="Profile" className="w-full h-full object-cover" />
+                      <img src={profilePicturePreview} alt="Profile" className="profile-pic-onboarding w-full h-full object-cover" />
                     ) : (
                       <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
@@ -1026,7 +1026,7 @@ function OnboardingContent() {
                     )}
                   </div>
 
-                  <label className="cursor-pointer bg-white border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 transition-all duration-200">
+                  <label className="cursor-pointer bg-white border-2 border-gray-300 text-gray-700 font-semibold px-6 py-2 rounded-xl hover:bg-gray-50 transition-all duration-200">
                     <input
                       type="file"
                       accept="image/*"

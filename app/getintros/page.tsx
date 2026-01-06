@@ -362,17 +362,26 @@ export default function GetIntrosPage() {
       const data = await response.json()
 
       if (data.success) {
-        // Update contacts with the IDs from the database
+        // Update contacts with the IDs from the database response
+        // Match by email or name to update IDs for the contacts we submitted
         if (data.contacts && data.contacts.length > 0) {
-          setContacts(data.contacts.map((c: any) => ({
-            id: c.id,
-            firstName: c.firstName,
-            lastName: c.lastName,
-            email: c.email || '',
-            phone: c.phone || '',
-            company: c.company || '',
-            linkedUser: c.linkedUser || null,
-          })))
+          const updatedContacts = validContacts.map((vc) => {
+            // Find the matching contact from API response
+            const matchedContact = data.contacts.find((c: any) =>
+              (c.email && c.email.toLowerCase() === vc.email?.toLowerCase()) ||
+              (c.firstName.toLowerCase() === vc.firstName.toLowerCase() &&
+               c.lastName.toLowerCase() === vc.lastName.toLowerCase())
+            )
+            return {
+              ...vc,
+              id: matchedContact?.id || vc.id,
+              linkedUser: matchedContact?.linkedUser || vc.linkedUser || null,
+            }
+          })
+          setContacts(updatedContacts)
+        } else {
+          // If no contacts returned from API, just use validContacts
+          setContacts(validContacts)
         }
         // Move to step 2
         setStep(2)

@@ -97,8 +97,11 @@ export async function POST(req: Request) {
           if (!referee.statementSummary) {
             // Remove divs with class "statement-summary-email"
             emailHtml = emailHtml.replace(/<div[^>]*class="[^"]*statement-summary-email[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-            // Remove any div that contains {statementSummary} placeholder
-            emailHtml = emailHtml.replace(/<div[^>]*>[\s\S]*?\{statementSummary\}[\s\S]*?<\/div>/gi, '')
+            // Remove any div that contains {statementSummary} placeholder (with or without surrounding quotes)
+            emailHtml = emailHtml.replace(/<div[^>]*>[\s\S]*?["']?\{statementSummary\}["']?[\s\S]*?<\/div>/gi, '')
+            // Also remove any standalone "{statementSummary}" or "" left over
+            emailHtml = emailHtml.replace(/["']\{statementSummary\}["']/g, '')
+            emailHtml = emailHtml.replace(/\{statementSummary\}/g, '')
           }
 
           emailHtml = emailHtml

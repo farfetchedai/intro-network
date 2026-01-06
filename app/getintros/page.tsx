@@ -499,10 +499,9 @@ export default function GetIntrosPage() {
     if (userName.statementSummary) {
       previewSubject = previewSubject.replace(/\{statementSummary\}/g, userName.statementSummary)
     } else {
-      // Remove the placeholder and any surrounding whitespace/newlines
-      previewSubject = previewSubject
-        .replace(/\n*\{statementSummary\}\n*/g, '\n')
-        .replace(/\{statementSummary\}/g, '')
+      // Clean up any remaining "{statementSummary}" or just {statementSummary}
+      previewSubject = previewSubject.replace(/["']\{statementSummary\}["']/g, '')
+      previewSubject = previewSubject.replace(/\{statementSummary\}/g, '')
     }
 
     // Remove any remaining unreplaced placeholders
@@ -537,10 +536,13 @@ export default function GetIntrosPage() {
     if (userName.statementSummary) {
       previewHtml = previewHtml.replace(/\{statementSummary\}/g, userName.statementSummary)
     } else {
-      // Remove the placeholder and any surrounding whitespace/newlines
-      previewHtml = previewHtml
-        .replace(/\n*\{statementSummary\}\n*/g, '\n')
-        .replace(/\{statementSummary\}/g, '')
+      // Remove div with class containing "statement-summary-email"
+      previewHtml = previewHtml.replace(/<div[^>]*class\s*=\s*["'][^"']*statement-summary-email[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
+      // Remove div with the blue border styling that typically wraps statement summary
+      previewHtml = previewHtml.replace(/<div[^>]*style\s*=\s*["'][^"']*border-left:\s*4px[^"']*#3B82F6[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
+      // Clean up any remaining "{statementSummary}" or just {statementSummary}
+      previewHtml = previewHtml.replace(/["']\{statementSummary\}["']/g, '')
+      previewHtml = previewHtml.replace(/\{statementSummary\}/g, '')
     }
 
     // Remove any remaining unreplaced placeholders
@@ -585,10 +587,9 @@ export default function GetIntrosPage() {
     if (userName.statementSummary) {
       previewSms = previewSms.replace(/\{statementSummary\}/g, userName.statementSummary)
     } else {
-      // Remove the placeholder and any surrounding whitespace/newlines
-      previewSms = previewSms
-        .replace(/\n*\{statementSummary\}\n*/g, '\n')
-        .replace(/\{statementSummary\}/g, '')
+      // Clean up any remaining "{statementSummary}" or just {statementSummary}
+      previewSms = previewSms.replace(/["']\{statementSummary\}["']/g, '')
+      previewSms = previewSms.replace(/\{statementSummary\}/g, '')
     }
 
     // Remove any remaining unreplaced placeholders

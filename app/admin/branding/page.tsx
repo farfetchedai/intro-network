@@ -688,37 +688,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep1Background}
-              onChange={(e) => setSettings({ ...settings, flowAStep1Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-blue-400 via-purple-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep1Background?.startsWith('#') ? settings.flowAStep1Background : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, flowAStep1Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep1Background}
+                onChange={(e) => setSettings({ ...settings, flowAStep1Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-blue-400 via-purple-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep1FormBg}
-              onChange={(e) => setSettings({ ...settings, flowAStep1FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep1FormBg?.startsWith('#') ? settings.flowAStep1FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowAStep1FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep1FormBg}
+                onChange={(e) => setSettings({ ...settings, flowAStep1FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep1ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowAStep1ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#3B82F6 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep1ButtonBg?.startsWith('#') ? settings.flowAStep1ButtonBg : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, flowAStep1ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep1ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowAStep1ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#3B82F6 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 2 */}
@@ -726,37 +750,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep2Background}
-              onChange={(e) => setSettings({ ...settings, flowAStep2Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-emerald-400 via-teal-400 to-cyan-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep2Background?.startsWith('#') ? settings.flowAStep2Background : '#10B981'}
+                onChange={(e) => setSettings({ ...settings, flowAStep2Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep2Background}
+                onChange={(e) => setSettings({ ...settings, flowAStep2Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-emerald-400 via-teal-400 to-cyan-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep2FormBg}
-              onChange={(e) => setSettings({ ...settings, flowAStep2FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep2FormBg?.startsWith('#') ? settings.flowAStep2FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowAStep2FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep2FormBg}
+                onChange={(e) => setSettings({ ...settings, flowAStep2FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep2ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowAStep2ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#10B981 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep2ButtonBg?.startsWith('#') ? settings.flowAStep2ButtonBg : '#10B981'}
+                onChange={(e) => setSettings({ ...settings, flowAStep2ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep2ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowAStep2ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#10B981 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 3 */}
@@ -764,37 +812,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep3Background}
-              onChange={(e) => setSettings({ ...settings, flowAStep3Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-orange-400 via-rose-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep3Background?.startsWith('#') ? settings.flowAStep3Background : '#F97316'}
+                onChange={(e) => setSettings({ ...settings, flowAStep3Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep3Background}
+                onChange={(e) => setSettings({ ...settings, flowAStep3Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-orange-400 via-rose-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep3FormBg}
-              onChange={(e) => setSettings({ ...settings, flowAStep3FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep3FormBg?.startsWith('#') ? settings.flowAStep3FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowAStep3FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep3FormBg}
+                onChange={(e) => setSettings({ ...settings, flowAStep3FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowAStep3ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowAStep3ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#F97316 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowAStep3ButtonBg?.startsWith('#') ? settings.flowAStep3ButtonBg : '#F97316'}
+                onChange={(e) => setSettings({ ...settings, flowAStep3ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowAStep3ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowAStep3ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#F97316 or leave empty for default"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -811,37 +883,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep1Background}
-              onChange={(e) => setSettings({ ...settings, flowBStep1Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-blue-400 via-purple-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep1Background?.startsWith('#') ? settings.flowBStep1Background : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, flowBStep1Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep1Background}
+                onChange={(e) => setSettings({ ...settings, flowBStep1Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-blue-400 via-purple-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep1FormBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep1FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep1FormBg?.startsWith('#') ? settings.flowBStep1FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowBStep1FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep1FormBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep1FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep1ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep1ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#3B82F6 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep1ButtonBg?.startsWith('#') ? settings.flowBStep1ButtonBg : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, flowBStep1ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep1ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep1ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#3B82F6 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 2 */}
@@ -849,37 +945,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep2Background}
-              onChange={(e) => setSettings({ ...settings, flowBStep2Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-emerald-400 via-teal-400 to-cyan-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep2Background?.startsWith('#') ? settings.flowBStep2Background : '#10B981'}
+                onChange={(e) => setSettings({ ...settings, flowBStep2Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep2Background}
+                onChange={(e) => setSettings({ ...settings, flowBStep2Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-emerald-400 via-teal-400 to-cyan-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep2FormBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep2FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep2FormBg?.startsWith('#') ? settings.flowBStep2FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowBStep2FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep2FormBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep2FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep2ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep2ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#10B981 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep2ButtonBg?.startsWith('#') ? settings.flowBStep2ButtonBg : '#10B981'}
+                onChange={(e) => setSettings({ ...settings, flowBStep2ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep2ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep2ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#10B981 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 3 */}
@@ -887,37 +1007,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep3Background}
-              onChange={(e) => setSettings({ ...settings, flowBStep3Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-orange-400 via-rose-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep3Background?.startsWith('#') ? settings.flowBStep3Background : '#F97316'}
+                onChange={(e) => setSettings({ ...settings, flowBStep3Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep3Background}
+                onChange={(e) => setSettings({ ...settings, flowBStep3Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-orange-400 via-rose-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep3FormBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep3FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep3FormBg?.startsWith('#') ? settings.flowBStep3FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowBStep3FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep3FormBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep3FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep3ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep3ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#F97316 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep3ButtonBg?.startsWith('#') ? settings.flowBStep3ButtonBg : '#F97316'}
+                onChange={(e) => setSettings({ ...settings, flowBStep3ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep3ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep3ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#F97316 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 4 */}
@@ -925,37 +1069,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 4 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep4Background}
-              onChange={(e) => setSettings({ ...settings, flowBStep4Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-violet-400 via-purple-400 to-fuchsia-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep4Background?.startsWith('#') ? settings.flowBStep4Background : '#8B5CF6'}
+                onChange={(e) => setSettings({ ...settings, flowBStep4Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep4Background}
+                onChange={(e) => setSettings({ ...settings, flowBStep4Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-violet-400 via-purple-400 to-fuchsia-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 4 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep4FormBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep4FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep4FormBg?.startsWith('#') ? settings.flowBStep4FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowBStep4FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep4FormBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep4FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 4 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowBStep4ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowBStep4ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#8B5CF6 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowBStep4ButtonBg?.startsWith('#') ? settings.flowBStep4ButtonBg : '#8B5CF6'}
+                onChange={(e) => setSettings({ ...settings, flowBStep4ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowBStep4ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowBStep4ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#8B5CF6 or leave empty for default"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -972,37 +1140,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep1Background}
-              onChange={(e) => setSettings({ ...settings, flowCStep1Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-blue-400 via-purple-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep1Background?.startsWith('#') ? settings.flowCStep1Background : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, flowCStep1Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep1Background}
+                onChange={(e) => setSettings({ ...settings, flowCStep1Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-blue-400 via-purple-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep1FormBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep1FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep1FormBg?.startsWith('#') ? settings.flowCStep1FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowCStep1FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep1FormBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep1FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 1 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep1ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep1ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#3B82F6 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep1ButtonBg?.startsWith('#') ? settings.flowCStep1ButtonBg : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, flowCStep1ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep1ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep1ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#3B82F6 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 2 */}
@@ -1010,37 +1202,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep2Background}
-              onChange={(e) => setSettings({ ...settings, flowCStep2Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-emerald-400 via-teal-400 to-cyan-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep2Background?.startsWith('#') ? settings.flowCStep2Background : '#10B981'}
+                onChange={(e) => setSettings({ ...settings, flowCStep2Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep2Background}
+                onChange={(e) => setSettings({ ...settings, flowCStep2Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-emerald-400 via-teal-400 to-cyan-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep2FormBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep2FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep2FormBg?.startsWith('#') ? settings.flowCStep2FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowCStep2FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep2FormBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep2FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 2 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep2ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep2ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#10B981 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep2ButtonBg?.startsWith('#') ? settings.flowCStep2ButtonBg : '#10B981'}
+                onChange={(e) => setSettings({ ...settings, flowCStep2ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep2ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep2ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#10B981 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 3 */}
@@ -1048,37 +1264,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep3Background}
-              onChange={(e) => setSettings({ ...settings, flowCStep3Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-orange-400 via-rose-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep3Background?.startsWith('#') ? settings.flowCStep3Background : '#F97316'}
+                onChange={(e) => setSettings({ ...settings, flowCStep3Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep3Background}
+                onChange={(e) => setSettings({ ...settings, flowCStep3Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-orange-400 via-rose-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep3FormBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep3FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep3FormBg?.startsWith('#') ? settings.flowCStep3FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowCStep3FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep3FormBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep3FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 3 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep3ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep3ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#F97316 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep3ButtonBg?.startsWith('#') ? settings.flowCStep3ButtonBg : '#F97316'}
+                onChange={(e) => setSettings({ ...settings, flowCStep3ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep3ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep3ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#F97316 or leave empty for default"
+              />
+            </div>
           </div>
 
           {/* Step 4 */}
@@ -1086,37 +1326,61 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 4 Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep4Background}
-              onChange={(e) => setSettings({ ...settings, flowCStep4Background: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-violet-400 via-purple-400 to-fuchsia-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep4Background?.startsWith('#') ? settings.flowCStep4Background : '#8B5CF6'}
+                onChange={(e) => setSettings({ ...settings, flowCStep4Background: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep4Background}
+                onChange={(e) => setSettings({ ...settings, flowCStep4Background: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-violet-400 via-purple-400 to-fuchsia-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 4 Form Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep4FormBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep4FormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep4FormBg?.startsWith('#') ? settings.flowCStep4FormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, flowCStep4FormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep4FormBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep4FormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Step 4 Button Background
             </label>
-            <input
-              type="text"
-              value={settings.flowCStep4ButtonBg}
-              onChange={(e) => setSettings({ ...settings, flowCStep4ButtonBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="#8B5CF6 or leave empty for default"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.flowCStep4ButtonBg?.startsWith('#') ? settings.flowCStep4ButtonBg : '#8B5CF6'}
+                onChange={(e) => setSettings({ ...settings, flowCStep4ButtonBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.flowCStep4ButtonBg}
+                onChange={(e) => setSettings({ ...settings, flowCStep4ButtonBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="#8B5CF6 or leave empty for default"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1309,25 +1573,41 @@ export default function BrandingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Page Background
             </label>
-            <input
-              type="text"
-              value={settings.profilePageBackground}
-              onChange={(e) => setSettings({ ...settings, profilePageBackground: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="from-blue-400 via-purple-400 to-pink-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.profilePageBackground?.startsWith('#') ? settings.profilePageBackground : '#3B82F6'}
+                onChange={(e) => setSettings({ ...settings, profilePageBackground: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.profilePageBackground}
+                onChange={(e) => setSettings({ ...settings, profilePageBackground: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="from-blue-400 via-purple-400 to-pink-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Form Background
             </label>
-            <input
-              type="text"
-              value={settings.profilePageFormBg}
-              onChange={(e) => setSettings({ ...settings, profilePageFormBg: e.target.value })}
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="white or #FFFFFF"
-            />
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.profilePageFormBg?.startsWith('#') ? settings.profilePageFormBg : '#FFFFFF'}
+                onChange={(e) => setSettings({ ...settings, profilePageFormBg: e.target.value })}
+                className="h-10 w-20 rounded border border-gray-300"
+              />
+              <input
+                type="text"
+                value={settings.profilePageFormBg}
+                onChange={(e) => setSettings({ ...settings, profilePageFormBg: e.target.value })}
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="white or #FFFFFF"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1342,13 +1622,21 @@ export default function BrandingPage() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             App Background
           </label>
-          <input
-            type="text"
-            value={settings.appBackground}
-            onChange={(e) => setSettings({ ...settings, appBackground: e.target.value })}
-            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="from-blue-50 via-purple-50 to-pink-50"
-          />
+          <div className="flex gap-2">
+            <input
+              type="color"
+              value={settings.appBackground?.startsWith('#') ? settings.appBackground : '#EFF6FF'}
+              onChange={(e) => setSettings({ ...settings, appBackground: e.target.value })}
+              className="h-10 w-20 rounded border border-gray-300"
+            />
+            <input
+              type="text"
+              value={settings.appBackground}
+              onChange={(e) => setSettings({ ...settings, appBackground: e.target.value })}
+              className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="from-blue-50 via-purple-50 to-pink-50"
+            />
+          </div>
           <p className="text-xs text-gray-500 mt-2">Use Tailwind gradient classes like "from-blue-50 via-purple-50 to-pink-50" or hex colors</p>
         </div>
       </div>

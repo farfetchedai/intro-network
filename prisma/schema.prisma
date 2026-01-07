@@ -221,6 +221,7 @@ model ApiSettings {
   sesSecretAccessKey       String?
   sesRegion                String?  @default("us-east-1")
   sesFromEmail             String?
+  smsEnabled               Boolean  @default(false)
   twilioAccountSid         String?
   twilioAuthToken          String?
   twilioPhoneNumber        String?

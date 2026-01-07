@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import BottomProgressBar from '@/components/BottomProgressBar'
+import CountryCodeSelect from '@/components/CountryCodeSelect'
 
 export default function GetIntrosPage() {
   const router = useRouter()
@@ -19,8 +20,11 @@ export default function GetIntrosPage() {
     id?: string
     firstName: string
     lastName: string
+    fullName?: string // For input field - stores raw input value
     email: string
     phone: string
+    countryCode: string
+    countryCodeIso: string
     company: string
     linkedUser?: {
       id: string
@@ -28,7 +32,7 @@ export default function GetIntrosPage() {
       profilePicture: string | null
       hasCompletedOnboarding: boolean
     } | null
-  }>>([{ firstName: '', lastName: '', email: '', phone: '', company: '' }])
+  }>>([{ firstName: '', lastName: '', fullName: '', email: '', phone: '', countryCode: '+1', countryCodeIso: 'US', company: '' }])
 
   // Track existing contacts from database
   const [existingContacts, setExistingContacts] = useState<Array<{
@@ -70,6 +74,7 @@ export default function GetIntrosPage() {
   const [smsTemplate, setSmsTemplate] = useState(
     "Hi {contactName}, I'm {firstName} and I'm looking to connect with people in your network. Would you be willing to make an introduction? Thanks!"
   )
+  const [smsEnabled, setSmsEnabled] = useState(false)
 
   // Preview state
   const [previewContactIndex, setPreviewContactIndex] = useState(0)
@@ -202,18 +207,50 @@ export default function GetIntrosPage() {
         }
       })
       .catch(err => console.error('Failed to fetch SMS template:', err))
+
+    // Fetch SMS enabled status
+    fetch('/api/sms-status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSmsEnabled(data.smsEnabled)
+        }
+      })
+      .catch(err => console.error('Failed to fetch SMS status:', err))
   }, [])
 
   const handleAddContact = () => {
     setContacts([
       ...contacts,
-      { firstName: '', lastName: '', email: '', phone: '', company: '' },
+      { firstName: '', lastName: '', fullName: '', email: '', phone: '', countryCode: '+1', countryCodeIso: 'US', company: '' },
     ])
   }
 
   const handleContactChange = (index: number, field: string, value: string) => {
     const newContacts = [...contacts]
     newContacts[index] = { ...newContacts[index], [field]: value }
+    setContacts(newContacts)
+  }
+
+  const handleFullNameChange = (index: number, fullName: string) => {
+    // Find the first space to split firstName and lastName
+    const firstSpaceIndex = fullName.indexOf(' ')
+    let firstName: string
+    let lastName: string
+
+    if (firstSpaceIndex === -1) {
+      // No space yet, everything goes to firstName
+      firstName = fullName
+      lastName = ''
+    } else {
+      // Split at first space
+      firstName = fullName.substring(0, firstSpaceIndex)
+      lastName = fullName.substring(firstSpaceIndex + 1)
+    }
+
+    const newContacts = [...contacts]
+    // Store both the raw fullName (for input) and parsed firstName/lastName (for API)
+    newContacts[index] = { ...newContacts[index], fullName, firstName, lastName }
     setContacts(newContacts)
   }
 
@@ -288,8 +325,11 @@ export default function GetIntrosPage() {
       loadedContacts.push({
         firstName: conn.firstName,
         lastName: conn.lastName,
+        fullName: `${conn.firstName} ${conn.lastName}`.trim(),
         email: conn.email || '',
         phone: '',
+        countryCode: '+1',
+        countryCodeIso: 'US',
         company: conn.companyName || '',
         linkedUser: {
           id: conn.id,
@@ -317,12 +357,37 @@ export default function GetIntrosPage() {
         addedEmails.add(c.email.toLowerCase())
       }
 
+      // Parse phone to extract country code if present
+      let countryCode = '+1'
+      let countryCodeIso = 'US'
+      let phoneNumber = c.phone || ''
+      if (phoneNumber.startsWith('+')) {
+        // Extract country code (assume +1 for simplicity, or first few digits)
+        if (phoneNumber.startsWith('+1')) {
+          countryCode = '+1'
+          countryCodeIso = 'US'
+          phoneNumber = phoneNumber.substring(2)
+        } else if (phoneNumber.startsWith('+44')) {
+          countryCode = '+44'
+          countryCodeIso = 'GB'
+          phoneNumber = phoneNumber.substring(3)
+        } else if (phoneNumber.startsWith('+61')) {
+          countryCode = '+61'
+          countryCodeIso = 'AU'
+          phoneNumber = phoneNumber.substring(3)
+        }
+        // Add more country codes as needed
+      }
+
       loadedContacts.push({
         id: c.id,
         firstName: c.firstName,
         lastName: c.lastName,
+        fullName: `${c.firstName} ${c.lastName}`.trim(),
         email: c.email || '',
-        phone: c.phone || '',
+        phone: phoneNumber,
+        countryCode,
+        countryCodeIso,
         company: c.company || '',
         linkedUser: c.linkedUser || null,
       })
@@ -356,13 +421,19 @@ export default function GetIntrosPage() {
       return
     }
 
+    // Combine country code with phone number for API
+    const contactsForApi = validContacts.map((c) => ({
+      ...c,
+      phone: c.phone ? `${c.countryCode}${c.phone}` : '',
+    }))
+
     setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, contacts: validContacts }),
+        body: JSON.stringify({ userId, contacts: contactsForApi }),
       })
 
       const data = await response.json()
@@ -976,36 +1047,22 @@ export default function GetIntrosPage() {
                         ) : (
                           // Full input form for new empty contacts
                           <>
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                  First Name
+                                  Full Name<span className="text-red-500">*</span>
                                 </label>
                                 <input
                                   type="text"
-                                  value={contact.firstName}
-                                  onChange={(e) =>
-                                    handleContactChange(index, 'firstName', e.target.value)
-                                  }
+                                  value={contact.fullName ?? `${contact.firstName}${contact.lastName ? ' ' + contact.lastName : ''}`}
+                                  onChange={(e) => handleFullNameChange(index, e.target.value)}
                                   className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                  placeholder="John Smith"
                                 />
                               </div>
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                  Last Name
-                                </label>
-                                <input
-                                  type="text"
-                                  value={contact.lastName}
-                                  onChange={(e) =>
-                                    handleContactChange(index, 'lastName', e.target.value)
-                                  }
-                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                  Email
+                                  Email<span className="text-red-500">*</span>
                                 </label>
                                 <input
                                   type="email"
@@ -1014,20 +1071,33 @@ export default function GetIntrosPage() {
                                     handleContactChange(index, 'email', e.target.value)
                                   }
                                   className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                  placeholder="john@example.com"
                                 />
                               </div>
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                                   Phone
                                 </label>
-                                <input
-                                  type="tel"
-                                  value={contact.phone}
-                                  onChange={(e) =>
-                                    handleContactChange(index, 'phone', e.target.value)
-                                  }
-                                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                                />
+                                <div className="flex gap-2">
+                                  <CountryCodeSelect
+                                    value={contact.countryCode}
+                                    selectedCountryCode={contact.countryCodeIso}
+                                    onChange={(value, code) => {
+                                      const newContacts = [...contacts]
+                                      newContacts[index] = { ...newContacts[index], countryCode: value, countryCodeIso: code }
+                                      setContacts(newContacts)
+                                    }}
+                                  />
+                                  <input
+                                    type="tel"
+                                    value={contact.phone}
+                                    onChange={(e) =>
+                                      handleContactChange(index, 'phone', e.target.value)
+                                    }
+                                    className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                    placeholder="(555) 000-0000"
+                                  />
+                                </div>
                               </div>
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1040,6 +1110,7 @@ export default function GetIntrosPage() {
                                     handleContactChange(index, 'company', e.target.value)
                                   }
                                   className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-[#191919] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                                  placeholder="Acme Corp"
                                 />
                               </div>
                             </div>
@@ -1163,35 +1234,37 @@ export default function GetIntrosPage() {
                     </div>
                   </div>
 
-                  {/* SMS Message - Preview with Edit Button */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        SMS Message
-                      </label>
-                      <button
-                        onClick={openSmsEditor}
-                        className="px-3 py-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200"
-                      >
-                        Edit SMS
-                      </button>
-                    </div>
-                    <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50">
-                      <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-md p-4">
-                        <div className="text-sm text-gray-900 whitespace-pre-wrap">
-                          {getPreviewSms()}
+                  {/* SMS Message - Preview with Edit Button (only shown if SMS is enabled) */}
+                  {smsEnabled && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          SMS Message
+                        </label>
+                        <button
+                          onClick={openSmsEditor}
+                          className="px-3 py-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200"
+                        >
+                          Edit SMS
+                        </button>
+                      </div>
+                      <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-50">
+                        <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-md p-4">
+                          <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                            {getPreviewSms()}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-2 text-right">
+                            {getPreviewSms().length} characters
+                          </div>
+                          {contacts.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                              Preview with: {contacts[previewContactIndex]?.firstName || contacts[0]?.firstName} {contacts[previewContactIndex]?.lastName || contacts[0]?.lastName}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-500 mt-2 text-right">
-                          {getPreviewSms().length} characters
-                        </div>
-                        {contacts.length > 0 && (
-                          <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                            Preview with: {contacts[previewContactIndex]?.firstName || contacts[0]?.firstName} {contacts[previewContactIndex]?.lastName || contacts[0]?.lastName}
-                          </p>
-                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Contacts List */}
                   <div>

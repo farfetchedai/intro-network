@@ -286,7 +286,7 @@ export default function CountryCodeSelect({ value, onChange, selectedCountryCode
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-xl border-2 border-gray-200 px-3 py-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white min-w-[100px]"
+        className="flex items-center gap-2 rounded-md border-2 border-gray-200 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white min-w-[100px]"
       >
         <span className="text-xl">{selectedCountry.flag}</span>
         <span className="font-medium">{selectedCountry.dial}</span>

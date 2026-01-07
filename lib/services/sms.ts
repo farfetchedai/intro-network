@@ -15,6 +15,12 @@ export async function sendSMS({
       return { success: false, error: 'SMS provider not configured' }
     }
 
+    // Check if SMS is enabled
+    if (!settings.smsEnabled) {
+      console.warn('SMS is disabled. SMS not sent.')
+      return { success: false, error: 'SMS is disabled' }
+    }
+
     // Check if Twilio is configured
     if (!settings.twilioAccountSid || !settings.twilioAuthToken || !settings.twilioPhoneNumber) {
       console.warn('Twilio SMS credentials not configured. SMS not sent.')
@@ -27,19 +33,34 @@ export async function sendSMS({
       message: message.substring(0, 50) + '...',
     })
 
-    // For now, just log the SMS since we don't have the Twilio package installed
-    // In production, you would import and use the Twilio SDK here
-    // const twilio = require('twilio')
-    // const client = twilio(settings.twilioAccountSid, settings.twilioAuthToken)
-    // await client.messages.create({
-    //   body: message,
-    //   from: settings.twilioPhoneNumber,
-    //   to: to,
-    // })
+    // Send SMS using Twilio REST API
+    const auth = Buffer.from(`${settings.twilioAccountSid}:${settings.twilioAuthToken}`).toString('base64')
 
-    console.log('SMS would be sent (Twilio not integrated yet)')
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${settings.twilioAccountSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${auth}`,
+        },
+        body: new URLSearchParams({
+          From: settings.twilioPhoneNumber,
+          To: to,
+          Body: message,
+        }),
+      }
+    )
 
-    return { success: true, provider: 'twilio' }
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('Twilio SMS error:', data)
+      return { success: false, error: data.message || 'Failed to send SMS' }
+    }
+
+    console.log('SMS sent successfully:', data.sid)
+    return { success: true, provider: 'twilio', sid: data.sid }
   } catch (error) {
     console.error('Failed to send SMS:', error)
     return { success: false, error }

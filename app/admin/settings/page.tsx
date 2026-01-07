@@ -14,6 +14,7 @@ interface ApiSettings {
   sesSecretAccessKey: string
   sesRegion: string
   sesFromEmail: string
+  smsEnabled: boolean
   twilioAccountSid: string
   twilioAuthToken: string
   twilioPhoneNumber: string
@@ -33,6 +34,7 @@ export default function SettingsPage() {
     sesSecretAccessKey: '',
     sesRegion: 'us-east-1',
     sesFromEmail: '',
+    smsEnabled: false,
     twilioAccountSid: '',
     twilioAuthToken: '',
     twilioPhoneNumber: '',
@@ -117,6 +119,28 @@ export default function SettingsPage() {
       const data = await response.json()
       if (data.success) {
         alert(`Test SMS sent successfully to ${settings.twilioPhoneNumber}!`)
+      } else {
+        alert(`Failed to send test SMS: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to test SMS:', error)
+      alert('Failed to send test SMS')
+    } finally {
+      setTestingSms(false)
+    }
+  }
+
+  const testSmsToNumber = async (toNumber: string) => {
+    setTestingSms(true)
+    try {
+      const response = await fetch('/api/admin/test-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: toNumber }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(`Test SMS sent successfully to ${toNumber}!`)
       } else {
         alert(`Failed to send test SMS: ${data.error}`)
       }
@@ -453,6 +477,27 @@ export default function SettingsPage() {
           </a>
         </div>
 
+        {/* SMS Enable/Disable Toggle */}
+        <div className="flex items-center justify-between py-4 border-b border-gray-200 mb-4">
+          <div>
+            <span className="font-medium text-gray-900">Enable SMS</span>
+            <p className="text-sm text-gray-500">Allow sending SMS messages to contacts</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSettings({ ...settings, smsEnabled: !settings.smsEnabled })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              settings.smsEnabled ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                settings.smsEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -496,13 +541,32 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <button
-            onClick={testSms}
-            disabled={testingSms || !settings.twilioAccountSid || !settings.twilioAuthToken || !settings.twilioPhoneNumber}
-            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {testingSms ? 'Sending...' : 'Send Test SMS'}
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              type="tel"
+              id="testSmsNumber"
+              placeholder="Your verified phone (+1234567890)"
+              className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+            />
+            <button
+              onClick={() => {
+                const input = document.getElementById('testSmsNumber') as HTMLInputElement
+                const testNumber = input?.value?.trim()
+                if (!testNumber) {
+                  alert('Please enter a verified phone number to send the test SMS to')
+                  return
+                }
+                testSmsToNumber(testNumber)
+              }}
+              disabled={testingSms || !settings.twilioAccountSid || !settings.twilioAuthToken || !settings.twilioPhoneNumber}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {testingSms ? 'Sending...' : 'Send Test SMS'}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            Trial accounts can only send to verified numbers. Add your number in Twilio Console → Verified Caller IDs.
+          </p>
         </div>
       </div>
 

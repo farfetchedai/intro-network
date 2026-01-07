@@ -98,6 +98,9 @@ export default function GetIntrosPage() {
     flowAStep1FormBg: 'white',
     flowAStep2FormBg: 'white',
     flowAStep3FormBg: 'white',
+    flowAStep1ButtonBg: '',
+    flowAStep2ButtonBg: '',
+    flowAStep3ButtonBg: '',
   })
 
   useEffect(() => {
@@ -162,6 +165,9 @@ export default function GetIntrosPage() {
               flowAStep1FormBg: data.settings.flowAStep1FormBg || 'white',
               flowAStep2FormBg: data.settings.flowAStep2FormBg || 'white',
               flowAStep3FormBg: data.settings.flowAStep3FormBg || 'white',
+              flowAStep1ButtonBg: data.settings.flowAStep1ButtonBg || '',
+              flowAStep2ButtonBg: data.settings.flowAStep2ButtonBg || '',
+              flowAStep3ButtonBg: data.settings.flowAStep3ButtonBg || '',
             })
           }
         })
@@ -733,6 +739,15 @@ export default function GetIntrosPage() {
     return { backgroundColor: bg }
   }
 
+  const getButtonBackgroundStyle = () => {
+    let bg = brandingSettings.flowAStep1ButtonBg
+    if (step === 2) bg = brandingSettings.flowAStep2ButtonBg
+    if (step === 3) bg = brandingSettings.flowAStep3ButtonBg
+
+    if (!bg) return {}
+    return { backgroundColor: bg }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1060,7 +1075,8 @@ export default function GetIntrosPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`flex-1 ${!brandingSettings.flowAStep1ButtonBg ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : ''} text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      style={getButtonBackgroundStyle()}
                     >
                       {isSubmitting ? 'Saving...' : 'Craft Message'}
                     </button>
@@ -1136,6 +1152,7 @@ export default function GetIntrosPage() {
                     <div className="w-full rounded-xl border-2 border-gray-200 bg-gray-50">
                       <div
                         className="overflow-auto p-4 bg-white min-h-[200px]"
+                        style={{ pointerEvents: 'none' }}
                         dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
                       />
                       {contacts.length > 0 && (
@@ -1269,7 +1286,8 @@ export default function GetIntrosPage() {
                     <button
                       onClick={() => handleSendRequests()}
                       disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`w-full ${!brandingSettings.flowAStep2ButtonBg ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : ''} text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      style={getButtonBackgroundStyle()}
                     >
                       {isSubmitting ? 'Sending...' : 'Ask Everyone'}
                     </button>

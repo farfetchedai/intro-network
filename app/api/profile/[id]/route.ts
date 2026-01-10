@@ -69,23 +69,29 @@ export async function PUT(
       }
     }
 
+    // Build update data, only including fields that were explicitly provided
+    const updateData: Record<string, any> = {}
+
+    // Always update these text fields
+    if (body.firstName !== undefined) updateData.firstName = body.firstName
+    if (body.lastName !== undefined) updateData.lastName = body.lastName
+    if (body.username !== undefined) updateData.username = body.username || null
+    if (body.email !== undefined) updateData.email = body.email || null
+    if (body.phone !== undefined) updateData.phone = body.phone || null
+    if (body.bio !== undefined) updateData.bio = body.bio || null
+    if (body.linkedinUrl !== undefined) updateData.linkedinUrl = body.linkedinUrl || null
+    if (body.twitterUrl !== undefined) updateData.twitterUrl = body.twitterUrl || null
+    if (body.facebookUrl !== undefined) updateData.facebookUrl = body.facebookUrl || null
+    if (body.instagramUrl !== undefined) updateData.instagramUrl = body.instagramUrl || null
+    if (body.websiteUrl !== undefined) updateData.websiteUrl = body.websiteUrl || null
+
+    // Only update image fields if explicitly provided (preserves existing images)
+    if (body.hasOwnProperty('profilePicture')) updateData.profilePicture = body.profilePicture || null
+    if (body.hasOwnProperty('backgroundImage')) updateData.backgroundImage = body.backgroundImage || null
+
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        firstName: body.firstName,
-        lastName: body.lastName,
-        username: body.username || null,
-        email: body.email || null,
-        phone: body.phone || null,
-        bio: body.bio || null,
-        profilePicture: body.profilePicture || null,
-        backgroundImage: body.backgroundImage || null,
-        linkedinUrl: body.linkedinUrl || null,
-        twitterUrl: body.twitterUrl || null,
-        facebookUrl: body.facebookUrl || null,
-        instagramUrl: body.instagramUrl || null,
-        websiteUrl: body.websiteUrl || null,
-      },
+      data: updateData,
     })
 
     return NextResponse.json({

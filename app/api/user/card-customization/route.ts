@@ -63,21 +63,23 @@ export async function POST(req: Request) {
       cardButtonBTextColor,
     } = body
 
+    // Build update data, only including fields that were explicitly provided
+    const updateData: Record<string, any> = {}
+    if (cardPageBgColor !== undefined) updateData.cardPageBgColor = cardPageBgColor || null
+    if (cardBoxBgColor !== undefined) updateData.cardBoxBgColor = cardBoxBgColor || null
+    if (cardTextColor !== undefined) updateData.cardTextColor = cardTextColor || null
+    if (body.hasOwnProperty('cardBgImage')) updateData.cardBgImage = cardBgImage || null
+    if (cardProfileBorderColor !== undefined) updateData.cardProfileBorderColor = cardProfileBorderColor || null
+    if (cardFooterBgColor !== undefined) updateData.cardFooterBgColor = cardFooterBgColor || null
+    if (cardFooterTextColor !== undefined) updateData.cardFooterTextColor = cardFooterTextColor || null
+    if (cardButtonABgColor !== undefined) updateData.cardButtonABgColor = cardButtonABgColor || null
+    if (cardButtonATextColor !== undefined) updateData.cardButtonATextColor = cardButtonATextColor || null
+    if (cardButtonBBgColor !== undefined) updateData.cardButtonBBgColor = cardButtonBBgColor || null
+    if (cardButtonBTextColor !== undefined) updateData.cardButtonBTextColor = cardButtonBTextColor || null
+
     const user = await prisma.user.update({
       where: { id: userId },
-      data: {
-        cardPageBgColor: cardPageBgColor || null,
-        cardBoxBgColor: cardBoxBgColor || null,
-        cardTextColor: cardTextColor || null,
-        cardBgImage: cardBgImage || null,
-        cardProfileBorderColor: cardProfileBorderColor || null,
-        cardFooterBgColor: cardFooterBgColor || null,
-        cardFooterTextColor: cardFooterTextColor || null,
-        cardButtonABgColor: cardButtonABgColor || null,
-        cardButtonATextColor: cardButtonATextColor || null,
-        cardButtonBBgColor: cardButtonBBgColor || null,
-        cardButtonBTextColor: cardButtonBTextColor || null,
-      },
+      data: updateData,
       select: {
         cardPageBgColor: true,
         cardBoxBgColor: true,

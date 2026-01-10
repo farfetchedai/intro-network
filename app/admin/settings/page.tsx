@@ -19,6 +19,13 @@ interface ApiSettings {
   twilioAuthToken: string
   twilioPhoneNumber: string
   anthropicApiKey: string
+  // S3 Storage
+  s3Enabled: boolean
+  s3Bucket: string
+  s3Region: string
+  s3AccessKeyId: string
+  s3SecretAccessKey: string
+  s3PublicUrlPrefix: string
 }
 
 export default function SettingsPage() {
@@ -39,12 +46,20 @@ export default function SettingsPage() {
     twilioAuthToken: '',
     twilioPhoneNumber: '',
     anthropicApiKey: '',
+    // S3 Storage
+    s3Enabled: false,
+    s3Bucket: '',
+    s3Region: 'us-east-1',
+    s3AccessKeyId: '',
+    s3SecretAccessKey: '',
+    s3PublicUrlPrefix: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showApiKeys, setShowApiKeys] = useState(false)
   const [testingEmail, setTestingEmail] = useState(false)
   const [testingSms, setTestingSms] = useState(false)
+  const [testingS3, setTestingS3] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -149,6 +164,26 @@ export default function SettingsPage() {
       alert('Failed to send test SMS')
     } finally {
       setTestingSms(false)
+    }
+  }
+
+  const testS3 = async () => {
+    setTestingS3(true)
+    try {
+      const response = await fetch('/api/admin/test-s3', {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(data.message || 'S3 connection successful!')
+      } else {
+        alert(`S3 connection failed: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to test S3:', error)
+      alert('Failed to test S3 connection')
+    } finally {
+      setTestingS3(false)
     }
   }
 
@@ -603,6 +638,137 @@ export default function SettingsPage() {
               Used for AI-generated professional statements
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* S3 Storage Settings */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Amazon S3 Storage</h2>
+            <p className="text-sm text-gray-600 mt-1">Configure file storage for images and documents</p>
+          </div>
+          <a
+            href="https://console.aws.amazon.com/s3/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            AWS Console →
+          </a>
+        </div>
+
+        {/* S3 Enable/Disable Toggle */}
+        <div className="flex items-center justify-between py-4 border-b border-gray-200 mb-4">
+          <div>
+            <span className="font-medium text-gray-900">Enable S3 Storage</span>
+            <p className="text-sm text-gray-500">Store uploaded files in S3 instead of the database</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSettings({ ...settings, s3Enabled: !settings.s3Enabled })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              settings.s3Enabled ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                settings.s3Enabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              S3 Bucket Name
+            </label>
+            <input
+              type="text"
+              value={settings.s3Bucket}
+              onChange={(e) => setSettings({ ...settings, s3Bucket: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="my-app-uploads"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Region
+            </label>
+            <select
+              value={settings.s3Region}
+              onChange={(e) => setSettings({ ...settings, s3Region: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="us-east-1">US East (N. Virginia)</option>
+              <option value="us-east-2">US East (Ohio)</option>
+              <option value="us-west-1">US West (N. California)</option>
+              <option value="us-west-2">US West (Oregon)</option>
+              <option value="eu-west-1">EU (Ireland)</option>
+              <option value="eu-west-2">EU (London)</option>
+              <option value="eu-west-3">EU (Paris)</option>
+              <option value="eu-central-1">EU (Frankfurt)</option>
+              <option value="ap-south-1">Asia Pacific (Mumbai)</option>
+              <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+              <option value="ap-northeast-2">Asia Pacific (Seoul)</option>
+              <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+              <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
+              <option value="ca-central-1">Canada (Central)</option>
+              <option value="sa-east-1">South America (São Paulo)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Access Key ID
+            </label>
+            <input
+              type={showApiKeys ? 'text' : 'password'}
+              value={settings.s3AccessKeyId}
+              onChange={(e) => setSettings({ ...settings, s3AccessKeyId: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="AKIA..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Secret Access Key
+            </label>
+            <input
+              type={showApiKeys ? 'text' : 'password'}
+              value={settings.s3SecretAccessKey}
+              onChange={(e) => setSettings({ ...settings, s3SecretAccessKey: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Your secret access key"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Public URL Prefix (Optional)
+            </label>
+            <input
+              type="url"
+              value={settings.s3PublicUrlPrefix}
+              onChange={(e) => setSettings({ ...settings, s3PublicUrlPrefix: e.target.value })}
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="https://cdn.yourdomain.com"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Custom domain or CloudFront distribution URL. Leave blank to use default S3 URLs.
+            </p>
+          </div>
+
+          <button
+            onClick={testS3}
+            disabled={testingS3 || !settings.s3Enabled || !settings.s3Bucket || !settings.s3AccessKeyId || !settings.s3SecretAccessKey}
+            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {testingS3 ? 'Testing...' : 'Test S3 Connection'}
+          </button>
         </div>
       </div>
 

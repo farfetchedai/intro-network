@@ -227,6 +227,13 @@ model ApiSettings {
   twilioPhoneNumber        String?
   statementSummaryTemplate String?
   anthropicApiKey          String?
+  // S3 Storage Configuration
+  s3Enabled                Boolean  @default(false)
+  s3Bucket                 String?
+  s3Region                 String?  @default("us-east-1")
+  s3AccessKeyId            String?
+  s3SecretAccessKey        String?
+  s3PublicUrlPrefix        String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
   emailFromName            String?

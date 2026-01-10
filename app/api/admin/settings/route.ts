@@ -32,6 +32,13 @@ export async function GET() {
         twilioAuthToken: settings.twilioAuthToken || '',
         twilioPhoneNumber: settings.twilioPhoneNumber || '',
         anthropicApiKey: settings.anthropicApiKey || '',
+        // S3 Storage
+        s3Enabled: settings.s3Enabled || false,
+        s3Bucket: settings.s3Bucket || '',
+        s3Region: settings.s3Region || 'us-east-1',
+        s3AccessKeyId: settings.s3AccessKeyId || '',
+        s3SecretAccessKey: settings.s3SecretAccessKey || '',
+        s3PublicUrlPrefix: settings.s3PublicUrlPrefix || '',
       },
     })
   } catch (error) {
@@ -71,6 +78,13 @@ export async function POST(request: Request) {
           twilioAuthToken: body.twilioAuthToken || null,
           twilioPhoneNumber: body.twilioPhoneNumber || null,
           anthropicApiKey: body.anthropicApiKey || null,
+          // S3 Storage
+          s3Enabled: body.s3Enabled || false,
+          s3Bucket: body.s3Bucket || null,
+          s3Region: body.s3Region || 'us-east-1',
+          s3AccessKeyId: body.s3AccessKeyId || null,
+          s3SecretAccessKey: body.s3SecretAccessKey || null,
+          s3PublicUrlPrefix: body.s3PublicUrlPrefix || null,
         },
       })
     } else {
@@ -93,6 +107,13 @@ export async function POST(request: Request) {
           twilioAuthToken: body.twilioAuthToken || null,
           twilioPhoneNumber: body.twilioPhoneNumber || null,
           anthropicApiKey: body.anthropicApiKey || null,
+          // S3 Storage
+          s3Enabled: body.s3Enabled || false,
+          s3Bucket: body.s3Bucket || null,
+          s3Region: body.s3Region || 'us-east-1',
+          s3AccessKeyId: body.s3AccessKeyId || null,
+          s3SecretAccessKey: body.s3SecretAccessKey || null,
+          s3PublicUrlPrefix: body.s3PublicUrlPrefix || null,
         },
       })
     }

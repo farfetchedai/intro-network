@@ -258,16 +258,30 @@ export default function MessageTemplatesPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Convert image to base64
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string
-      const imgTag = `<img src="${base64}" alt="Uploaded image" style="max-width: 100%; height: auto;" />`
-
-      // Insert at cursor position or append
-      setBodyHtml(prevHtml => prevHtml + '\n' + imgTag)
+    // Upload to server (will use S3 if configured)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+      if (data.url) {
+        const imgTag = `<img src="${data.url}" alt="Uploaded image" style="max-width: 100%; height: auto;" />`
+        setBodyHtml(prevHtml => prevHtml + '\n' + imgTag)
+      }
+    } catch (err) {
+      console.error('Failed to upload image:', err)
+      // Fallback to base64 if upload fails
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string
+        const imgTag = `<img src="${base64}" alt="Uploaded image" style="max-width: 100%; height: auto;" />`
+        setBodyHtml(prevHtml => prevHtml + '\n' + imgTag)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const getPersonalizationTokens = () => {

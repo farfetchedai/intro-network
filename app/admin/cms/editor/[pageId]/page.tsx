@@ -376,12 +376,29 @@ export default function CMSEditorPage() {
     file: File,
     field: 'content' | 'mobileContent' = 'content'
   ) => {
+    // Show local preview immediately
     const reader = new FileReader()
     reader.onloadend = () => {
       const base64 = reader.result as string
       updateElement(sectionId, columnIndex, elementId, { [field]: base64 })
     }
     reader.readAsDataURL(file)
+
+    // Upload to server (will use S3 if configured)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+      if (data.url) {
+        updateElement(sectionId, columnIndex, elementId, { [field]: data.url })
+      }
+    } catch (err) {
+      console.error('Failed to upload image:', err)
+    }
   }
 
   if (loading) {

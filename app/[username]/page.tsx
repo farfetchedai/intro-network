@@ -592,14 +592,31 @@ export default function ProfilePage() {
     }
   }
 
-  const handleBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Show local preview immediately
       const reader = new FileReader()
       reader.onloadend = () => {
         setCustomBgImage(reader.result as string)
       }
       reader.readAsDataURL(file)
+
+      // Upload to server (will use S3 if configured)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        const response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await response.json()
+        if (data.url) {
+          setCustomBgImage(data.url)
+        }
+      } catch (err) {
+        console.error('Failed to upload background image:', err)
+      }
     }
   }
 

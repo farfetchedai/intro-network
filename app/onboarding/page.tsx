@@ -761,15 +761,35 @@ function OnboardingContent() {
     }
   }
 
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setProfilePicture(file)
+
+      // Show local preview immediately for better UX
       const reader = new FileReader()
       reader.onloadend = () => {
         setProfilePicturePreview(reader.result as string)
       }
       reader.readAsDataURL(file)
+
+      // Upload to server (will use S3 if configured, otherwise base64)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        const response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await response.json()
+        if (data.url) {
+          // Replace local preview with server URL (S3 or base64)
+          setProfilePicturePreview(data.url)
+        }
+      } catch (err) {
+        console.error('Failed to upload profile picture:', err)
+        // Keep the local preview as fallback
+      }
     }
   }
 

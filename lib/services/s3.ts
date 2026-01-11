@@ -42,10 +42,9 @@ export async function isS3Configured(): Promise<boolean> {
 
 // Generate unique filename with original extension
 function generateUniqueKey(originalFilename: string, folder: string = 'uploads'): string {
-  const timestamp = Date.now()
-  const randomId = crypto.randomBytes(8).toString('hex')
+  const randomId = crypto.randomBytes(6).toString('hex') // 12 chars
   const extension = originalFilename.split('.').pop()?.toLowerCase() || 'bin'
-  return `${folder}/${timestamp}-${randomId}.${extension}`
+  return `${folder}/${randomId}.${extension}`
 }
 
 // Upload file to S3

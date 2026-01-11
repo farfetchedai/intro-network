@@ -33,7 +33,15 @@ interface ApiSettings {
   linkedinRedirectUri: string
 }
 
-type TabType = 'general' | 'email' | 'sms' | 'ai' | 'storage' | 'linkedin'
+type TabType = 'general' | 'email' | 'sms' | 'ai' | 'storage' | 'linkedin' | 'backup'
+
+interface BackupInfo {
+  key: string
+  size: number
+  sizeFormatted: string
+  date: string
+  dateFormatted: string
+}
 
 const tabs: { id: TabType; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -42,6 +50,7 @@ const tabs: { id: TabType; label: string }[] = [
   { id: 'ai', label: 'AI' },
   { id: 'storage', label: 'Storage' },
   { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'backup', label: 'Backup' },
 ]
 
 export default function SettingsPage() {
@@ -82,10 +91,19 @@ export default function SettingsPage() {
   const [testingEmail, setTestingEmail] = useState(false)
   const [testingSms, setTestingSms] = useState(false)
   const [testingS3, setTestingS3] = useState(false)
+  const [backups, setBackups] = useState<BackupInfo[]>([])
+  const [loadingBackups, setLoadingBackups] = useState(false)
+  const [creatingBackup, setCreatingBackup] = useState(false)
 
   useEffect(() => {
     fetchSettings()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'backup') {
+      fetchBackups()
+    }
+  }, [activeTab])
 
   const fetchSettings = async () => {
     try {
@@ -187,6 +205,48 @@ export default function SettingsPage() {
     } finally {
       setTestingS3(false)
     }
+  }
+
+  const fetchBackups = async () => {
+    setLoadingBackups(true)
+    try {
+      const response = await fetch('/api/admin/backup')
+      const data = await response.json()
+      if (data.success) {
+        setBackups(data.backups || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch backups:', error)
+    } finally {
+      setLoadingBackups(false)
+    }
+  }
+
+  const createBackup = async () => {
+    setCreatingBackup(true)
+    try {
+      const response = await fetch('/api/admin/backup', {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(`Backup created successfully!\n\nFile: ${data.backupKey}\nSize: ${formatBytes(data.size)}${data.cleanedUp ? `\nCleaned up ${data.cleanedUp} old backup(s)` : ''}`)
+        fetchBackups()
+      } else {
+        alert(`Backup failed: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to create backup:', error)
+      alert('Failed to create backup')
+    } finally {
+      setCreatingBackup(false)
+    }
+  }
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   if (loading) {
@@ -891,6 +951,114 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Backup Tab */}
+        {activeTab === 'backup' && (
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Database Backup</h2>
+                  <p className="text-sm text-gray-600 mt-1">Create and manage database backups stored in S3</p>
+                </div>
+                <button
+                  onClick={createBackup}
+                  disabled={creatingBackup || !settings.s3Enabled}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {creatingBackup ? 'Creating Backup...' : 'Create Backup Now'}
+                </button>
+              </div>
+
+              {!settings.s3Enabled && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    S3 storage must be enabled to use backups. Go to the Storage tab to configure S3.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Recent Backups</h3>
+                  {loadingBackups ? (
+                    <p className="text-sm text-gray-500">Loading backups...</p>
+                  ) : backups.length === 0 ? (
+                    <p className="text-sm text-gray-500">No backups found</p>
+                  ) : (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">File</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {backups.map((backup) => (
+                            <tr key={backup.key}>
+                              <td className="px-4 py-2 text-sm text-gray-900 font-mono">
+                                {backup.key.split('/').pop()}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-600">
+                                {backup.sizeFormatted}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-600">
+                                {new Date(backup.dateFormatted).toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Automated Backups</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Set up automated daily backups using a cron service. Backups are retained for 14 days.
+              </p>
+
+              <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">1. Set Environment Variable</h3>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Add a <code className="bg-gray-200 px-1 rounded">CRON_SECRET</code> environment variable to your deployment:
+                  </p>
+                  <code className="block bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+                    CRON_SECRET=your-secret-key-here
+                  </code>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">2. Configure Cron Job</h3>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Set up a daily cron job (e.g., using Railway, Vercel Cron, or cron-job.org) to call:
+                  </p>
+                  <code className="block bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+                    POST {settings.appUrl || 'https://your-app.com'}/api/cron/backup
+                  </code>
+                  <p className="text-xs text-gray-600 mt-2">
+                    Include the header: <code className="bg-gray-200 px-1 rounded">x-cron-secret: your-secret-key-here</code>
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Example cURL Command</h3>
+                  <code className="block bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto whitespace-pre">
+{`curl -X POST \\
+  ${settings.appUrl || 'https://your-app.com'}/api/cron/backup \\
+  -H "x-cron-secret: your-secret-key-here"`}
+                  </code>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

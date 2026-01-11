@@ -75,6 +75,10 @@ async function sendMagicLink(userId: string, email: string, firstName: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    console.log('[Register] Received body:', {
+      ...body,
+      profilePicture: body.profilePicture ? `${body.profilePicture.substring(0, 50)}...` : null
+    })
     const validatedData = registerSchema.parse(body)
 
     // Convert empty strings to null for unique fields
@@ -83,6 +87,7 @@ export async function POST(req: Request) {
     const username = validatedData.username?.trim() || null
     const profilePicture = validatedData.profilePicture?.trim() || null
     const statementSummary = validatedData.statementSummary?.trim() || null
+    console.log('[Register] profilePicture value:', profilePicture ? `${profilePicture.substring(0, 50)}...` : null)
 
     // Check if user already exists - prefer userId if provided (user is logged in)
     let existingUser = null
@@ -115,6 +120,9 @@ export async function POST(req: Request) {
       // Only update optional fields if they are explicitly provided
       if (profilePicture !== null) {
         updateData.profilePicture = profilePicture
+        console.log('[Register] Adding profilePicture to updateData')
+      } else {
+        console.log('[Register] profilePicture is null, NOT updating (preserving existing)')
       }
       if (statementSummary !== undefined) {
         updateData.statementSummary = statementSummary

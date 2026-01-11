@@ -238,6 +238,7 @@ function OnboardingContent() {
   useEffect(() => {
     const linkedInParam = searchParams.get('linkedin')
     const fromMagicLink = searchParams.get('fromMagicLink')
+    console.log('[Onboarding] searchParams effect - linkedin:', linkedInParam, 'fromMagicLink:', fromMagicLink, 'current step:', step)
 
     // Function to handle pending connection requests
     const processPendingConnection = async () => {
@@ -268,6 +269,7 @@ function OnboardingContent() {
     }
 
     if (linkedInParam === 'connected') {
+      console.log('[Onboarding] LinkedIn connected - setting step to 2')
       setLinkedInConnected(true)
       // User just logged in via LinkedIn - skip to step 2
       // The user data will be fetched by fetchCurrentUser effect

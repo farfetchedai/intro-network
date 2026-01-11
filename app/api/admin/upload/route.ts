@@ -6,6 +6,8 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const file = formData.get('file') as File
 
+    console.log('[Upload] Received file:', file?.name, 'size:', file?.size, 'type:', file?.type)
+
     if (!file) {
       return NextResponse.json(
         { success: false, error: 'No file uploaded' },
@@ -20,6 +22,7 @@ export async function POST(request: Request) {
 
     // Check if S3 is configured
     const useS3 = await isS3Configured()
+    console.log('[Upload] S3 configured:', useS3)
 
     if (useS3) {
       // S3 upload - allow larger files (10MB)
@@ -35,6 +38,7 @@ export async function POST(request: Request) {
       const folder = mimeType.startsWith('image/') ? 'images' : 'documents'
 
       const result = await uploadToS3(buffer, file.name, mimeType, folder)
+      console.log('[Upload] S3 upload result:', result)
 
       if (!result.success) {
         // Fallback to base64 if S3 upload fails
@@ -42,6 +46,7 @@ export async function POST(request: Request) {
         return uploadAsBase64(buffer, mimeType, file.size)
       }
 
+      console.log('[Upload] Success - S3 URL:', result.url)
       return NextResponse.json({
         success: true,
         url: result.url,

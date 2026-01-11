@@ -915,8 +915,11 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center text-center mb-8">
               {/* Profile Picture */}
               <div
-                className="bus-card-profile-pic w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold overflow-hidden mb-4 border-4"
-                style={effectiveProfileBorderColor ? { borderColor: effectiveProfileBorderColor } : { borderColor: '' }}
+                className={`bus-card-profile-pic w-32 h-32 rounded-full flex items-center justify-center text-white text-4xl font-bold overflow-hidden mb-4 border-4 ${!effectiveButtonABgColor ? 'bg-gradient-to-br from-blue-500 to-purple-600' : ''}`}
+                style={{
+                  ...(effectiveProfileBorderColor ? { borderColor: effectiveProfileBorderColor } : {}),
+                  ...(effectiveButtonABgColor ? { backgroundColor: effectiveButtonABgColor } : {})
+                }}
               >
                 {profile.profilePicture ? (
                   <img

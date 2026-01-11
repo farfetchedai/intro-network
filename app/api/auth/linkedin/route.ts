@@ -20,10 +20,14 @@ export async function GET(req: Request) {
     const response = NextResponse.redirect(authUrl)
 
     // Set state cookie for CSRF validation
+    // Use sameSite: 'none' for cross-site OAuth flow (LinkedIn redirect)
+    // This requires secure: true, which works in production (HTTPS)
+    const isProduction = process.env.NODE_ENV === 'production'
     response.cookies.set('linkedin_oauth_state', stateData, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-site in prod, 'lax' for local dev
+      path: '/',
       maxAge: 60 * 10, // 10 minutes
     })
 

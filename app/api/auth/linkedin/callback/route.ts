@@ -32,7 +32,10 @@ export async function GET(req: Request) {
     const cookieStore = await cookies()
     const stateCookie = cookieStore.get('linkedin_oauth_state')
 
+    console.log('[LinkedIn Callback] State cookie present:', !!stateCookie)
+
     if (!stateCookie) {
+      console.error('[LinkedIn Callback] State cookie missing - cookies available:', cookieStore.getAll().map(c => c.name))
       return NextResponse.redirect(
         new URL('/login?error=Invalid session state', getBaseUrl())
       )

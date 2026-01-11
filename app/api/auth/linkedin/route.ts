@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     const stateData = encodeState({ nonce, returnTo })
 
     // Get the LinkedIn authorization URL with encoded state
-    const authUrl = getLinkedInAuthUrl(stateData, returnTo)
+    const authUrl = getLinkedInAuthUrl(stateData)
 
     // Redirect to LinkedIn - no cookies needed
     return NextResponse.redirect(authUrl)

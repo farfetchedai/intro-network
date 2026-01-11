@@ -45,8 +45,9 @@ export interface LinkedInConnection {
 
 /**
  * Generate LinkedIn OAuth authorization URL
+ * The state parameter should already contain all necessary data (encoded by the caller)
  */
-export function getLinkedInAuthUrl(state: string, returnTo?: string): string {
+export function getLinkedInAuthUrl(state: string): string {
   if (!LINKEDIN_CLIENT_ID) {
     throw new Error('LINKEDIN_CLIENT_ID is not configured')
   }
@@ -58,11 +59,6 @@ export function getLinkedInAuthUrl(state: string, returnTo?: string): string {
     state: state,
     scope: 'openid profile email',
   })
-
-  // Encode returnTo in state if provided
-  if (returnTo) {
-    params.set('state', JSON.stringify({ state, returnTo }))
-  }
 
   return `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`
 }

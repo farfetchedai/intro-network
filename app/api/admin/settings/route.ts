@@ -45,6 +45,10 @@ export async function GET() {
         linkedinClientId: settings.linkedinClientId || '',
         linkedinClientSecret: settings.linkedinClientSecret || '',
         linkedinRedirectUri: settings.linkedinRedirectUri || '',
+        // Backup Configuration
+        backupS3Bucket: settings.backupS3Bucket || '',
+        backupS3Region: settings.backupS3Region || 'us-east-1',
+        backupRetentionDays: settings.backupRetentionDays || 14,
       },
     })
   } catch (error) {
@@ -96,6 +100,10 @@ export async function POST(request: Request) {
           linkedinClientId: body.linkedinClientId || null,
           linkedinClientSecret: body.linkedinClientSecret || null,
           linkedinRedirectUri: body.linkedinRedirectUri || null,
+          // Backup Configuration
+          backupS3Bucket: body.backupS3Bucket || null,
+          backupS3Region: body.backupS3Region || 'us-east-1',
+          backupRetentionDays: body.backupRetentionDays || 14,
         },
       })
     } else {
@@ -130,6 +138,10 @@ export async function POST(request: Request) {
           linkedinClientId: body.linkedinClientId || null,
           linkedinClientSecret: body.linkedinClientSecret || null,
           linkedinRedirectUri: body.linkedinRedirectUri || null,
+          // Backup Configuration
+          backupS3Bucket: body.backupS3Bucket || null,
+          backupS3Region: body.backupS3Region || 'us-east-1',
+          backupRetentionDays: body.backupRetentionDays || 14,
         },
       })
     }

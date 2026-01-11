@@ -31,6 +31,10 @@ interface ApiSettings {
   linkedinClientId: string
   linkedinClientSecret: string
   linkedinRedirectUri: string
+  // Backup Configuration
+  backupS3Bucket: string
+  backupS3Region: string
+  backupRetentionDays: number
 }
 
 type TabType = 'general' | 'email' | 'sms' | 'ai' | 'storage' | 'linkedin' | 'backup'
@@ -84,6 +88,10 @@ export default function SettingsPage() {
     linkedinClientId: '',
     linkedinClientSecret: '',
     linkedinRedirectUri: '',
+    // Backup Configuration
+    backupS3Bucket: '',
+    backupS3Region: 'us-east-1',
+    backupRetentionDays: 14,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -1019,9 +1027,78 @@ export default function SettingsPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Backup Storage Settings</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Configure where backups are stored. Leave bucket empty to use the main S3 bucket from Storage settings.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Backup S3 Bucket (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.backupS3Bucket}
+                    onChange={(e) => setSettings({ ...settings, backupS3Bucket: e.target.value })}
+                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder={settings.s3Bucket || 'Uses main S3 bucket'}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Leave empty to use the main S3 bucket configured in Storage settings
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Backup S3 Region
+                  </label>
+                  <select
+                    value={settings.backupS3Region}
+                    onChange={(e) => setSettings({ ...settings, backupS3Region: e.target.value })}
+                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="us-east-1">US East (N. Virginia)</option>
+                    <option value="us-east-2">US East (Ohio)</option>
+                    <option value="us-west-1">US West (N. California)</option>
+                    <option value="us-west-2">US West (Oregon)</option>
+                    <option value="eu-west-1">EU (Ireland)</option>
+                    <option value="eu-west-2">EU (London)</option>
+                    <option value="eu-west-3">EU (Paris)</option>
+                    <option value="eu-central-1">EU (Frankfurt)</option>
+                    <option value="ap-south-1">Asia Pacific (Mumbai)</option>
+                    <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                    <option value="ap-northeast-2">Asia Pacific (Seoul)</option>
+                    <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                    <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
+                    <option value="ca-central-1">Canada (Central)</option>
+                    <option value="sa-east-1">South America (São Paulo)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Retention Period (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={settings.backupRetentionDays}
+                    onChange={(e) => setSettings({ ...settings, backupRetentionDays: parseInt(e.target.value) || 14 })}
+                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Backups older than this will be automatically deleted (1-365 days)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Automated Backups</h2>
               <p className="text-sm text-gray-600 mb-4">
-                Set up automated daily backups using a cron service. Backups are retained for 14 days.
+                Set up automated daily backups using a cron service. Backups are retained for {settings.backupRetentionDays} days.
               </p>
 
               <div className="bg-gray-50 rounded-lg p-4 space-y-4">

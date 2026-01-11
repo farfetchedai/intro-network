@@ -3,8 +3,16 @@ import { prisma } from '../prisma'
 import { getS3Config } from './s3'
 import { gzipSync } from 'zlib'
 
-const BACKUP_RETENTION_DAYS = 14
 const BACKUP_FOLDER = 'backups'
+const DEFAULT_RETENTION_DAYS = 14
+
+interface BackupConfig {
+  bucket: string
+  region: string
+  accessKeyId: string
+  secretAccessKey: string
+  retentionDays: number
+}
 
 interface BackupResult {
   success: boolean
@@ -16,17 +24,45 @@ interface BackupResult {
 }
 
 /**
+ * Get backup configuration from database
+ * Uses backup-specific settings if available, otherwise falls back to main S3 settings
+ */
+async function getBackupConfig(): Promise<BackupConfig | null> {
+  const s3Config = await getS3Config()
+
+  if (!s3Config) {
+    return null
+  }
+
+  // Get backup-specific settings from database
+  const settings = await prisma.apiSettings.findFirst()
+
+  return {
+    // Use backup bucket if specified, otherwise use main S3 bucket
+    bucket: settings?.backupS3Bucket || s3Config.bucket,
+    // Use backup region if specified, otherwise use main S3 region
+    region: settings?.backupS3Region || s3Config.region,
+    // Always use main S3 credentials
+    accessKeyId: s3Config.accessKeyId,
+    secretAccessKey: s3Config.secretAccessKey,
+    // Use configured retention days, default to 14
+    retentionDays: settings?.backupRetentionDays || DEFAULT_RETENTION_DAYS,
+  }
+}
+
+/**
  * Create a full database backup and upload to S3
  */
 export async function createDatabaseBackup(): Promise<BackupResult> {
   try {
-    const config = await getS3Config()
+    const config = await getBackupConfig()
 
     if (!config) {
       return { success: false, error: 'S3 not configured. Enable S3 in API Settings first.' }
     }
 
     console.log('[Backup] Starting database backup...')
+    console.log(`[Backup] Using bucket: ${config.bucket}, region: ${config.region}, retention: ${config.retentionDays} days`)
 
     // Export all tables
     const backupData = await exportAllTables()
@@ -64,7 +100,7 @@ export async function createDatabaseBackup(): Promise<BackupResult> {
     console.log(`[Backup] Uploaded backup: ${backupKey} (${formatBytes(compressedData.length)})`)
 
     // Clean up old backups
-    const cleanedUp = await cleanupOldBackups(client, config.bucket)
+    const cleanedUp = await cleanupOldBackups(client, config.bucket, config.retentionDays)
 
     return {
       success: true,
@@ -127,7 +163,7 @@ async function exportAllTables(): Promise<Record<string, unknown[]>> {
 /**
  * Delete backups older than retention period
  */
-async function cleanupOldBackups(client: S3Client, bucket: string): Promise<number> {
+async function cleanupOldBackups(client: S3Client, bucket: string, retentionDays: number): Promise<number> {
   try {
     // List all backups
     const listResponse = await client.send(new ListObjectsV2Command({
@@ -141,7 +177,7 @@ async function cleanupOldBackups(client: S3Client, bucket: string): Promise<numb
 
     // Find backups older than retention period
     const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - BACKUP_RETENTION_DAYS)
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays)
 
     const oldBackups = listResponse.Contents.filter(obj => {
       if (!obj.LastModified || !obj.Key) return false
@@ -174,7 +210,7 @@ async function cleanupOldBackups(client: S3Client, bucket: string): Promise<numb
  */
 export async function listBackups(): Promise<{ success: boolean; backups?: Array<{ key: string; size: number; date: Date }>; error?: string }> {
   try {
-    const config = await getS3Config()
+    const config = await getBackupConfig()
 
     if (!config) {
       return { success: false, error: 'S3 not configured' }

@@ -239,6 +239,10 @@ model ApiSettings {
   linkedinClientId         String?
   linkedinClientSecret     String?
   linkedinRedirectUri      String?
+  // Backup Configuration
+  backupS3Bucket           String?
+  backupS3Region           String?  @default("us-east-1")
+  backupRetentionDays      Int      @default(14)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
   emailFromName            String?

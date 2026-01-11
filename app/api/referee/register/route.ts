@@ -117,29 +117,32 @@ export async function POST(req: Request) {
         lastName: validatedData.lastName,
       }
 
-      // Only update optional fields if they are explicitly provided
+      // Only update optional fields if they have actual values (don't overwrite with empty)
       if (profilePicture !== null) {
         updateData.profilePicture = profilePicture
         console.log('[Register] Adding profilePicture to updateData')
       } else {
         console.log('[Register] profilePicture is null, NOT updating (preserving existing)')
       }
-      if (statementSummary !== undefined) {
+
+      // Only update these fields if they have non-empty values
+      // This prevents the onboarding flow from wiping out existing data
+      if (statementSummary && statementSummary.trim()) {
         updateData.statementSummary = statementSummary
       }
-      if (validatedData.skills !== undefined) {
-        updateData.skills = validatedData.skills ? JSON.stringify(validatedData.skills) : null
+      if (validatedData.skills && validatedData.skills.length > 0) {
+        updateData.skills = JSON.stringify(validatedData.skills)
       }
-      if (validatedData.companyName !== undefined) {
+      if (validatedData.companyName && validatedData.companyName.trim()) {
         updateData.companyName = validatedData.companyName
       }
-      if (validatedData.achievement !== undefined) {
+      if (validatedData.achievement && validatedData.achievement.trim()) {
         updateData.achievement = validatedData.achievement
       }
-      if (validatedData.achievementMethod !== undefined) {
+      if (validatedData.achievementMethod && validatedData.achievementMethod.trim()) {
         updateData.achievementMethod = validatedData.achievementMethod
       }
-      if (validatedData.introRequest !== undefined) {
+      if (validatedData.introRequest && validatedData.introRequest.trim()) {
         updateData.introRequest = validatedData.introRequest
       }
 

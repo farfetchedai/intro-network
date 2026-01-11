@@ -1002,6 +1002,7 @@ export default function SettingsPage() {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">File</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -1015,6 +1016,26 @@ export default function SettingsPage() {
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-600">
                                 {new Date(backup.dateFormatted).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch(`/api/admin/backup/download?key=${encodeURIComponent(backup.key)}`)
+                                      const data = await response.json()
+                                      if (data.success && data.url) {
+                                        window.open(data.url, '_blank')
+                                      } else {
+                                        alert('Failed to download: ' + (data.error || 'Unknown error'))
+                                      }
+                                    } catch {
+                                      alert('Failed to download backup')
+                                    }
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                >
+                                  Download
+                                </button>
                               </td>
                             </tr>
                           ))}

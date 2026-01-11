@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "prisma db push && next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backup": "tsx scripts/backup-cron.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -40,6 +41,7 @@
     "eslint-config-next": "16.0.6",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

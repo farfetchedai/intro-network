@@ -82,6 +82,9 @@ export default function GetIntrosPage() {
   // Track which contacts have been sent to
   const [sentContactIndices, setSentContactIndices] = useState<Set<number>>(new Set())
 
+  // Track which contacts are selected (for bulk sending)
+  const [selectedContactIndices, setSelectedContactIndices] = useState<Set<number>>(new Set())
+
   // Track which contacts are in edit mode (for editing email/phone)
   const [editingContactIndices, setEditingContactIndices] = useState<Set<number>>(new Set())
 
@@ -675,30 +678,32 @@ export default function GetIntrosPage() {
     return previewSms
   }
 
-  const handleSendRequests = async (contactIndex?: number) => {
+  const handleSendRequests = async () => {
     setIsSubmitting(true)
     setFormError('')
 
     try {
       // Determine which contact(s) to send to
       let contactIds: string[]
-      if (contactIndex !== undefined) {
-        // Individual contact
-        const contact = contacts[contactIndex]
-        if (!contact.id) {
-          setFormError('Unable to send to this contact. Please go back and re-add your contacts.')
-          setIsSubmitting(false)
-          return
-        }
-        contactIds = [contact.id]
+      let indicesToMark: number[] = []
+
+      if (selectedContactIndices.size > 0) {
+        // Send to selected contacts only
+        indicesToMark = Array.from(selectedContactIndices)
+        contactIds = indicesToMark
+          .map(idx => contacts[idx])
+          .filter(c => c?.id)
+          .map(c => c.id!)
       } else {
         // All contacts
         contactIds = contacts.filter(c => c.id).map(c => c.id!)
-        if (contactIds.length === 0) {
-          setFormError('No contacts found. Please go back and add your contacts again.')
-          setIsSubmitting(false)
-          return
-        }
+        indicesToMark = contacts.map((_, idx) => idx)
+      }
+
+      if (contactIds.length === 0) {
+        setFormError('No contacts found. Please go back and add your contacts again.')
+        setIsSubmitting(false)
+        return
       }
 
       // Preprocess templates to remove {statementSummary} if user doesn't have one
@@ -740,30 +745,23 @@ export default function GetIntrosPage() {
         const successfulEmails = data.results?.filter((r: any) => r.emailSent) || []
         const failedEmails = data.results?.filter((r: any) => !r.emailSent) || []
 
-        if (contactIndex !== undefined) {
-          // Individual contact - check if their email actually sent
-          const result = data.results?.[0]
-          if (result?.emailSent) {
-            setSentContactIndices(prev => new Set([...prev, contactIndex]))
-          } else {
-            setFormError('Failed to send email. Please check your email configuration in Settings.')
+        // Show success modal with actual count
+        if (successfulEmails.length > 0) {
+          setSentCount(successfulEmails.length)
+          // Mark sent contacts
+          setSentContactIndices(prev => new Set([...prev, ...indicesToMark]))
+          // Clear selection after sending
+          setSelectedContactIndices(new Set())
+          if (failedEmails.length > 0) {
+            // Some succeeded, some failed
+            setFormError(`${failedEmails.length} email(s) failed to send. Check your email configuration.`)
           }
-          setIsSubmitting(false)
+          setShowSuccessModal(true)
         } else {
-          // "Ask Everyone" - show success modal with actual count
-          if (successfulEmails.length > 0) {
-            setSentCount(successfulEmails.length)
-            if (failedEmails.length > 0) {
-              // Some succeeded, some failed
-              setFormError(`${failedEmails.length} email(s) failed to send. Check your email configuration.`)
-            }
-            setShowSuccessModal(true)
-          } else {
-            // All failed
-            setFormError('Failed to send emails. Please check your email configuration in Settings.')
-          }
-          setIsSubmitting(false)
+          // All failed
+          setFormError('Failed to send emails. Please check your email configuration in Settings.')
         }
+        setIsSubmitting(false)
       } else {
         setFormError(data.error || 'Failed to send requests. Please try again.')
         setIsSubmitting(false)
@@ -1275,12 +1273,40 @@ export default function GetIntrosPage() {
                       {contacts.map((contact, index) => {
                         const isSent = sentContactIndices.has(index)
                         const hasProfile = contact.linkedUser?.username
+                        const isSelected = selectedContactIndices.has(index)
                         return (
                           <div
                             key={index}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                            className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+                              isSent ? 'bg-emerald-50' : isSelected ? 'bg-emerald-50 ring-2 ring-emerald-300' : 'bg-gray-50'
+                            }`}
                           >
                             <div className="flex items-center gap-3">
+                              {/* Checkbox or Sent indicator */}
+                              {isSent ? (
+                                <div className="w-5 h-5 rounded bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    setSelectedContactIndices(prev => {
+                                      const newSet = new Set(prev)
+                                      if (newSet.has(index)) {
+                                        newSet.delete(index)
+                                      } else {
+                                        newSet.add(index)
+                                      }
+                                      return newSet
+                                    })
+                                  }}
+                                  className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer flex-shrink-0"
+                                />
+                              )}
                               {/* Profile Picture / Avatar */}
                               {hasProfile ? (
                                 <a href={`/${contact.linkedUser?.username}`} className="flex-shrink-0">
@@ -1320,34 +1346,9 @@ export default function GetIntrosPage() {
                                 </p>
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleSendRequests(index)}
-                              disabled={isSubmitting || isSent}
-                              className={`px-4 py-2 font-semibold rounded-lg transition-all duration-200 text-sm flex items-center gap-2 ${
-                                isSent
-                                  ? 'bg-emerald-100 text-emerald-700 cursor-default'
-                                  : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
-                              }`}
-                            >
-                              {isSent ? (
-                                <>
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  Sent
-                                </>
-                              ) : (
-                                'Ask Them'
-                              )}
-                            </button>
+                            {isSent && (
+                              <span className="text-sm font-medium text-emerald-600">Sent</span>
+                            )}
                           </div>
                         )
                       })}
@@ -1359,25 +1360,27 @@ export default function GetIntrosPage() {
                     <button
                       onClick={() => handleSendRequests()}
                       disabled={isSubmitting}
-                      className={`w-full ${!brandingSettings.flowAStep2ButtonBg ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : ''} text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      className={`w-full ${!brandingSettings.flowAStep2ButtonBg ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : ''} text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                       style={getButtonBackgroundStyle()}
                     >
-                      {isSubmitting ? 'Sending...' : 'Ask Everyone'}
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      {isSubmitting
+                        ? 'Sending...'
+                        : selectedContactIndices.size > 0
+                          ? `Ask ${selectedContactIndices.size} Contact${selectedContactIndices.size > 1 ? 's' : ''}`
+                          : 'Ask Everyone'}
                     </button>
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => setStep(1)}
-                        className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
-                      >
-                        ← Back to Contacts
-                      </button>
-                      <button
-                        onClick={() => router.push('/dashboard')}
-                        className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
-                      >
-                        Finish
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setStep(1)}
+                      className="flex items-center justify-center gap-1 text-gray-600 hover:text-gray-900 font-medium py-2 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Back to Contacts
+                    </button>
                   </div>
                 </div>
               </>

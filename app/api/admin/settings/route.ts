@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { clearLinkedInConfigCache } from '@/lib/linkedin'
 
 export async function GET() {
   try {
@@ -39,6 +40,11 @@ export async function GET() {
         s3AccessKeyId: settings.s3AccessKeyId || '',
         s3SecretAccessKey: settings.s3SecretAccessKey || '',
         s3PublicUrlPrefix: settings.s3PublicUrlPrefix || '',
+        // LinkedIn OAuth
+        linkedinEnabled: settings.linkedinEnabled || false,
+        linkedinClientId: settings.linkedinClientId || '',
+        linkedinClientSecret: settings.linkedinClientSecret || '',
+        linkedinRedirectUri: settings.linkedinRedirectUri || '',
       },
     })
   } catch (error) {
@@ -85,6 +91,11 @@ export async function POST(request: Request) {
           s3AccessKeyId: body.s3AccessKeyId || null,
           s3SecretAccessKey: body.s3SecretAccessKey || null,
           s3PublicUrlPrefix: body.s3PublicUrlPrefix || null,
+          // LinkedIn OAuth
+          linkedinEnabled: body.linkedinEnabled || false,
+          linkedinClientId: body.linkedinClientId || null,
+          linkedinClientSecret: body.linkedinClientSecret || null,
+          linkedinRedirectUri: body.linkedinRedirectUri || null,
         },
       })
     } else {
@@ -114,9 +125,17 @@ export async function POST(request: Request) {
           s3AccessKeyId: body.s3AccessKeyId || null,
           s3SecretAccessKey: body.s3SecretAccessKey || null,
           s3PublicUrlPrefix: body.s3PublicUrlPrefix || null,
+          // LinkedIn OAuth
+          linkedinEnabled: body.linkedinEnabled || false,
+          linkedinClientId: body.linkedinClientId || null,
+          linkedinClientSecret: body.linkedinClientSecret || null,
+          linkedinRedirectUri: body.linkedinRedirectUri || null,
         },
       })
     }
+
+    // Clear LinkedIn config cache so new settings take effect immediately
+    clearLinkedInConfigCache()
 
     return NextResponse.json({
       success: true,

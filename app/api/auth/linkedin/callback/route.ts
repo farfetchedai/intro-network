@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { exchangeCodeForToken, fetchLinkedInProfile } from '@/lib/linkedin'
-import { cookies } from 'next/headers'
+import { decodeState } from '../route'
 
 export async function GET(req: Request) {
   // Use NEXT_PUBLIC_APP_URL for production, fallback to req.url origin for local dev
@@ -28,45 +28,23 @@ export async function GET(req: Request) {
       )
     }
 
-    // Get and validate state cookie
-    const cookieStore = await cookies()
-    const stateCookie = cookieStore.get('linkedin_oauth_state')
-
-    console.log('[LinkedIn Callback] State cookie present:', !!stateCookie)
-
-    if (!stateCookie) {
-      console.error('[LinkedIn Callback] State cookie missing - cookies available:', cookieStore.getAll().map(c => c.name))
+    // Decode state from OAuth parameter (no cookies needed)
+    if (!state) {
+      console.error('[LinkedIn Callback] No state parameter received')
       return NextResponse.redirect(
         new URL('/login?error=Invalid session state', getBaseUrl())
       )
     }
 
-    let stateData: { state: string; returnTo: string }
-    try {
-      stateData = JSON.parse(stateCookie.value)
-    } catch {
+    const stateData = decodeState(state)
+    if (!stateData) {
+      console.error('[LinkedIn Callback] Failed to decode state:', state)
       return NextResponse.redirect(
         new URL('/login?error=Invalid session state', getBaseUrl())
       )
     }
 
-    // Validate state (CSRF protection)
-    // LinkedIn may return state with or without the JSON wrapper
-    let receivedState = state
-    try {
-      const parsedState = JSON.parse(state || '{}')
-      if (parsedState.state) {
-        receivedState = parsedState.state
-      }
-    } catch {
-      // State is plain string, use as-is
-    }
-
-    if (receivedState !== stateData.state) {
-      return NextResponse.redirect(
-        new URL('/login?error=Invalid state parameter', getBaseUrl())
-      )
-    }
+    console.log('[LinkedIn Callback] State decoded successfully, returnTo:', stateData.returnTo)
 
     // Exchange code for access token
     const tokenResponse = await exchangeCodeForToken(code)
@@ -153,9 +131,6 @@ export async function GET(req: Request) {
 
     // Create response with redirect
     const response = NextResponse.redirect(redirectUrl)
-
-    // Clear OAuth state cookie
-    response.cookies.delete('linkedin_oauth_state')
 
     // Set session cookies (same pattern as magic link auth)
     response.cookies.set('userId', user.id, {
